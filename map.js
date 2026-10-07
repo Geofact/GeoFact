@@ -90,8 +90,17 @@
       setTimeout(() => { for (const shape of shapes) shape.classList.remove(className); }, duration);
     }
     function celebrate(iso) { animateCountry(iso, 'country-correct', 780); }
-    function reject(iso) { animateCountry(iso, 'country-wrong', 430); }
-    return { zoom, celebrate, reject, reset() { pointers.clear(); drag = pinch = null; moved = multi = false; setView(base); }, getView: () => ({ ...view }), resolveCountry };
+    function reject(iso) {
+      const shapes = [...svg.querySelectorAll(`[data-iso="${iso}"]`)];
+      for (const shape of shapes) {
+        shape.classList.remove('country-wrong');
+        void shape.getBoundingClientRect();
+        shape.classList.add('country-wrong', 'country-tried');
+      }
+      setTimeout(() => { for (const shape of shapes) shape.classList.remove('country-wrong'); }, 430);
+    }
+    function clearTried() { for (const shape of svg.querySelectorAll('.country-tried')) shape.classList.remove('country-tried'); }
+    return { zoom, celebrate, reject, reset() { pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), resolveCountry };
   }
   root.GeoFactMap = createMap;
 })(globalThis);
