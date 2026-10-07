@@ -60,11 +60,11 @@
   const format = n => n.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB');
   const flag = c => [...c.a2].map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
   const map = GeoFactMap($('map'), guess);
-  const desktopAutoScroll = () => matchMedia('(pointer: fine) and (min-width: 700px)').matches;
-  function scrollToElement(element) {
-    if (!desktopAutoScroll()) return;
+  const autoScrollGameplay = () => matchMedia('(pointer: coarse), (max-width: 699px)').matches || matchMedia('(pointer: fine) and (min-width: 700px)').matches;
+  function scrollToElement(element, block = 'start') {
+    if (!autoScrollGameplay() || !element) return;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    element.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    element.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block });
   }
   function celebrateCorrect(iso) {
     map.celebrate(iso);
@@ -75,7 +75,7 @@
     setTimeout(() => check.remove(), 850);
     $('result').classList.remove('result-reveal');
     requestAnimationFrame(() => $('result').classList.add('result-reveal'));
-    setTimeout(() => scrollToElement($('result')), 360);
+    setTimeout(() => scrollToElement($('result'), 'start'), 430);
   }
   const boundaries = new Map();
   for (const el of $('map').querySelectorAll('[data-iso]')) {
@@ -426,7 +426,13 @@
         if (finalWasRecord) { bestScores[state.difficulty] = state.score; storage.write('gf-best-scores', bestScores); }
       }
       state.screen = 'final'; render(); $('challengeFriend').focus({ preventScroll: true });
-    } else { round(); setTimeout(() => scrollToElement($('playing')), 0); }
+    } else {
+      round();
+      setTimeout(() => {
+        const mapWrap = $('map')?.closest('.map-wrap');
+        scrollToElement(mapWrap || $('playing'), 'center');
+      }, 80);
+    }
   }
   function baseURL() { const url = new URL(location.href); url.search = ''; url.hash = ''; return url; }
   function factPayload() {
