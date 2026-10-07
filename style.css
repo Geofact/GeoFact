@@ -1224,3 +1224,10 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
   z-index:10!important;
   filter:drop-shadow(0 6px 7px rgba(45,34,20,.16)) saturate(1.22) contrast(1.08)!important;
 }
+
+
+/* Home secondary modes share one visual family. */
+.secondary-modes .mode-practice,
+.secondary-modes .mode-game{
+  background:linear-gradient(145deg,#fff7e8 0%,#f6e8d5 100%)!important;
+}
