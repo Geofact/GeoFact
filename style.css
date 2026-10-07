@@ -1169,3 +1169,58 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 .card-modal-content .flag-card.tcg-interactive.gold .card-flag{
   filter:drop-shadow(0 6px 7px rgba(55,38,10,.18)) saturate(1.18) contrast(1.06)!important;
 }
+
+
+/* Warmer, more inviting secondary home modes. */
+.secondary-modes .mode-choice{
+  background:linear-gradient(145deg,#fff7e8 0%,#f9ead7 100%)!important;
+  border-color:rgba(174,112,61,.17)!important;
+  box-shadow:0 8px 20px rgba(113,75,42,.055)!important;
+}
+.secondary-modes .mode-practice{
+  background:linear-gradient(145deg,#fff8e9 0%,#f3ead6 100%)!important;
+}
+.secondary-modes .mode-game{
+  background:linear-gradient(145deg,#fff5e5 0%,#f8e5d2 100%)!important;
+}
+.secondary-modes .mode-choice:hover{
+  background:linear-gradient(145deg,#fff9ee 0%,#f7e5cf 100%)!important;
+  box-shadow:0 11px 25px rgba(113,75,42,.10)!important;
+}
+
+/* Premium rarity sheen: vivid card beneath, responsive light above. */
+.card-modal-content .flag-card.tcg-interactive.silver::before,
+.card-modal-content .flag-card.tcg-interactive.gold::before,
+.card-modal-content .flag-card.tcg-interactive.shiny::before{
+  inset:0!important;
+  opacity:.48!important;
+  mix-blend-mode:screen!important;
+  background:
+    radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.92) 0 3%,rgba(255,255,255,.42) 9%,transparent 25%),
+    linear-gradient(112deg,transparent 25%,rgba(255,255,255,.08) 38%,rgba(255,255,255,.42) 48%,rgba(255,255,255,.08) 58%,transparent 72%)!important;
+  background-size:100% 100%,180% 180%!important;
+  background-position:center,calc(var(--mx)) calc(var(--my))!important;
+}
+.card-modal-content .flag-card.tcg-interactive.gold::before{
+  opacity:.52!important;
+  background:
+    radial-gradient(circle at var(--mx) var(--my),rgba(255,255,235,.98) 0 3%,rgba(255,224,112,.52) 10%,transparent 27%),
+    linear-gradient(112deg,transparent 25%,rgba(255,244,181,.10) 38%,rgba(255,255,255,.55) 48%,rgba(255,211,85,.12) 58%,transparent 72%)!important;
+  background-size:100% 100%,180% 180%!important;
+  background-position:center,calc(var(--mx)) calc(var(--my))!important;
+}
+.card-modal-content .flag-card.tcg-interactive.shiny::before{
+  opacity:.62!important;
+  background:
+    radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.98) 0 3%,rgba(255,255,255,.38) 9%,transparent 24%),
+    linear-gradient(115deg,rgba(255,83,175,.24),rgba(80,214,255,.30),rgba(255,226,89,.28),rgba(135,94,255,.26),rgba(255,83,175,.24))!important;
+  background-size:100% 100%,190% 190%!important;
+  background-position:center,calc(var(--mx)) calc(var(--my))!important;
+}
+.card-modal-content .flag-card.tcg-interactive.silver .card-flag,
+.card-modal-content .flag-card.tcg-interactive.gold .card-flag,
+.card-modal-content .flag-card.tcg-interactive.shiny .card-flag{
+  position:relative!important;
+  z-index:10!important;
+  filter:drop-shadow(0 6px 7px rgba(45,34,20,.16)) saturate(1.22) contrast(1.08)!important;
+}
