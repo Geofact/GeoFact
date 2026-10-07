@@ -1267,3 +1267,26 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
   background:linear-gradient(145deg,#fff6e7 0%,#f1dbc0 100%)!important;
   box-shadow:0 11px 25px rgba(113,75,42,.11)!important;
 }
+
+
+/* Wrong guesses stay visible for the current country. */
+.country-shape.country-tried,
+.microstate.country-tried{
+  fill:#dc4c45!important;
+  stroke:#9f302d!important;
+}
+.country-shape.country-tried:hover{fill:#c93f39!important}
+.country-shape.country-tried.country-wrong,
+.microstate.country-tried.country-wrong{
+  animation:countryWrongTried .42s ease-out;
+}
+@keyframes countryWrongTried{
+  0%{fill:#dc4c45;transform:translateX(0)}
+  25%{fill:#ef6a61;transform:translateX(-3px)}
+  50%{fill:#c93f39;transform:translateX(3px)}
+  75%{fill:#ef6a61;transform:translateX(-2px)}
+  100%{fill:#dc4c45;transform:translateX(0)}
+}
+@media(max-width:600px){
+  .distance-feedback{flex-wrap:wrap;gap:5px 9px;line-height:1.35;text-align:center}
+}
