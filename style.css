@@ -1231,3 +1231,21 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 .secondary-modes .mode-game{
   background:linear-gradient(145deg,#fff7e8 0%,#f6e8d5 100%)!important;
 }
+
+
+/* Mobile: Practice and Challenge titles use the same visual size. */
+@media(max-width:600px){
+  html[lang="en"] .secondary-modes .mode-practice strong,
+  html[lang="en"] .secondary-modes .mode-game strong{
+    font-size:12.5px!important;
+    line-height:1.1!important;
+    letter-spacing:-.7px!important;
+  }
+}
+@media(max-width:380px){
+  html[lang="en"] .secondary-modes .mode-practice strong,
+  html[lang="en"] .secondary-modes .mode-game strong{
+    font-size:11.5px!important;
+    letter-spacing:-.8px!important;
+  }
+}
