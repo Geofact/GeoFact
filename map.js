@@ -5,10 +5,53 @@
     let view = { ...base }, drag = null, pinch = null, moved = false, multi = false;
     const pointers = new Map();
     const microstates = [...svg.querySelectorAll('circle[data-iso]')];
+    const markerLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    markerLayer.setAttribute('class', 'microstate-marker-layer');
+    svg.appendChild(markerLayer);
+    const markers = microstates.map(source => {
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      marker.setAttribute('class', 'microstate-marker');
+      marker.dataset.iso = source.dataset.iso;
+      marker.dataset.sourceIso = source.dataset.iso;
+      markerLayer.appendChild(marker);
+      return { source, marker };
+    });
+    function layoutMicrostateMarkers() {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const inverse = matrix.inverse(), placed = [];
+      const radius = 4.5, gap = 2.5, minDistance = radius * 2 + gap;
+      for (const item of markers) {
+        const p = svg.createSVGPoint();
+        p.x = +item.source.getAttribute('cx'); p.y = +item.source.getAttribute('cy');
+        const anchor = p.matrixTransform(matrix);
+        let chosen = { x: anchor.x, y: anchor.y }, found = false;
+        for (let ring = 0; ring <= 5 && !found; ring++) {
+          const distance = ring * (minDistance + 1);
+          const steps = ring === 0 ? 1 : Math.max(8, ring * 10);
+          for (let step = 0; step < steps; step++) {
+            const angle = ring === 0 ? 0 : (step / steps) * Math.PI * 2;
+            const candidate = { x: anchor.x + Math.cos(angle) * distance, y: anchor.y + Math.sin(angle) * distance };
+            if (placed.every(q => Math.hypot(candidate.x - q.x, candidate.y - q.y) >= minDistance)) {
+              chosen = candidate; found = true; break;
+            }
+          }
+        }
+        placed.push(chosen);
+        const local = svg.createSVGPoint(); local.x = chosen.x; local.y = chosen.y;
+        const svgPoint = local.matrixTransform(inverse);
+        const scale = Math.max(.0001, Math.hypot(matrix.a, matrix.b));
+        item.marker.setAttribute('cx', svgPoint.x);
+        item.marker.setAttribute('cy', svgPoint.y);
+        item.marker.setAttribute('r', radius / scale);
+        item.marker.style.setProperty('--marker-stroke', `${1.4 / scale}px`);
+      }
+    }
     function setView(next) {
       const w = Math.min(1200, Math.max(15, next.w)), h = w / 2;
       view = { x: Math.min(1200 - w, Math.max(0, next.x)), y: Math.min(600 - h, Math.max(0, next.y)), w, h };
       svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+      requestAnimationFrame(layoutMicrostateMarkers);
     }
     function point(x, y) {
       const p = svg.createSVGPoint(); p.x = x; p.y = y;
@@ -24,15 +67,16 @@
     function resolveCountry(target, x, y, type) {
       const real = target?.closest?.('path[data-iso]');
       if (real && svg.contains(real)) return real.dataset.iso;
+      const marker = target?.closest?.('.microstate-marker[data-iso]');
+      if (marker && svg.contains(marker)) return marker.dataset.iso;
       const hit = target?.closest?.('circle[data-iso]');
       if (hit && svg.contains(hit)) return hit.dataset.iso;
       let nearest = null, distance = type === 'touch' ? 24 : 12;
       const matrix = svg.getScreenCTM();
-      for (const circle of microstates) {
-        const p = svg.createSVGPoint(); p.x = +circle.getAttribute('cx'); p.y = +circle.getAttribute('cy');
-        const screen = p.matrixTransform(matrix);
-        const d = Math.hypot(screen.x - x, screen.y - y);
-        if (d < distance) { distance = d; nearest = circle.dataset.iso; }
+      for (const item of markers) {
+        const screen = item.marker.getBoundingClientRect();
+        const d = Math.hypot(screen.left + screen.width / 2 - x, screen.top + screen.height / 2 - y);
+        if (d < distance) { distance = d; nearest = item.source.dataset.iso; }
       }
       return nearest;
     }
@@ -100,6 +144,8 @@
       setTimeout(() => { for (const shape of shapes) shape.classList.remove('country-wrong'); }, 430);
     }
     function clearTried() { for (const shape of svg.querySelectorAll('.country-tried')) shape.classList.remove('country-tried'); }
+    addEventListener('resize', () => requestAnimationFrame(layoutMicrostateMarkers));
+    requestAnimationFrame(layoutMicrostateMarkers);
     return { zoom, celebrate, reject, reset() { pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), resolveCountry };
   }
   root.GeoFactMap = createMap;
