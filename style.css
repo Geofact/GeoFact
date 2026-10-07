@@ -899,3 +899,17 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 /* Collection continent grouping */
 .collection-grid .continent-heading{grid-column:1/-1;margin:18px 0 2px;font-size:1.05rem;color:var(--blue);letter-spacing:.01em}
 .collection-grid .continent-heading:first-child{margin-top:2px}
+
+
+/* Mobile polish: keep the two home shortcuts comfortably inside their cards. */
+@media(max-width:600px){
+  .mode-choice strong{font-size:19px!important;line-height:1.16;margin-bottom:7px}
+  .mode-choice span{font-size:13px;line-height:1.35}
+}
+@media(max-width:360px){
+  .mode-choice strong{font-size:17px!important}
+  .mode-choice span{font-size:12px}
+}
+
+/* TCG modal: clip all animated/tilted finishes to the rounded card edge. */
+.card-modal-content .flag-card{overflow:hidden!important;isolation:isolate}
