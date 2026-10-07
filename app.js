@@ -207,6 +207,7 @@
     const detail = $('collectionDetail');
     if (!detail || !flagCards[iso]) return;
     const c = byISO.get(iso), owned = ownedRarities(iso);
+    detail.dataset.iso = iso;
     detail.replaceChildren();
     const head = document.createElement('div'); head.className = 'collection-detail-head';
     const title = document.createElement('div'); title.innerHTML = `<span>${cardFlag(iso)}</span><div><small>${t('collectionVariants')}</small><h2></h2></div>`; title.querySelector('h2').textContent = c.name[lang];
@@ -526,7 +527,11 @@
   $('lang').addEventListener('change', e => {
     lang = e.target.value;
     try { localStorage.setItem('wg-lang', lang); } catch { /* Language still changes without persistence. */ }
+    const openCollectionIso = !$('collectionDetail')?.classList.contains('hidden')
+      ? $('collectionDetail')?.dataset.iso
+      : null;
     render();
+    if (openCollectionIso) renderCollectionDetail(openCollectionIso);
   });
   $('acceptChallenge').addEventListener('click', () => start('game', state.challenge.d, state.challenge));
   $('next').addEventListener('click', next);
