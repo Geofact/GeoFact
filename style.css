@@ -1045,3 +1045,27 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
   box-shadow:0 8px 20px rgba(5,34,26,.18)!important;
   border-color:rgba(255,255,255,.08)!important;
 }
+
+
+/* Daily final stats: three balanced units, never orphan the value on mobile. */
+.daily-final-stats{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin:15px 0 17px!important;
+  line-height:1.2!important;
+}
+.daily-final-stats.hidden{display:none!important}
+.daily-final-stats span{
+  min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:10px 5px;border-radius:13px;background:rgba(255,255,255,.48);
+  white-space:nowrap;
+}
+.daily-final-stats b{font-size:10px;font-weight:750;color:var(--muted)}
+.daily-final-stats strong{font-size:17px;color:var(--blue);font-weight:900}
+@media(max-width:360px){
+  .daily-final-stats{gap:5px!important}
+  .daily-final-stats span{padding:9px 3px}
+  .daily-final-stats b{font-size:9px}
+  .daily-final-stats strong{font-size:16px}
+}
