@@ -1069,3 +1069,47 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
   .daily-final-stats b{font-size:9px}
   .daily-final-stats strong{font-size:16px}
 }
+
+
+/* EN home shortcut: keep the full translated title on one line on mobile. */
+@media(max-width:600px){
+  html[lang="en"] .secondary-modes .mode-game strong{
+    font-size:14px!important;
+    letter-spacing:-.65px!important;
+  }
+}
+@media(max-width:360px){
+  html[lang="en"] .secondary-modes .mode-game strong{
+    font-size:12.5px!important;
+    letter-spacing:-.75px!important;
+  }
+}
+
+/* TCG modal: clip the visual layers to the actual rounded card silhouette.
+   Pseudo-element effects no longer extend beyond the card corners. */
+.card-modal-content{
+  border-radius:28px!important;
+  transform-style:flat!important;
+}
+.card-modal-content .flag-card.tcg-interactive{
+  clip-path:inset(0 round 28px)!important;
+  -webkit-clip-path:inset(0 round 28px)!important;
+  contain:paint!important;
+  transform-style:flat!important;
+  backface-visibility:hidden!important;
+  -webkit-backface-visibility:hidden!important;
+}
+.card-modal-content .flag-card.tcg-interactive::before,
+.card-modal-content .flag-card.tcg-interactive::after{
+  border-radius:inherit!important;
+}
+@media(max-width:600px){
+  .card-modal-content,
+  .card-modal-content .flag-card.tcg-interactive{
+    border-radius:24px!important;
+  }
+  .card-modal-content .flag-card.tcg-interactive{
+    clip-path:inset(0 round 24px)!important;
+    -webkit-clip-path:inset(0 round 24px)!important;
+  }
+}
