@@ -1,0 +1,11 @@
+{
+  "name": "geofact-local-reconstruction",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node --test tests/geofact.test.js",
+    "test:browser": "node tests/browser.mjs",
+    "start": "python3 -m http.server 8000"
+  },
+  "devDependencies": { "playwright": "1.63.0" }
+}

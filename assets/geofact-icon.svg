@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">GeoFact globe and location pin</title>
+  <circle cx="29" cy="34" r="22" fill="#0F3D91"/>
+  <path fill="#22C55E" d="M12 25l7-7 7 1 2 6-5 3-1 7-7-1-4-4zm17 25-6-5 1-7 6-3 5 3 1 7zm7-31 8 3 6 8-3 4-6-3-1-6-6-2z"/>
+  <path fill="#F59E0B" stroke="#FFF9F0" stroke-width="2" d="M49 4c-7.2 0-13 5.8-13 13 0 9.5 13 22 13 22s13-12.5 13-22C62 9.8 56.2 4 49 4z"/>
+  <circle cx="49" cy="17" r="5" fill="#FFF9F0"/>
+</svg>
