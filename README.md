@@ -37,3 +37,5 @@ Pour travailler sur le code source, utiliser `index.html`, `style.css`, `app.js`
 `npm test` lance les tests Node. `npm run test:browser` lance les parcours Playwright après installation de Playwright/Chromium.
 
 Avant une mise en ligne publique, remplacer l’ancienne URL GitHub Pages encore utilisée dans les métadonnées/partages par l’URL du nouvel hébergement, puis régénérer `GeoFact.html`.
+
+<!-- Deployment refresh: 2026-10-07 -->
