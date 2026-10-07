@@ -282,7 +282,7 @@
     if (state.wrong) {
       const km = state.wrong.km, guessed = byISO.get(state.wrong.iso);
       $('distanceReaction').textContent = guessed ? `${guessed.name[lang]} — ${t('capital')} : ${guessed.capital[lang]} · ` : '';
-      $('distanceReaction').textContent +=  = t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
+      $('distanceReaction').textContent += t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
       $('distance').textContent = `${format(km)} km`;
       $('penalty').textContent = state.wrong.penalty ? `−${state.wrong.penalty} ${t('points')}` : '';
     }
