@@ -53,7 +53,7 @@
   let renderedDailyKey = core.utcDayKey();
   function blankState() {
     return { screen: 'home', mode: null, difficulty: 'easy', series: [], queue: [], index: 0, current: null,
-      answered: false, attempts: 0, points: core.ROUND_MAX, score: 0, streak: 0, factIndex: null, wrong: null, challenge: null, dailyTiles: [], dailyErrors: 0, practicePool: [] };
+      answered: false, attempts: 0, points: core.ROUND_MAX, score: 0, streak: 0, factIndex: null, wrong: null, wrongGuesses: [], challenge: null, dailyTiles: [], dailyErrors: 0, practicePool: [] };
   }
   let state = blankState();
   const t = (key, values = {}) => (GeoFactTranslations[lang][key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
@@ -280,8 +280,9 @@
     $('result').classList.toggle('hidden', !state.answered);
     $('distanceRow').classList.toggle('hidden', !state.wrong || state.answered);
     if (state.wrong) {
-      const km = state.wrong.km;
-      $('distanceReaction').textContent = t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
+      const km = state.wrong.km, guessed = byISO.get(state.wrong.iso);
+      $('distanceReaction').textContent = guessed ? `${guessed.name[lang]} — ${t('capital')} : ${guessed.capital[lang]} · ` : '';
+      $('distanceReaction').textContent +=  = t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
       $('distance').textContent = `${format(km)} km`;
       $('penalty').textContent = state.wrong.penalty ? `−${state.wrong.penalty} ${t('points')}` : '';
     }
@@ -378,7 +379,7 @@
       if (state.queue[0] === state.current?.iso) [state.queue[0], state.queue[1]] = [state.queue[1], state.queue[0]];
     }
     state.current = byISO.get((state.mode === 'game' || state.mode === 'daily') ? state.series[state.index] : state.queue.shift());
-    state.screen = 'playing'; state.answered = false; state.attempts = 0; state.points = core.ROUND_MAX; state.factIndex = null; state.wrong = null;
+    state.screen = 'playing'; state.answered = false; state.attempts = 0; state.points = core.ROUND_MAX; state.factIndex = null; state.wrong = null; state.wrongGuesses = [];
     map.reset(); render();
   }
   function guess(iso) {
@@ -389,7 +390,8 @@
       const km = distance(iso, state.current.iso), before = state.points;
       if (state.mode === 'game' || state.mode === 'daily') state.points = core.penalise(state.points, km);
       if (state.mode === 'daily') state.dailyErrors++;
-      state.wrong = { km, penalty: before - state.points };
+      state.wrong = { iso, km, penalty: before - state.points };
+      if (!state.wrongGuesses.includes(iso)) state.wrongGuesses.push(iso);
       map.reject(iso);
     } else {
       state.answered = true; state.streak++;
