@@ -927,3 +927,49 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
   .mode-choice strong{font-size:15px!important}
   .mode-choice span{font-size:11px!important}
 }
+
+
+/* Home harmony: emoji + title stay together; no orphan punctuation. */
+.secondary-modes .mode-choice strong{display:flex!important;align-items:center;gap:6px;white-space:nowrap;padding-right:0!important}
+.secondary-modes .mode-choice strong>span{display:inline!important}
+.secondary-modes .mode-choice .mode-emoji{flex:0 0 auto;font-size:.95em;line-height:1}
+.secondary-modes .mode-choice>span{display:block;text-wrap:pretty}
+@media(max-width:600px){
+  .secondary-modes .mode-choice strong{font-size:14px!important;letter-spacing:-.35px!important;gap:4px}
+  .secondary-modes .mode-choice>span{font-size:10.5px!important}
+}
+@media(max-width:360px){
+  .secondary-modes .mode-choice strong{font-size:13px!important}
+}
+
+/* Collection is a real destination, not a quiet text link. */
+.collection-link{
+  display:block!important;width:min(310px,82%)!important;margin:20px auto 2px!important;
+  min-height:52px!important;padding:14px 24px!important;border:1px solid rgba(15,61,145,.14)!important;
+  border-radius:16px!important;background:linear-gradient(135deg,#eef7ff,#fff8e8)!important;
+  box-shadow:0 10px 24px rgba(15,61,145,.09)!important;color:var(--blue)!important;
+  font-size:16px!important;font-weight:900!important;text-decoration:none!important;
+}
+.collection-link::before{content:"✦";margin-right:9px;color:var(--orange);font-size:13px}
+.collection-link:hover{transform:translateY(-1px);box-shadow:0 13px 28px rgba(15,61,145,.13)!important}
+
+/* Daily: modern editorial map texture instead of a generic gradient card. */
+.daily-card{
+  background:
+    radial-gradient(circle at 82% 18%,rgba(116,218,191,.20) 0 2px,transparent 3px),
+    radial-gradient(circle at 70% 68%,rgba(255,198,109,.17) 0 2px,transparent 3px),
+    linear-gradient(125deg,rgba(255,255,255,.035) 25%,transparent 25% 50%,rgba(255,255,255,.025) 50% 75%,transparent 75%),
+    linear-gradient(135deg,#102f46 0%,#17485a 54%,#246456 100%)!important;
+  background-size:auto,auto,42px 42px,auto!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 20px 45px rgba(16,47,70,.20),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+.daily-card::before{
+  width:230px!important;height:230px!important;right:-88px!important;top:-112px!important;
+  border:1px solid rgba(255,244,216,.18)!important;
+  box-shadow:0 0 0 25px rgba(255,244,216,.028),0 0 0 50px rgba(255,244,216,.018)!important;
+}
+.daily-card::after{
+  width:120px!important;height:120px!important;right:18px!important;bottom:-78px!important;
+  background:radial-gradient(circle,rgba(242,170,91,.22),rgba(242,170,91,0) 68%)!important;
+}
