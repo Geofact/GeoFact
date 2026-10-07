@@ -319,7 +319,7 @@
         renderDailyMarks($('dailyFinalTiles'), state.dailyTiles);
         $('dailyFinalErrors').classList.remove('hidden');
         $('dailyFinalErrors').textContent = dailyErrorsText(state.dailyErrors);
-        $('dailyFinalStats').textContent = `🔥 ${t('dailyStreak')} : ${format(activeDailyStreak())} · 🏆 ${t('dailyBestStreak')} : ${format(dailyData.bestStreak)} · ✓ ${t('dailyPlayed')} : ${format(dailyData.played)}`;
+        $('dailyFinalStats').innerHTML = `<span>🔥 <b>${t('dailyStreak')}</b> <strong>${format(activeDailyStreak())}</strong></span><span>🏆 <b>${t('dailyBestStreak')}</b> <strong>${format(dailyData.bestStreak)}</strong></span><span>✓ <b>${t('dailyPlayed')}</b> <strong>${format(dailyData.played)}</strong></span>`;
         $('challengeFriend').textContent = t('dailyShare');
         const dailyResult = todayDaily().result;
         const hasCard = !!dailyResult?.card;
