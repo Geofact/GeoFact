@@ -80,7 +80,9 @@
   const boundaries = new Map();
   const territoryShapes = new Map();
   const overseas = {
-    'FRA-GF': { parent: 'FRA', name: { fr: 'Guyane française', en: 'French Guiana' }, capital: { fr: 'Cayenne', en: 'Cayenne' } }
+    'FRA-GF': { parent: 'FRA', name: { fr: 'Guyane française', en: 'French Guiana' }, capital: { fr: 'Cayenne', en: 'Cayenne' } },
+    'USA-AK': { parent: 'USA', name: { fr: 'Alaska (États-Unis)', en: 'Alaska (United States)' }, capital: { fr: 'Juneau', en: 'Juneau' } },
+    'USA-HI': { parent: 'USA', name: { fr: 'Hawaï (États-Unis)', en: 'Hawaii (United States)' }, capital: { fr: 'Honolulu', en: 'Honolulu' } }
   };
   for (const el of $('map').querySelectorAll('path.country-shape[data-iso], circle.microstate[data-iso]')) {
     const shape = el.tagName.toLowerCase() === 'path' ? core.samplePath(el.getAttribute('d')) : {
@@ -88,17 +90,9 @@
     };
     boundaries.set(el.dataset.iso, shape);
   }
-  // French Guiana is drawn as a separate component inside the French SVG path.
-  const frenchPath = $('map').querySelector('path.country-shape[data-iso="FRA"]');
-  if (frenchPath) {
-    const parts = frenchPath.getAttribute('d').match(/M[^M]+/g) || [];
-    const guiana = parts.find(part => /^M427\.81,286\.15\b/.test(part));
-    if (guiana) {
-      const shape = core.samplePath(guiana);
-      territoryShapes.set('FRA-GF', shape);
-      const mainland = parts.filter(part => part !== guiana).map(core.samplePath);
-      boundaries.set('FRA', { points: mainland.flatMap(p => p.points), vertices: new Set(mainland.flatMap(p => [...p.vertices])) });
-    }
+  // The map module splits distant regions into independent SVG paths before this geometry is read.
+  for (const iso of Object.keys(overseas)) {
+    if (boundaries.has(iso)) territoryShapes.set(iso, boundaries.get(iso));
   }
   const distanceCache = new Map();
   function distance(a, b) {
@@ -401,7 +395,7 @@
   function guess(iso) {
     if (state.screen !== 'playing' || state.answered || (!byISO.has(iso) && !overseas[iso])) return;
     state.attempts++;
-    if (iso !== state.current.iso) {
+    if (iso !== state.current.iso && overseas[iso]?.parent !== state.current.iso) {
       state.streak = 0;
       const km = distance(iso, state.current.iso), before = state.points;
       if (state.mode === 'game' || state.mode === 'daily') state.points = core.penalise(state.points, km);
