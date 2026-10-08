@@ -20,7 +20,7 @@
       const matrix = svg.getScreenCTM();
       if (!matrix) return;
       const inverse = matrix.inverse(), placed = [];
-      const radius = 4.5, gap = 2.5, minDistance = radius * 2 + gap;
+      const radius = 4.5, gap = 3, minDistance = radius * 2 + gap;
       for (const item of markers) {
         const p = svg.createSVGPoint();
         p.x = +item.source.getAttribute('cx'); p.y = +item.source.getAttribute('cy');
@@ -48,7 +48,7 @@
       }
     }
     function setView(next) {
-      const w = Math.min(1200, Math.max(15, next.w)), h = w / 2;
+      const w = Math.min(1200, Math.max(4, next.w)), h = w / 2;
       view = { x: Math.min(1200 - w, Math.max(0, next.x)), y: Math.min(600 - h, Math.max(0, next.y)), w, h };
       svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
       requestAnimationFrame(layoutMicrostateMarkers);
@@ -60,19 +60,18 @@
     function zoom(factor, clientX, clientY) {
       const rect = svg.getBoundingClientRect();
       const anchor = point(clientX ?? rect.x + rect.width / 2, clientY ?? rect.y + rect.height / 2);
-      const w = Math.min(1200, Math.max(15, view.w / factor));
+      const w = Math.min(1200, Math.max(4, view.w / factor));
       const ratio = w / view.w;
       setView({ x: anchor.x - (anchor.x - view.x) * ratio, y: anchor.y - (anchor.y - view.y) * ratio, w });
     }
     function resolveCountry(target, x, y, type) {
-      const real = target?.closest?.('path[data-iso]');
-      if (real && svg.contains(real)) return real.dataset.iso;
       const marker = target?.closest?.('.microstate-marker[data-iso]');
       if (marker && svg.contains(marker)) return marker.dataset.iso;
+      const real = target?.closest?.('path[data-iso]');
+      if (real && svg.contains(real)) return real.dataset.iso;
       const hit = target?.closest?.('circle[data-iso]');
       if (hit && svg.contains(hit)) return hit.dataset.iso;
       let nearest = null, distance = type === 'touch' ? 24 : 12;
-      const matrix = svg.getScreenCTM();
       for (const item of markers) {
         const screen = item.marker.getBoundingClientRect();
         const d = Math.hypot(screen.left + screen.width / 2 - x, screen.top + screen.height / 2 - y);
@@ -102,7 +101,7 @@
       if (Math.hypot(p.x - p.startX, p.y - p.startY) > 8) moved = true;
       if (pointers.size >= 2) {
         const [a, b] = [...pointers.values()];
-        const w = Math.min(1200, Math.max(15, pinch.view.w * pinch.distance / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y))));
+        const w = Math.min(1200, Math.max(4, pinch.view.w * pinch.distance / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y))));
         const mid = point((a.x + b.x) / 2, (a.y + b.y) / 2);
         setView({ x: pinch.anchor.x - (mid.x - view.x) * w / view.w, y: pinch.anchor.y - (mid.y - view.y) * w / view.w, w });
       } else if (moved && drag) {
