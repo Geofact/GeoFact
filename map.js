@@ -5,6 +5,19 @@
     let view = { ...base }, drag = null, pinch = null, moved = false, multi = false;
     const pointers = new Map();
     const microstates = [...svg.querySelectorAll('circle[data-iso]')];
+    const frenchPath = svg.querySelector('path.country-shape[data-iso="FRA"]');
+    if (frenchPath) {
+      const parts = frenchPath.getAttribute('d').match(/M[^M]+/g) || [];
+      const guiana = parts.find(part => /^M427\.81,286\.15\b/.test(part));
+      if (guiana) {
+        frenchPath.setAttribute('d', parts.filter(part => part !== guiana).join(' '));
+        const region = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        region.setAttribute('d', guiana);
+        region.setAttribute('class', 'country-shape');
+        region.dataset.iso = 'FRA-GF';
+        frenchPath.parentNode.insertBefore(region, frenchPath);
+      }
+    }
     const markerLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     markerLayer.setAttribute('class', 'microstate-marker-layer');
     svg.appendChild(markerLayer);
