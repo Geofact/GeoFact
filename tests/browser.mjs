@@ -6,6 +6,7 @@ import path from 'node:path';
 import {currentSave,legacySave} from './save-fixtures.mjs';
 import {testHighlight} from './highlight.mjs';
 import {testBorders} from './borders.mjs';
+import {testRepository} from './repository.mjs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const browserTypes = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -20,7 +21,7 @@ const server = createServer(async (req, res) => {
   if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
   try {
     const data = await readFile(file);
-    const type = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'}[path.extname(file)] || 'application/octet-stream';
+    const type = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'}[path.extname(file)] || 'application/octet-stream';
     res.writeHead(200, {'Content-Type':type}); res.end(data);
   } catch { res.writeHead(404).end(); }
 });
@@ -290,6 +291,8 @@ try {
   check(telemetry.some(e=>e.rpc==='geofact_record_event' && e.body.p_event_type==='challenge_completed'),'challenge event contract');
   console.log('Land-border feedback, translations and unchanged penalties…');
   await testBorders({newContext,url,core,tap,check,equal});
+  console.log('Isolated transactional reward repository…');
+  await testRepository({newContext,url,check,equal});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');
