@@ -112,7 +112,15 @@
     const km = 12742 * Math.asin(Math.min(1, Math.sqrt(minimum) / 2));
     return km <= 2 ? 10 : Math.max(1, Math.round(km));
   }
-  const core = { ROUND_MAX, SCORE_MAX, levels, penaltyFor, penalise, shuffle, encodeChallenge, encodeChallengeResult, parseChallenge, utcDayKey, dailyNumber, dailySeries, dailyTile, dailyShareCircle, chooseFact, samplePath, spherePoint, territoryDistance };
+  function areLandNeighbours(a, b, borders = root.GeoFactLandBorders) {
+    if (typeof a !== 'string' || typeof b !== 'string' || !borders) return false;
+    const parents = borders.territoryParents;
+    const parent = iso => Object.prototype.hasOwnProperty.call(parents, iso) ? parents[iso] : iso;
+    const countryA = parent(a), countryB = parent(b);
+    const neighbours = borders.neighbours[countryA];
+    return countryA !== countryB && Array.isArray(neighbours) && neighbours.includes(countryB);
+  }
+  const core = { ROUND_MAX, SCORE_MAX, levels, penaltyFor, penalise, shuffle, encodeChallenge, encodeChallengeResult, parseChallenge, utcDayKey, dailyNumber, dailySeries, dailyTile, dailyShareCircle, chooseFact, samplePath, spherePoint, territoryDistance, areLandNeighbours };
   root.GeoFactCore = core;
   if (typeof module !== 'undefined' && module.exports) module.exports = core;
 })(globalThis);

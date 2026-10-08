@@ -4,6 +4,7 @@
     const base = { x: 0, y: 0, w: 1200, h: 600 };
     let view = { ...base }, drag = null, pinch = null, moved = false, multi = false;
     const pointers = new Map();
+    let celebrationTimer = null;
     const microstates = [...svg.querySelectorAll('circle[data-iso]')];
     const frenchPath = svg.querySelector('path.country-shape[data-iso="FRA"]');
     if (frenchPath) {
@@ -159,9 +160,23 @@
     function animateCountry(iso, className, duration) {
       const shapes = [...svg.querySelectorAll(`[data-iso="${iso}"]`)];
       for (const shape of shapes) { shape.classList.remove(className); void shape.getBoundingClientRect(); shape.classList.add(className); }
-      setTimeout(() => { for (const shape of shapes) shape.classList.remove(className); }, duration);
+      return setTimeout(() => { for (const shape of shapes) shape.classList.remove(className); }, duration);
     }
-    function celebrate(iso) { animateCountry(iso, 'country-correct', 780); }
+    function clearFound() {
+      clearTimeout(celebrationTimer);
+      celebrationTimer = null;
+      for (const shape of svg.querySelectorAll('.country-found, .country-correct')) {
+        shape.classList.remove('country-found', 'country-correct');
+      }
+    }
+    function celebrate(countryISO, guessedISO = countryISO) {
+      clearFound();
+      // Include the country's independently selectable overseas regions and markers.
+      for (const shape of svg.querySelectorAll(`[data-iso="${countryISO}"], [data-iso^="${countryISO}-"]`)) {
+        shape.classList.add('country-found');
+      }
+      celebrationTimer = animateCountry(guessedISO, 'country-correct', 780);
+    }
     function reject(iso) {
       const shapes = [...svg.querySelectorAll(`[data-iso="${iso}"]`)];
       for (const shape of shapes) {
@@ -174,7 +189,7 @@
     function clearTried() { for (const shape of svg.querySelectorAll('.country-tried')) shape.classList.remove('country-tried'); }
     addEventListener('resize', () => requestAnimationFrame(layoutMicrostateMarkers));
     requestAnimationFrame(layoutMicrostateMarkers);
-    return { zoom, celebrate, reject, reset() { pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), resolveCountry };
+    return { zoom, celebrate, clearFound, reject, reset() { pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), resolveCountry };
   }
   root.GeoFactMap = createMap;
 })(globalThis);

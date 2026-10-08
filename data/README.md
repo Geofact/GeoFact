@@ -1,6 +1,7 @@
 # Données GeoFact
 
 - `countries.js` contient les 195 pays, leurs noms FR/EN, capitales, coordonnées, difficulté et continent de classement.
+- `borders.js` contient les paires de frontières terrestres et leur index symétrique ; sources, conventions et maintenance dans `borders.md`, licence dans `BORDERS-LICENSE.txt`.
 - `facts.js` contient les 201 faits utilisés après une bonne réponse.
 - `flag-cards.js` contient les 195 textes de cartes de drapeau FR/EN et une URL source d’audit pour chaque pays.
 

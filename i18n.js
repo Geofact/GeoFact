@@ -1,5 +1,6 @@
 globalThis.GeoFactTranslations = {
   fr: {
+    neighbour: "Tout près ! C'est un pays voisin.",
     publicStats: 'Stats',
     publicStatsKicker: 'GeoFact en chiffres',
     statsPeriod: 'Période',
@@ -40,6 +41,7 @@ globalThis.GeoFactTranslations = {
     against: 'Score de ton ami : {score} / 100', loading: 'Chargement…'
   },
   en: {
+    neighbour: "Very close! It's a neighbouring country.",
     publicStats: 'Stats',
     publicStatsKicker: 'GeoFact by the numbers',
     statsPeriod: 'Period',

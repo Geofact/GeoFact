@@ -101,7 +101,7 @@
     element.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block });
   }
   function celebrateCorrect(iso) {
-    map.celebrate(iso);
+    map.celebrate(state.current.iso, iso);
     const wrap = $('map').closest('.map-wrap');
     const check = document.createElement('div');
     check.className = 'correct-check'; check.textContent = '✓'; check.setAttribute('aria-hidden', 'true');
@@ -295,6 +295,7 @@
     $('dailyChest').classList.add('hidden');
   }
   function render() {
+    if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
     $('lang').value = lang;
     const arcText=$('heroArcText'), arcEnd=$('heroArcEnd'), arcCopy=document.querySelector('.hero-arc-copy'); if(arcText) arcText.textContent=t('homeTitleArc'); if(arcEnd) arcEnd.textContent=t('homeTitleEnd'); if(arcCopy) arcCopy.setAttribute('aria-label',t('homeTitle'));
@@ -325,9 +326,11 @@
     $('distanceRow').classList.toggle('hidden', !state.wrong || state.answered);
     if (state.wrong) {
       const km = state.wrong.km, guessed = overseas[state.wrong.iso] || byISO.get(state.wrong.iso);
+      const neighbour = core.areLandNeighbours(state.wrong.iso, state.current.iso);
       $('distanceReaction').textContent = guessed ? `${guessed.name[lang]} — ${t('capital')} : ${guessed.capital[lang]} · ` : '';
-      $('distanceReaction').textContent += t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
-      $('distance').textContent = `${format(km)} km`;
+      $('distanceReaction').textContent += neighbour ? t('neighbour') : t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
+      $('distance').classList.toggle('hidden', neighbour);
+      $('distance').textContent = neighbour ? '' : `${format(km)} km`;
       $('penalty').textContent = state.wrong.penalty ? `−${state.wrong.penalty} ${t('points')}` : '';
     }
     if (state.answered) {
@@ -421,7 +424,7 @@
   function round() {
     if (state.mode === 'practice' && !state.queue.length) {
       state.queue = core.shuffle(state.practicePool.length ? state.practicePool : countries.filter(c => c.difficulty === state.difficulty).map(c => c.iso));
-      if (state.queue[0] === state.current?.iso) [state.queue[0], state.queue[1]] = [state.queue[1], state.queue[0]];
+      if (state.queue.length > 1 && state.queue[0] === state.current?.iso) [state.queue[0], state.queue[1]] = [state.queue[1], state.queue[0]];
     }
     state.current = byISO.get((state.mode === 'game' || state.mode === 'daily') ? state.series[state.index] : state.queue.shift());
     state.screen = 'playing'; state.answered = false; state.attempts = 0; state.points = core.ROUND_MAX; state.factIndex = null; state.wrong = null; state.wrongGuesses = [];
@@ -441,7 +444,8 @@
     } else {
       state.answered = true; state.streak++;
       if (state.mode === 'game' || state.mode === 'daily') { state.score += state.points; if (state.mode === 'daily') state.dailyTiles.push(core.dailyTile(state.points)); }
-      state.factIndex = core.chooseFact(iso, facts[iso].length, validHistory);
+      const countryISO = state.current.iso;
+      state.factIndex = core.chooseFact(countryISO, facts[countryISO].length, validHistory);
       storage.write('wg-seen-facts', validHistory);
       for (const total of [stats, sessionStats]) { total.solved++; total.totalClicks += state.attempts; if (state.attempts === 1) total.oneClick++; }
       storage.write('wg-stats', stats);

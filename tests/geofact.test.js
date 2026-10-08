@@ -5,6 +5,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 require('../data/countries.js');
 require('../data/facts.js');
+require('../data/borders.js');
 const core = require('../core.js');
 const countries = GeoFactCountries, facts = GeoFactFacts;
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
@@ -153,4 +154,42 @@ test('Exploration collection is Daily-only, bilingual and keeps verified source 
   for (const key of ['collectionCount','chestReady','openChest','newCard']) assert.ok(translations.includes(key));
   assert.ok(cardsSource.includes('source:'));
   assert.ok((cardsSource.match(/source:/g)||[]).length >= 8);
+});
+
+test('Land borders are canonical, unique, sourced, symmetric and restricted to the country roster', () => {
+  const data = GeoFactLandBorders, known = new Set(countries.map(c => c.iso)), pairs = new Set();
+  for (const [a,b] of data.pairs) {
+    assert.ok(known.has(a) && known.has(b)); assert.ok(a < b); assert.ok(!pairs.has(a+'-'+b)); pairs.add(a+'-'+b);
+    assert.equal(core.areLandNeighbours(a,b),true); assert.equal(core.areLandNeighbours(b,a),true);
+  }
+  for (const c of countries) {
+    assert.equal(core.areLandNeighbours(c.iso,c.iso),false);
+    for (const neighbour of data.neighbours[c.iso] || []) assert.ok(pairs.has([c.iso,neighbour].sort().join('-')));
+  }
+  assert.match(data.baseSource.commit,/^[a-f0-9]{40}$/); assert.match(data.baseSource.sha256,/^[a-f0-9]{64}$/);
+  assert.equal(data.baseSource.license,'ODbL-1.0'); assert.ok(Object.isFrozen(data.neighbours));
+  for (const source of data.overseasSources) { assert.ok(pairs.has(source.pair.join('-'))); assert.match(source.url,/^https:\/\//); }
+});
+test('Land neighbours include overseas borders, microstates, enclaves and separated territories', () => {
+  for (const [a,b] of [['FRA','BEL'],['FRA','BRA'],['FRA','SUR'],['FRA','NLD'],['USA','CAN'],['USA-AK','CAN'],['FRA-GF','BRA'],['VAT','ITA'],['MCO','FRA'],['LSO','ZAF'],['SMR','ITA'],['CAN','DNK'],['CYP','GBR'],['ESP','GBR'],['ESP','MAR'],['RUS','POL'],['RUS','LTU'],['TUR','AZE'],['BWA','ZMB'],['NAM','ZMB']]) {
+    assert.equal(core.areLandNeighbours(a,b),true,a+' / '+b); assert.equal(core.areLandNeighbours(b,a),true,b+' / '+a);
+  }
+  assert.equal(core.areLandNeighbours('USA-HI','CAN'),true,'country-level adjacency also applies to Hawaii');
+  for (const [region,parent] of Object.entries(GeoFactLandBorders.territoryParents)) {
+    assert.equal(core.areLandNeighbours(region,parent),false);
+    for (const c of countries) assert.equal(core.areLandNeighbours(region,c.iso),core.areLandNeighbours(parent,c.iso));
+  }
+});
+test('Sea crossings and claims alone do not create land neighbours', () => {
+  for (const [a,b] of [['FRA','GBR'],['DNK','SWE'],['SGP','MYS'],['BHR','SAU'],['IND','LKA'],['USA','CUB'],['MCO','ITA'],['NAM','ZWE'],['MAR','MRT'],['SRB','ALB'],['IND','AFG'],['CYP','TUR']]) {
+    assert.equal(core.areLandNeighbours(a,b),false,a+' / '+b); assert.equal(core.areLandNeighbours(b,a),false,b+' / '+a);
+  }
+  for (const value of [null,undefined,{},'constructor','__proto__','XXX','USA-XX','ESH','UNK']) assert.equal(core.areLandNeighbours(value,'FRA'),false);
+});
+test('Documented disputed land interfaces remain neighbours without changing the distance penalty', () => {
+  for (const [a,b] of [['IND','PAK'],['IND','CHN'],['PAK','CHN'],['ISR','PSE'],['PSE','EGY'],['PSE','JOR'],['RUS','UKR'],['RUS','GEO'],['ARM','AZE']]) {
+    assert.equal(core.areLandNeighbours(a,b),true,a+' / '+b); assert.equal(core.areLandNeighbours(b,a),true,b+' / '+a);
+  }
+  const originalDistance=core.territoryDistance(contours.get('FRA'),contours.get('BEL'));
+  assert.equal(originalDistance,10); assert.equal(core.penalise(20,originalDistance),19);
 });
