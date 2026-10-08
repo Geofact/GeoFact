@@ -109,7 +109,7 @@ globalThis.GeoFactFacts = {
       "fr": "Les Sundarbans, partagés avec l’Inde, forment la plus grande mangrove du monde. Leurs tigres se sont même adaptés à nager sur de longues distances. 🐅",
       "emoji": "🐅",
       "category": "nature",
-      "en": "The Sundarbans, shared with India, form the world’s largest mangrove forest. Their tigers have even adapted to swimming long distances. 🐅"
+      "en": "The Sundarbans, shared with India, form the world’s largest mangrove forest. The tigers living there are also strong swimmers. 🐅"
     }
   ],
   "BRB": [
@@ -149,7 +149,7 @@ globalThis.GeoFactFacts = {
       "fr": "Entre 1625 et 1900, le royaume du Dahomey a connu 12 rois successifs. Presque chacun a fait construire son propre palais dans la même enceinte royale. 👑",
       "emoji": "👑",
       "category": "history",
-      "en": "Between 1625 and 1900, 12 kings ruled the Kingdom of Dahomey. Almost every one built his own palace inside the same royal enclosure. 👑"
+      "en": "Between 1625 and 1900, 12 kings ruled the Kingdom of Dahomey. Almost every king built his own palace inside the same royal enclosure. 👑"
     }
   ],
   "BTN": [
@@ -237,7 +237,7 @@ globalThis.GeoFactFacts = {
       "fr": "L’ancienne capitale d’Angkor ne se résume pas à un temple : son immense site archéologique couvre environ 400 km², avec temples, routes, bassins, digues et réservoirs. 🛕",
       "emoji": "🛕",
       "category": "history",
-      "en": "Angkor’s ancient capital is far more than a temple: its vast archaeological site covers around 400 km², including temples, roads, pools, dykes and reservoirs. 🛕"
+      "en": "The ancient city of Angkor is far more than a single temple: its vast archaeological site covers around 400 km², including temples, roads, pools, dykes and reservoirs. 🛕"
     }
   ],
   "CMR": [
@@ -245,7 +245,7 @@ globalThis.GeoFactFacts = {
       "fr": "La réserve de faune du Dja protège l’une des plus grandes forêts tropicales intactes d’Afrique : environ 90 % de sa superficie reste non perturbée et elle abrite 107 espèces de mammifères. 🌳",
       "emoji": "🌳",
       "category": "nature",
-      "en": "The Dja Faunal Reserve protects one of Africa’s largest intact tropical forests: around 90% remains undisturbed, and it shelters 107 mammal species. 🌳"
+      "en": "The Dja Faunal Reserve protects one of Africa’s largest intact tropical forests: around 90% of the reserve remains undisturbed, and it shelters 107 mammal species. 🌳"
     }
   ],
   "CAN": [
@@ -285,7 +285,7 @@ globalThis.GeoFactFacts = {
       "fr": "En additionnant ses différentes sections construites au fil des siècles, la Grande Muraille de Chine mesure plus de 20 000 km. 🧱",
       "emoji": "🧱",
       "category": "history",
-      "en": "Adding together its different sections built over the centuries, the Great Wall of China measures over 20,000 km. 🧱"
+      "en": "The Great Wall of China stretches for more than 20,000 km when all the sections built over the centuries are counted. 🧱"
     }
   ],
   "COL": [
@@ -309,7 +309,7 @@ globalThis.GeoFactFacts = {
       "fr": "Une vaste forêt protégée partagée avec le Cameroun et la Centrafrique abrite encore d’importantes populations d’éléphants de forêt, de gorilles et de chimpanzés. 🦍",
       "emoji": "🦍",
       "category": "nature",
-      "en": "A vast protected forest shared with Cameroon and the Central African Republic still shelters large populations of forest elephants, gorillas and chimpanzees. 🦍"
+      "en": "A vast protected forest spanning the borders of Cameroon, the Central African Republic and the Republic of the Congo still shelters large populations of forest elephants, gorillas and chimpanzees. 🦍"
     }
   ],
   "COD": [
@@ -349,7 +349,7 @@ globalThis.GeoFactFacts = {
       "fr": "Dans les montagnes cubaines subsistent les vestiges de 171 anciennes plantations de café, témoignant notamment des techniques agricoles et du travail de personnes réduites en esclavage aux XIXe et début XXe siècles. ☕",
       "emoji": "☕",
       "category": "history",
-      "en": "Cuba’s mountains preserve the remains of 171 old coffee plantations, documenting farming techniques and enslaved labour in the 19th and early 20th centuries. ☕"
+      "en": "Cuba’s mountains preserve the remains of 171 former coffee plantations, offering evidence of farming techniques and enslaved labour in the 19th and early 20th centuries. ☕"
     }
   ],
   "CYP": [
@@ -1505,7 +1505,7 @@ globalThis.GeoFactFacts = {
       "fr": "Le Burj Khalifa, à Dubaï, mesure 828 mètres : il dépasse de plus de 300 mètres l’Empire State Building et reste le plus haut bâtiment construit au monde. 🏙️",
       "emoji": "🏙️",
       "category": "architecture",
-      "en": "Dubai’s Burj Khalifa is 828 metres tall: it exceeds the Empire State Building by over 300 metres and remains the world’s tallest constructed building. 🏙️"
+      "en": "Dubai’s Burj Khalifa is 828 metres tall: it exceeds the Empire State Building by over 300 metres and remains the world’s tallest building. 🏙️"
     }
   ],
   "GBR": [
@@ -1545,7 +1545,7 @@ globalThis.GeoFactFacts = {
       "fr": "Avec seulement environ 330 000 habitants, le Vanuatu compte plus de 100 langues autochtones, ce qui en fait l’un des pays les plus linguistiquement diversifiés par habitant. 🗣️",
       "emoji": "🗣️",
       "category": "culture",
-      "en": "With only around 330,000 inhabitants, Vanuatu has over 100 Indigenous languages, making it one of the most linguistically diverse countries per person. 🗣️"
+      "en": "With only around 330,000 inhabitants, Vanuatu has over 100 Indigenous languages, making it one of the most linguistically diverse countries relative to its population. 🗣️"
     }
   ],
   "VAT": [
