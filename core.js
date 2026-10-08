@@ -104,7 +104,6 @@
     return { points, vertices };
   }
   function territoryDistance(a, b) {
-    for (const v of a.vertices) if (b.vertices.has(v)) return 10;
     let minimum = Infinity;
     for (const p of a.points) for (const q of b.points) {
       const chord = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2;
