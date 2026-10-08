@@ -1478,7 +1478,7 @@ globalThis.GeoFactFacts = {
   ],
   "TUV": [
     {
-      "fr": "Le minuscule Tuvalu possède le domaine Internet .tv. Sa commercialisation rapporte plusieurs millions de dollars par an au pays grâce à son association naturelle avec le mot « television ». 💻",
+      "fr": "Le minuscule Tuvalu possède le domaine Internet .tv. Sa commercialisation rapporte plusieurs millions de dollars par an au pays grâce à son association naturelle avec le mot « télévision ». 💻",
       "emoji": "💻",
       "category": "society",
       "en": "Tiny Tuvalu owns the .tv Internet domain. Commercial licensing brings the country several million dollars a year thanks to its natural association with television. 💻"
