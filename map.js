@@ -18,6 +18,21 @@
         frenchPath.parentNode.insertBefore(region, frenchPath);
       }
     }
+    // Separate geographically distant US territories from the contiguous states.
+    const usPath = svg.querySelector('path.country-shape[data-iso="USA"]');
+    if (usPath) {
+      const parts = usPath.getAttribute('d').match(/M[^M]+/g) || [];
+      if (parts.length === 10 && parts[0].startsWith('M190.53,136.67')) {
+        usPath.setAttribute('d', parts[0]);
+        for (const [iso, subset] of [['USA-HI', parts.slice(1, 6)], ['USA-AK', parts.slice(6)]]) {
+          const region = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          region.setAttribute('d', subset.join(' '));
+          region.setAttribute('class', 'country-shape');
+          region.dataset.iso = iso;
+          usPath.parentNode.insertBefore(region, usPath);
+        }
+      }
+    }
     const markerLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     markerLayer.setAttribute('class', 'microstate-marker-layer');
     svg.appendChild(markerLayer);
