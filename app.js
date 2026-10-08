@@ -78,7 +78,7 @@
     setTimeout(() => scrollToElement($('result'), 'start'), 430);
   }
   const boundaries = new Map();
-  for (const el of $('map').querySelectorAll('[data-iso]')) {
+  for (const el of $('map').querySelectorAll('path.country-shape[data-iso], circle.microstate[data-iso]')) {
     const shape = el.tagName.toLowerCase() === 'path' ? core.samplePath(el.getAttribute('d')) : {
       points: [core.spherePoint(+el.getAttribute('cx'), +el.getAttribute('cy'))], vertices: new Set()
     };
