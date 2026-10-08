@@ -71,7 +71,7 @@
       if (real && svg.contains(real)) return real.dataset.iso;
       const hit = target?.closest?.('circle[data-iso]');
       if (hit && svg.contains(hit)) return hit.dataset.iso;
-      let nearest = null, distance = type === 'touch' ? 24 : 12;
+      let nearest = null, distance = type === 'touch' ? 16 : 10;
       for (const item of markers) {
         const screen = item.marker.getBoundingClientRect();
         const d = Math.hypot(screen.left + screen.width / 2 - x, screen.top + screen.height / 2 - y);
@@ -117,7 +117,8 @@
       else if (pointers.size === 1) { pinch = null; beginDrag([...pointers.values()][0]); }
       else {
         if (!moved && !multi && !cancelled) {
-          const iso = resolveCountry(p.target, e.clientX, e.clientY, p.type);
+          const actualTarget = document.elementFromPoint(e.clientX, e.clientY);
+          const iso = resolveCountry(actualTarget && svg.contains(actualTarget) ? actualTarget : p.target, e.clientX, e.clientY, p.type);
           if (iso) onGuess(iso);
         }
         drag = pinch = null;
