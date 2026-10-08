@@ -1,5 +1,6 @@
 // Isolated IndexedDB repository. Importing this module never opens a database.
 import {createBonusState,applyBonusAnswer,openBonusChest,bonusProgress,bonusUTCDate} from './bonus-rules.mjs';
+import {readLegacyRewardValues,prepareLegacyRewards,sameLegacyValues} from './legacy-rewards.mjs';
 
 export const REWARD_DB_VERSION=1;
 export const REWARD_STATE_VERSION=1;
@@ -150,6 +151,29 @@ export function openRewardRepository({name=REWARD_DB_NAME,indexedDB=globalThis.i
         });
       }
       const repository={
+        importLegacy:async storage=>{
+          let raw,prepared;
+          try {raw=readLegacyRewardValues(storage);prepared=prepareLegacyRewards(raw);}
+          catch(cause) {throw new RewardStorageError(cause.code||'INVALID_LEGACY_SAVES',cause.message,cause);}
+          return transact('readwrite',async({tx,read})=>{
+            const [record,chests,sessions]=await Promise.all([read('state','rewards'),read('chests'),read('sessions')]);
+            validate(record);
+            if(record.legacyImport) {
+              if(!sameLegacyValues(record.legacyImport.raw,raw)) throw new RewardStorageError('LEGACY_SOURCE_CHANGED','Original saves differ from the completed import; no merge performed');
+              return {status:'already-imported',revision:record.revision};
+            }
+            if(record.revision!==0||Object.keys(record.collection).length||Object.keys(record.credits).length||chests.length||sessions.length)
+              throw new RewardStorageError('IMPORT_TARGET_NOT_EMPTY','Import requires an untouched repository; existing rewards are preserved');
+            if(raw['gf-collection-v1']===null && raw['gf-daily-v1']===null) return {status:'no-data',revision:record.revision};
+            let current;
+            try {current=readLegacyRewardValues(storage);}catch(cause) {throw new RewardStorageError(cause.code,cause.message,cause);}
+            if(!sameLegacyValues(current,raw)) throw new RewardStorageError('LEGACY_SOURCE_CHANGED','Original saves changed before import');
+            const updated={...record,revision:record.revision+1,collection:prepared.collection,daily:prepared.daily,
+              legacyImport:{version:1,raw:prepared.raw}};
+            tx.objectStore('state').put(updated);
+            return {status:'imported',revision:updated.revision};
+          });
+        },
         answer:(command,catalog)=>mutate('answer',command,catalog),
         openChest:command=>mutate('open',command),
         read:()=>transact('readonly',async({read})=>{
@@ -161,7 +185,8 @@ export function openRewardRepository({name=REWARD_DB_NAME,indexedDB=globalThis.i
             if(session.kind==='operation') Object.defineProperty(bonus.operations,session.id.slice(3),{value:session.value,enumerable:true,writable:true,configurable:true});
             else if(session.kind==='round') Object.defineProperty(bonus.solvedRounds,session.id.slice(6),{value:true,enumerable:true,writable:true,configurable:true});
           }
-          return {schemaVersion:record.schemaVersion,revision:record.revision,bonus,collection:record.collection,credits:record.credits};
+          return {schemaVersion:record.schemaVersion,revision:record.revision,bonus,collection:record.collection,credits:record.credits,
+            ...(record.legacyImport?{daily:record.daily,legacyImport:record.legacyImport}:{})};
         }),
         export:async()=>({format:'geofact-reward-export',version:1,databaseVersion:REWARD_DB_VERSION,state:await repository.read()}),
         close:()=>{closed=true;db.close();}

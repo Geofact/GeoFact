@@ -7,6 +7,7 @@ import {currentSave,legacySave} from './save-fixtures.mjs';
 import {testHighlight} from './highlight.mjs';
 import {testBorders} from './borders.mjs';
 import {testRepository} from './repository.mjs';
+import {testLegacyImport} from './legacy-import.mjs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const browserTypes = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -293,6 +294,7 @@ try {
   await testBorders({newContext,url,core,tap,check,equal});
   console.log('Isolated transactional reward repository…');
   await testRepository({newContext,url,check,equal});
+  await testLegacyImport({newContext,url,check,equal});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');
