@@ -7,6 +7,40 @@
     read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
     write(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Playing also works when browser storage is disabled. */ } }
   };
+  // Public statistics are optional: network failures never interrupt gameplay.
+  const STATS_URL = 'https://wpxaliifkzyhjsucavbr.supabase.co/rest/v1/rpc/';
+  const STATS_KEY = 'sb_publishable_mJwCClCpxIUXqPCqOnfa_A_a5ZlOlqH';
+  const statsHeaders = { 'apikey': STATS_KEY, 'Content-Type': 'application/json' };
+  let anonymousVisitor = storage.read('gf-anonymous-visitor-v1', null);
+  if (typeof anonymousVisitor !== 'string' || !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(anonymousVisitor)) {
+    anonymousVisitor = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : null;
+    if (anonymousVisitor) storage.write('gf-anonymous-visitor-v1', anonymousVisitor);
+  }
+  function recordEvent(type) {
+    if (!anonymousVisitor) return;
+    fetch(STATS_URL + 'geofact_record_event', {
+      method: 'POST', headers: statsHeaders,
+      body: JSON.stringify({ p_visitor_id: anonymousVisitor, p_event_type: type }),
+      keepalive: true
+    }).catch(() => { /* Telemetry is non-essential. */ });
+  }
+  async function loadPublicStats() {
+    $('statsStatus').textContent = t('statsLoading');
+    try {
+      const response = await fetch(STATS_URL + 'geofact_stats', {
+        method: 'POST', headers: statsHeaders,
+        body: JSON.stringify({ period_days: Number($('statsPeriod').value) })
+      });
+      if (!response.ok) throw new Error('Stats request failed');
+      const data = await response.json();
+      if (!Array.isArray(data) || !data[0]) throw new Error('Invalid stats response');
+      const fields = { statVisitors: 'visitors', statPlayers: 'players', statDailyStarted: 'daily_started', statDailyCompleted: 'daily_completed', statChests: 'chests_opened', statChallenges: 'challenges_completed' };
+      for (const [id, key] of Object.entries(fields)) $(id).textContent = format(Number(data[0][key] || 0));
+      $('statsStatus').textContent = '';
+    } catch {
+      $('statsStatus').textContent = t('statsUnavailable');
+    }
+  }
   let savedLang;
   try { savedLang = localStorage.getItem('wg-lang'); } catch { /* Private or restricted file storage. */ }
   let lang = ['fr', 'en'].includes(savedLang) ? savedLang : navigator.language.toLowerCase().startsWith('fr') ? 'fr' : 'en';
@@ -267,7 +301,7 @@
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)); });
-    for (const id of ['home', 'collection', 'practiceSetup', 'difficulty', 'challengeIntro', 'playing', 'final']) $(id).classList.toggle('hidden', id !== state.screen);
+    for (const id of ['home', 'publicStats', 'collection', 'practiceSetup', 'difficulty', 'challengeIntro', 'playing', 'final']) $(id).classList.toggle('hidden', id !== state.screen);
     $('modeTitle').textContent = state.mode === 'practice' ? t('practice') : t('game');
     renderDailyHome();
     renderCollection();
@@ -377,6 +411,7 @@
   function chooseMode(mode) { state.mode = mode; state.screen = mode === 'practice' ? 'practiceSetup' : 'difficulty'; render(); const target = mode === 'practice' ? $('practiceByDifficulty') : $('difficulty').querySelector('button'); target?.focus({ preventScroll: true }); }
   function start(mode, difficulty, challenge = null, customPool = null) {
     state = blankState(); state.mode = mode; state.difficulty = difficulty; state.challenge = challenge;
+    recordEvent(mode === 'daily' ? 'daily_started' : 'game_started');
     const pool = Array.isArray(customPool) && customPool.length ? [...customPool] : countries.filter(c => c.difficulty === difficulty).map(c => c.iso);
     state.practicePool = mode === 'practice' ? [...pool] : [];
     state.series = challenge ? [...challenge.c] : mode === 'daily' ? core.dailySeries(countries) : mode === 'game' ? core.shuffle(pool).slice(0, 5) : [];
@@ -431,8 +466,10 @@
           const card = awardDailyCard(state.score);
           dailyData.days[daily.key] = { score: state.score, tiles: [...state.dailyTiles], errors: state.dailyErrors, number: daily.number, card, cardOpened: false };
           storage.write('gf-daily-v1', dailyData);
+          recordEvent('daily_completed');
         }
       } else {
+        recordEvent('challenge_completed');
         const previous = Number.isSafeInteger(bestScores[state.difficulty]) ? bestScores[state.difficulty] : 0;
         finalWasRecord = state.score > previous;
         if (finalWasRecord) { bestScores[state.difficulty] = state.score; storage.write('gf-best-scores', bestScores); }
@@ -507,6 +544,8 @@
     if ($('practiceSelectedCount')) $('practiceSelectedCount').textContent=t('selectedCountries',{count:format(customPracticeSelection.size)});
     if ($('startCustomPractice')) $('startCustomPractice').disabled=customPracticeSelection.size===0;
   }
+  $('openPublicStats').addEventListener('click', () => { state = blankState(); state.screen = 'publicStats'; render(); loadPublicStats(); });
+  $('statsPeriod').addEventListener('change', loadPublicStats);
   $('chooseDaily').addEventListener('click', () => {
     const daily = todayDaily();
     if (daily.result) {
@@ -532,6 +571,7 @@
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     await new Promise(resolve=>setTimeout(resolve,reduced?80:4650));
     result.cardOpened = true; storage.write('gf-daily-v1', dailyData);
+    recordEvent('chest_opened');
     $('dailyChest').classList.add('chest-fade');
     await new Promise(resolve=>setTimeout(resolve,reduced?0:260));
     revealDailyCard(result); button.classList.remove('opening'); button.disabled=false; $('dailyChest').classList.remove('chest-fade');
@@ -564,5 +604,6 @@
   const challenge = params.getAll('challenge').length === 1 ? core.parseChallenge(params.get('challenge'), countries) : null;
   if (challenge) { state.screen = 'challengeIntro'; state.challenge = challenge; }
   render();
+  recordEvent('visit');
   setInterval(() => { updateCountdown(); const key = core.utcDayKey(); if (key !== renderedDailyKey) { renderedDailyKey = key; if (state.screen === 'home') render(); } }, 1000);
 })();
