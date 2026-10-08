@@ -78,16 +78,32 @@
     setTimeout(() => scrollToElement($('result'), 'start'), 430);
   }
   const boundaries = new Map();
+  const territoryShapes = new Map();
+  const overseas = {
+    'FRA-GF': { parent: 'FRA', name: { fr: 'Guyane française', en: 'French Guiana' }, capital: { fr: 'Cayenne', en: 'Cayenne' } }
+  };
   for (const el of $('map').querySelectorAll('path.country-shape[data-iso], circle.microstate[data-iso]')) {
     const shape = el.tagName.toLowerCase() === 'path' ? core.samplePath(el.getAttribute('d')) : {
       points: [core.spherePoint(+el.getAttribute('cx'), +el.getAttribute('cy'))], vertices: new Set()
     };
     boundaries.set(el.dataset.iso, shape);
   }
+  // French Guiana is drawn as a separate component inside the French SVG path.
+  const frenchPath = $('map').querySelector('path.country-shape[data-iso="FRA"]');
+  if (frenchPath) {
+    const parts = frenchPath.getAttribute('d').match(/M[^M]+/g) || [];
+    const guiana = parts.find(part => /^M427\.81,286\.15\b/.test(part));
+    if (guiana) {
+      const shape = core.samplePath(guiana);
+      territoryShapes.set('FRA-GF', shape);
+      const mainland = parts.filter(part => part !== guiana).map(core.samplePath);
+      boundaries.set('FRA', { points: mainland.flatMap(p => p.points), vertices: new Set(mainland.flatMap(p => [...p.vertices])) });
+    }
+  }
   const distanceCache = new Map();
   function distance(a, b) {
     const key = [a, b].sort().join('-');
-    if (!distanceCache.has(key)) distanceCache.set(key, core.territoryDistance(boundaries.get(a), boundaries.get(b)));
+    if (!distanceCache.has(key)) distanceCache.set(key, core.territoryDistance(territoryShapes.get(a) || boundaries.get(a), territoryShapes.get(b) || boundaries.get(b)));
     return distanceCache.get(key);
   }
   function todayDaily() {
@@ -280,7 +296,7 @@
     $('result').classList.toggle('hidden', !state.answered);
     $('distanceRow').classList.toggle('hidden', !state.wrong || state.answered);
     if (state.wrong) {
-      const km = state.wrong.km, guessed = byISO.get(state.wrong.iso);
+      const km = state.wrong.km, guessed = overseas[state.wrong.iso] || byISO.get(state.wrong.iso);
       $('distanceReaction').textContent = guessed ? `${guessed.name[lang]} — ${t('capital')} : ${guessed.capital[lang]} · ` : '';
       $('distanceReaction').textContent += t(km < 250 ? 'burning' : km < 750 ? 'hot' : km < 2000 ? 'warm' : km < 5000 ? 'cold' : 'freezing');
       $('distance').textContent = `${format(km)} km`;
@@ -383,7 +399,7 @@
     map.reset(); render();
   }
   function guess(iso) {
-    if (state.screen !== 'playing' || state.answered || !byISO.has(iso)) return;
+    if (state.screen !== 'playing' || state.answered || (!byISO.has(iso) && !overseas[iso])) return;
     state.attempts++;
     if (iso !== state.current.iso) {
       state.streak = 0;
