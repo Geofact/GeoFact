@@ -40,6 +40,8 @@ Les normalisations historiques déjà présentes dans l'application sont conserv
 
 ## Interactions et géographie
 
+`bonus-rules.test.mjs` vérifie séparément le modèle pur `bonus-rules.mjs` : seuils, progression, quotas UTC, rejeux, cartes fixes, ouverture idempotente et probabilités exactes. Le module n’est pas intégré au jeu ou au stockage. Son contrat et les limites de cette sous-étape figurent dans `docs/bonus-rules-4b1.md`.
+
 Les tests couvrent les territoires français et américains (bonne réponse, anecdote et historique du pays parent, mauvaise réponse et distance), ainsi que douze tours d'entraînement avec un seul pays. Les autres parcours couvrent les modes, les défis et le partage, la langue, les gestes de carte et six largeurs d'affichage.
 
 `highlight.mjs` vérifie le vert réellement calculé par le navigateur après la fin de l’animation, puis le retour aux couleurs initiales au tour suivant ou à la sortie. Il couvre Daily, partie classique et entraînement, sur ordinateur et en simulation mobile, avec et sans réduction des animations. Les contrôles incluent zoom, déplacement tactile, pinch, recentrage, changement de langue, territoires séparés et marqueurs des micro-États. Les interactions après une réponse ne doivent modifier ni le score ni la progression sauvegardée ; le changement de langue conserve son enregistrement habituel de préférence. Des changements de tour et sorties pendant l’animation vérifient également l’annulation des anciens temporisateurs.
