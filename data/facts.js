@@ -146,7 +146,7 @@ globalThis.GeoFactFacts = {
   ],
   "BEN": [
     {
-      "fr": "Entre 1625 et 1900, 12 rois se sont succédé à la tête du royaume du Dahomey. Presque chacun a fait construire son propre palais dans la même enceinte royale. 👑",
+      "fr": "Entre 1625 et 1900, le royaume du Dahomey a connu 12 rois successifs. Presque chacun a fait construire son propre palais dans la même enceinte royale. 👑",
       "emoji": "👑",
       "category": "history",
       "en": "Between 1625 and 1900, 12 kings ruled the Kingdom of Dahomey. Almost every one built his own palace inside the same royal enclosure. 👑"
