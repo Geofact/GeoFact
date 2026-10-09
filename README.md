@@ -32,3 +32,7 @@ Source : c747ef85022f04a7b81ce67efb6391c1a4a94f24, branche redesign/home-only. A
 - [home-controls-390-en.png](home-controls-390-en.png)
 - [home-controls-1280-fr.png](home-controls-1280-fr.png)
 - [home-controls-1280-en.png](home-controls-1280-en.png)
+
+## Finitions : f171667e87477a7f5240d3b11c080968f62318b1
+
+Captures home-polish : cercle retiré, collection pêche, logo réduit et texte recentré. FR/EN à 1280, 320, 375 et 390 px. Source conservée localement sur redesign/home-only, non fusionnée et non déployée. 88 tests Node et 2617 assertions HTTP réussis. positive-guess-preview.wav : notification ascendante de 115 ms, aperçu synthétique, pas un enregistrement iPhone.
