@@ -9,6 +9,7 @@ import {testBorders} from './borders.mjs';
 import {testRepository} from './repository.mjs';
 import {testLegacyImport} from './legacy-import.mjs';
 import {testDailyStorage} from './daily-storage.mjs';
+import {testUpdateIntegration} from './update-integration.mjs';
 import {testIphoneRegression} from './iphone-regression.mjs';
 import {testReleaseAudit} from './release-audit.mjs';
 import {testBonusIntegration} from './bonus-integration.mjs';
@@ -307,6 +308,7 @@ try {
   await testBonusIntegration({newContext,url,tap,check,equal,telemetry,core});
   await testReleaseAudit({newContext,url,tap,check,equal});
   await testIphoneRegression({newContext,url,tap,core,check,equal});
+  await testUpdateIntegration({newContext,url,tap,core,check,equal,telemetry});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');

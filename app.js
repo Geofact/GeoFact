@@ -11,39 +11,41 @@
   const STATS_URL = 'https://wpxaliifkzyhjsucavbr.supabase.co/rest/v1/rpc/';
   const STATS_KEY = 'sb_publishable_mJwCClCpxIUXqPCqOnfa_A_a5ZlOlqH';
   const statsHeaders = { 'apikey': STATS_KEY, 'Content-Type': 'application/json' };
-  let anonymousVisitor = storage.read('gf-anonymous-visitor-v1', null);
-  if (typeof anonymousVisitor !== 'string' || !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(anonymousVisitor)) {
-    anonymousVisitor = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : null;
-    if (anonymousVisitor) storage.write('gf-anonymous-visitor-v1', anonymousVisitor);
-  }
-  function recordEvent(type) {
-    if (!anonymousVisitor) return;
-    fetch(STATS_URL + 'geofact_record_event', {
-      method: 'POST', headers: statsHeaders,
-      body: JSON.stringify({ p_visitor_id: anonymousVisitor, p_event_type: type }),
-      keepalive: true
-    }).catch(() => { /* Telemetry is non-essential. */ });
+  const publicTelemetry = GeoFactPublicStatistics.createPublicTelemetry({
+    storage:GeoFactPreferences.availableStorage(),locks:navigator.locks,
+    uuid:()=>globalThis.crypto?.randomUUID?.(),
+    send:body=>fetch(STATS_URL+'geofact_record_event',{method:'POST',headers:statsHeaders,body:JSON.stringify(body),keepalive:true})
+  });
+  const recordEvent = type => publicTelemetry.recordEvent(type);
+  const publicStatFields = { statVisitors:'visitors',statPlayers:'players',statDailyStarted:'daily_started',statDailyCompleted:'daily_completed',statChests:'chests_opened',statChallenges:'challenges_completed' };
+  let publicStatValues = null, publicStatMessage = null, publicStatsRequest = 0;
+  function renderPublicStats() {
+    $('statsStatus').textContent = publicStatMessage ? t(publicStatMessage) : '';
+    if(publicStatValues)for(const [id,key] of Object.entries(publicStatFields))$(id).textContent=format(publicStatValues[key]);
   }
   async function loadPublicStats() {
-    $('statsStatus').textContent = t('statsLoading');
+    const request = ++publicStatsRequest;
+    publicStatMessage='statsLoading';renderPublicStats();
     try {
       const response = await fetch(STATS_URL + 'geofact_stats', {
-        method: 'POST', headers: statsHeaders,
-        body: JSON.stringify({ period_days: Number($('statsPeriod').value) })
+        method:'POST',headers:statsHeaders,body:JSON.stringify({period_days:Number($('statsPeriod').value)})
       });
-      if (!response.ok) throw new Error('Stats request failed');
-      const data = await response.json();
-      if (!Array.isArray(data) || !data[0]) throw new Error('Invalid stats response');
-      const fields = { statVisitors: 'visitors', statPlayers: 'players', statDailyStarted: 'daily_started', statDailyCompleted: 'daily_completed', statChests: 'chests_opened', statChallenges: 'challenges_completed' };
-      for (const [id, key] of Object.entries(fields)) $(id).textContent = format(Number(data[0][key] || 0));
-      $('statsStatus').textContent = '';
-    } catch {
-      $('statsStatus').textContent = t('statsUnavailable');
-    }
+      if(!response.ok)throw new Error('Stats request failed');
+      const data=await response.json();
+      if(!Array.isArray(data)||!data[0])throw new Error('Invalid stats response');
+      const values=Object.fromEntries(Object.values(publicStatFields).map(key=>[key,Number(data[0][key]??0)]));
+      if(Object.values(values).some(value=>!Number.isSafeInteger(value)||value<0))throw new Error('Invalid public counts');
+      if(request!==publicStatsRequest)return;
+      publicStatValues=values;publicStatMessage=null;
+    }catch {if(request!==publicStatsRequest)return;publicStatMessage='statsUnavailable';}
+    renderPublicStats();
   }
-  let savedLang;
-  try { savedLang = localStorage.getItem('wg-lang'); } catch { /* Private or restricted file storage. */ }
-  let lang = ['fr', 'en'].includes(savedLang) ? savedLang : navigator.language.toLowerCase().startsWith('fr') ? 'fr' : 'en';
+  let lang = GeoFactPreferences.language.get();
+  const sounds = GeoFactSound.createSoundEffects({storage:GeoFactPreferences.availableStorage(),
+    createContext:()=>{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;return Audio?new Audio():null;}});
+  // Resume inside the actual user gesture, before any asynchronous reward operation.
+  for(const event of ['pointerdown','pointerup','click'])document.addEventListener(event,()=>sounds.unlock(),{capture:true});
+  document.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' ')sounds.unlock();},{capture:true});
   const seen = storage.read('wg-seen-facts', {});
   const validHistory = seen && typeof seen === 'object' && !Array.isArray(seen) ? seen : {};
   const oldStats = storage.read('wg-stats', {});
@@ -57,6 +59,7 @@
   const rarityRank = { classic: 0, silver: 1, gold: 2, shiny: 3 };
   const rarities = ['classic', 'silver', 'gold', 'shiny'];
   let rewardsRepository, rewardsLoading = true, rewardError = null, legacyWarning = false;
+  let practiceSavePromise = null;
   let nextBusy = false, rewardModules, bonusRules, bonusSnapshot = null;
   let practiceError = null, practiceSaving = false, practiceBlocked = false, pendingPracticeUnreadable = false, pendingPractice = [], latestBonus = null;
   const PRACTICE_PENDING_KEY = 'gf-pending-practice-v1';
@@ -64,7 +67,7 @@
     const raw = sessionStorage.getItem(PRACTICE_PENDING_KEY);
     if (raw !== null) {
       const commands = JSON.parse(raw);
-      if (!Array.isArray(commands) || commands.some(c => !c || c.mode !== 'practice')) throw new Error('Invalid pending answers');
+      if (!Array.isArray(commands) || commands.some(c => !c || !['practice','game','challenge'].includes(c.mode))) throw new Error('Invalid pending answers');
       pendingPractice = commands;
     }
   } catch { practiceBlocked = true; pendingPracticeUnreadable = true; }
@@ -82,7 +85,7 @@
   async function initializeRewards() {
     rewardsLoading = true; rewardError = null; render();
     try {
-      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-fix1'), import('./daily-rewards.mjs?v=20261009-fix1'), import('./bonus-rules.mjs?v=20261009-fix1')]);
+      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-update1'), import('./daily-rewards.mjs?v=20261009-update1'), import('./bonus-rules.mjs?v=20261009-update1')]);
       const [repositoryModule,,rules] = await rewardModules; bonusRules = rules;
       rewardsRepository?.close(); rewardsRepository = await repositoryModule.openRewardRepository();
       let snapshot = await rewardsRepository.read();
@@ -112,12 +115,15 @@
   }
   function queuePracticeAnswer(correct) {
     const command = {id:'answer:'+state.practiceRoundId+':'+state.attempts,roundId:state.practiceRoundId,
-      mode:'practice',correct,at:Date.now(),countryDraw:randomUnit(),rarityDraw:randomUnit()};
+      mode:state.bonusMode,correct,at:Date.now(),countryDraw:randomUnit(),rarityDraw:randomUnit()};
     pendingPractice.push(command); preservePracticeQueue();
     savePracticeAnswers();
   }
-  async function savePracticeAnswers() {
-    if (practiceSaving || !pendingPractice.length) return;
+  function savePracticeAnswers() {
+    if (!practiceSavePromise && pendingPractice.length) practiceSavePromise = performPracticeSave().finally(()=>{practiceSavePromise=null;});
+    return practiceSavePromise || Promise.resolve();
+  }
+  async function performPracticeSave() {
     practiceSaving = true;
     try {
       if (!rewardsRepository || rewardsLoading || rewardError) throw new Error('Reward storage unavailable');
@@ -152,11 +158,12 @@
     $('practiceBonusMeter').value = displayedProgress ?? 0;
     $('practiceBonusMeter').setAttribute('aria-label',streakText);
     $('practiceBonusSaving').textContent = pendingPractice.length ? t(practiceBlocked ? 'bonusPending' : 'bonusSaving') : '';
-    $('practiceBonus').classList.toggle('hidden',state.mode!=='practice'||state.screen!=='playing');
+    $('practiceBonus').classList.toggle('hidden',!state.bonusMode||state.screen!=='playing');
     const available = Object.values(bonusSnapshot?.chests||{}).filter(c=>c.openedAt===null).sort((a,b)=>a.earnedAt-b.earnedAt||a.id.localeCompare(b.id));
-    for (const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards']) {
-      $(id).textContent=t('bonusAvailable',{count:available.length}); $(id).classList.toggle('hidden',!available.length);
+    for (const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards','finalBonusRewards']) {
+      $(id).textContent=t('bonusAvailable',{count:available.length}); $(id).classList.toggle('hidden',!available.length||(id==='finalBonusRewards'&&!state.bonusMode));
     }
+    $('viewBonusCollection').classList.toggle('hidden',!latestBonus||bonusSnapshot?.chests[latestBonus]?.openedAt!==null);
     $('practiceChestNotice').textContent=latestBonus&&bonusSnapshot?.chests[latestBonus]?.openedAt===null?t('bonusEarned'):'';
     if (!$('bonusDialog').open) return;
     const list=$('bonusChestList'); list.replaceChildren();
@@ -196,7 +203,7 @@
   let renderedDailyKey = core.utcDayKey();
   function blankState() {
     return { screen: 'home', mode: null, difficulty: 'easy', series: [], queue: [], index: 0, current: null,
-      answered: false, attempts: 0, points: core.ROUND_MAX, score: 0, streak: 0, factIndex: null, wrong: null, wrongGuesses: [], challenge: null, dailyTiles: [], dailyErrors: 0, practicePool: [] };
+      answered: false, attempts: 0, points: core.ROUND_MAX, score: 0, streak: 0, factIndex: null, wrong: null, wrongGuesses: [], challenge: null, dailyTiles: [], dailyErrors: 0, practicePool: [], bonusMode: null };
   }
   let state = blankState();
   const t = (key, values = {}) => (GeoFactTranslations[lang][key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
@@ -333,6 +340,7 @@
   function openCardModal(iso, rarity) {
     const modal = $('cardModal'), content = $('cardModalContent');
     if (!modal || !content || !flagCards[iso] || !ownedRarities(iso).includes(rarity)) return;
+    modal.dataset.iso=iso;modal.dataset.rarity=rarity;
     const card = cardElement(iso, rarity); card.classList.add('tcg-interactive'); content.replaceChildren(card); attachCardMotion(card);
     modal.classList.remove('hidden');
     document.body.classList.add('modal-open');
@@ -397,7 +405,7 @@
     $('retryRewards').classList.toggle('hidden', !rewardError && !practiceError);
     $('retryRewards').textContent = t('rewardRetry');
     $('retryRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
-    $('next').disabled = nextBusy || (state.mode === 'practice' && practiceBlocked);
+    $('next').disabled = nextBusy || (!!state.bonusMode && practiceBlocked);
     const practiceMessage = rewardsLoading ? 'practiceLoading' : rewardError || practiceError;
     $('practiceInputRecovery').classList.toggle('hidden', !practiceMessage);
     $('practiceInputStatus').textContent = practiceMessage ? t(practiceMessage) : '';
@@ -413,12 +421,17 @@
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
     $('lang').value = lang;
+    $('toggleSound').setAttribute('aria-pressed',String(!sounds.isEnabled()));
+    $('toggleSound').setAttribute('aria-label',t(sounds.isEnabled()?'muteSound':'enableSound'));
+    $('toggleSound').title=t(sounds.isEnabled()?'muteSound':'enableSound');
+    $('toggleSound').dataset.muted=String(!sounds.isEnabled());
     const arcText=$('heroArcText'), arcEnd=$('heroArcEnd'), arcCopy=document.querySelector('.hero-arc-copy'); if(arcText) arcText.textContent=t('homeTitleArc'); if(arcEnd) arcEnd.textContent=t('homeTitleEnd'); if(arcCopy) arcCopy.setAttribute('aria-label',t('homeTitle'));
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)); });
     for (const id of ['home', 'publicStats', 'collection', 'practiceSetup', 'difficulty', 'challengeIntro', 'playing', 'final']) $(id).classList.toggle('hidden', id !== state.screen);
     $('modeTitle').textContent = state.mode === 'practice' ? t('practice') : t('game');
+    renderPublicStats();
     renderDailyHome();
     renderRewardStatus();
     renderBonusRewards();
@@ -432,7 +445,7 @@
     $('penalty').classList.toggle('hidden', !game);
     $('roundEarned').classList.toggle('hidden', !game);
     $('streak').textContent = `${t('streak')} : ${state.streak}`;
-    $('streak').classList.toggle('hidden',state.mode==='practice');
+    $('streak').classList.toggle('hidden',state.mode==='practice'||!!state.bonusMode);
     $('roundLabel').textContent = `${state.index + 1} / 5`;
     const progress = $('roundProgress');
     progress.innerHTML = '';
@@ -535,6 +548,7 @@
   function chooseMode(mode) { state.mode = mode; state.screen = mode === 'practice' ? 'practiceSetup' : 'difficulty'; render(); const target = mode === 'practice' ? $('practiceByDifficulty') : $('difficulty').querySelector('button'); target?.focus({ preventScroll: true }); }
   function start(mode, difficulty, challenge = null, customPool = null) {
     state = blankState(); state.mode = mode; state.difficulty = difficulty; state.challenge = challenge;
+    state.bonusMode = customPool || mode==='daily' ? null : challenge ? 'challenge' : mode;
     recordEvent(mode === 'daily' ? 'daily_started' : 'game_started');
     const pool = Array.isArray(customPool) && customPool.length ? [...customPool] : countries.filter(c => c.difficulty === difficulty).map(c => c.iso);
     state.practicePool = mode === 'practice' ? [...pool] : [];
@@ -549,13 +563,13 @@
       if (state.queue.length > 1 && state.queue[0] === state.current?.iso) [state.queue[0], state.queue[1]] = [state.queue[1], state.queue[0]];
     }
     state.current = byISO.get((state.mode === 'game' || state.mode === 'daily') ? state.series[state.index] : state.queue.shift());
-    if (state.mode === 'practice') state.practiceRoundId = 'round:' + (globalThis.crypto?.randomUUID?.() || Array.from({length:4},()=>Math.floor(randomUnit()*4294967296).toString(16).padStart(8,'0')).join(''));
+    if (state.bonusMode) state.practiceRoundId = 'round:' + (globalThis.crypto?.randomUUID?.() || Array.from({length:4},()=>Math.floor(randomUnit()*4294967296).toString(16).padStart(8,'0')).join(''));
     state.screen = 'playing'; state.answered = false; state.attempts = 0; state.points = core.ROUND_MAX; state.factIndex = null; state.wrong = null; state.wrongGuesses = [];
     map.reset(); render();
   }
   function guess(iso) {
     if (state.screen !== 'playing' || state.answered || (!byISO.has(iso) && !overseas[iso])) return;
-    if (state.mode === 'practice' && (practiceBlocked || rewardsLoading)) {
+    if (state.bonusMode && (practiceBlocked || rewardsLoading)) {
       renderRewardStatus();
       $('practiceInputRecovery').scrollIntoView({block:'nearest',behavior:'auto'});
       return;
@@ -578,7 +592,8 @@
       for (const total of [stats, sessionStats]) { total.solved++; total.totalClicks += state.attempts; if (state.attempts === 1) total.oneClick++; }
       storage.write('wg-stats', stats);
     }
-    if (state.mode === 'practice') queuePracticeAnswer(state.answered);
+    if (state.bonusMode) queuePracticeAnswer(state.answered);
+    sounds.answer(state.answered);
     render();
     if (state.wrong && !state.answered) {
       const row = $('distanceRow'); row.classList.remove('wrong-reveal'); void row.offsetWidth; row.classList.add('wrong-reveal');
@@ -601,13 +616,15 @@
     } catch { rewardError = 'rewardSaveFailed'; return false; }
   }
   async function next() {
-    if (!state.answered || nextBusy || (state.mode === 'practice' && practiceBlocked)) return;
+    if (!state.answered || nextBusy || (!!state.bonusMode && practiceBlocked)) return;
     const gameState = state;
     if ((state.mode === 'game' || state.mode === 'daily') && state.index === 4) {
       nextBusy = true; $('next').disabled = true;
       try {
         if (state.mode === 'daily') await saveDaily(gameState);
         else {
+          await savePracticeAnswers();
+          if (practiceBlocked) return;
           recordEvent('challenge_completed');
           const previous = Number.isSafeInteger(bestScores[state.difficulty]) ? bestScores[state.difficulty] : 0;
           finalWasRecord = state.score > previous;
@@ -706,7 +723,13 @@
   $('clearPractice')?.addEventListener('click',()=>{ customPracticeSelection.clear(); renderPracticePicker(); });
   $('startCustomPractice')?.addEventListener('click',()=>{ if(customPracticeSelection.size) start('practice','custom',null,[...customPracticeSelection]); });
   document.querySelectorAll('[data-level]').forEach(button => button.addEventListener('click', () => start(state.mode, button.dataset.level)));
-  $('openCollection').addEventListener('click', async () => { await refreshRewards(); state = blankState(); state.screen = 'collection'; render(); });
+  async function viewCollection() {
+    if ($('bonusDialog').open) $('bonusDialog').close();
+    await refreshRewards(); state = blankState(); state.screen = 'collection'; render();
+    $('collection').querySelector('h1').setAttribute('tabindex','-1');
+    $('collection').querySelector('h1').focus({preventScroll:true});
+  }
+  for (const id of ['openCollection','viewBonusCollection','bonusViewCollection']) $(id).addEventListener('click',viewCollection);
   const openHow=()=>{ $('howModal')?.classList.remove('hidden'); document.body.classList.add('modal-open'); };
   const closeHow=()=>{ $('howModal')?.classList.add('hidden'); document.body.classList.remove('modal-open'); };
   $('howToPlay')?.addEventListener('click',openHow); $('closeHow')?.addEventListener('click',closeHow); $('howModal')?.addEventListener('click',e=>{if(e.target===$('howModal')) closeHow();});
@@ -722,9 +745,12 @@
       if (!isCurrent()) return;
       box.classList.add('chest-fade');
       await new Promise(resolve=>setTimeout(resolve,reduced?0:260));
-      if (isCurrent()) reveal(outcome);
+      if (isCurrent()) {
+        if (outcome.status==='opened'||outcome.status==='revealed') sounds.reveal(rarity);
+        reveal(outcome);
+      }
     } catch { rewardError = errorKey; render(); }
-    finally { button.classList.remove('opening'); button.disabled=false; box.classList.remove('chest-fade'); renderBonusRewards(); }
+    finally { button.classList.remove('opening'); button.disabled=false; box.classList.remove('chest-fade'); renderBonusRewards(); if(state.screen==='collection')renderCollection(); }
   }
   $('openChest').addEventListener('click', async () => {
     const gameState = state, day = state.dailyKey, result = selectedDailyResult();
@@ -739,7 +765,7 @@
     if (pendingPracticeUnreadable) {
       try {
         const commands = JSON.parse(sessionStorage.getItem(PRACTICE_PENDING_KEY) || '[]');
-        if (!Array.isArray(commands) || commands.some(c=>!c || c.mode!=='practice')) throw new Error('Invalid pending answers');
+        if (!Array.isArray(commands) || commands.some(c=>!c || !['practice','game','challenge'].includes(c.mode))) throw new Error('Invalid pending answers');
         pendingPractice = commands; pendingPracticeUnreadable = false;
       } catch { practiceError = 'bonusRecoveryFailed'; }
     }
@@ -758,7 +784,7 @@
   $('retryPracticeRewards').addEventListener('click', retryRewards);
   const bonusChestButton=$('openChest').cloneNode(true);bonusChestButton.id='openBonusChest';
   $('bonusChestStage').appendChild(bonusChestButton);
-  for(const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards']) $(id).addEventListener('click',openBonusRewards);
+  for(const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards','finalBonusRewards']) $(id).addEventListener('click',openBonusRewards);
   $('closeBonusRewards').addEventListener('click',()=>$('bonusDialog').close());
   bonusChestButton.addEventListener('click',async()=>{
     const chest=bonusSnapshot?.chests[selectedBonus];if(!chest||chest.openedAt!==null)return;
@@ -774,14 +800,17 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('cardModal')?.classList.contains('hidden')) closeCardModal(); if (!$('howModal')?.classList.contains('hidden')) closeHow(); } });
   document.querySelectorAll('[data-home]').forEach(button => button.addEventListener('click', home));
   $('brand').addEventListener('click', home);
+  $('toggleSound').addEventListener('click',()=>{sounds.setEnabled(!sounds.isEnabled());if(sounds.isEnabled())sounds.unlock();render();});
+  window.addEventListener('storage',event=>{if(event.key===GeoFactSound.SOUND_KEY){sounds.setEnabled(event.newValue!=='off',{persist:false});render();}});
   $('lang').addEventListener('change', e => {
     lang = e.target.value;
-    try { localStorage.setItem('wg-lang', lang); } catch { /* Language still changes without persistence. */ }
+    GeoFactPreferences.language.set(lang);
     const openCollectionIso = !$('collectionDetail')?.classList.contains('hidden')
       ? $('collectionDetail')?.dataset.iso
       : null;
     render();
     if (openCollectionIso) renderCollectionDetail(openCollectionIso);
+    if (!$('cardModal').classList.contains('hidden')) openCardModal($('cardModal').dataset.iso,$('cardModal').dataset.rarity);
   });
   $('acceptChallenge').addEventListener('click', () => start('game', state.challenge.d, state.challenge));
   $('next').addEventListener('click', next);

@@ -1,7 +1,7 @@
 import {currentSave} from './save-fixtures.mjs';
 export async function testReleaseAudit({newContext,url,tap,check,equal}) {
  const origin=new URL(url).origin;
- const read=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-fix1');const r=await openRewardRepository();try{return await r.read();}finally{r.close();}});
+ const read=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{return await r.read();}finally{r.close();}});
  const profile={cookies:[],origins:[{origin,localStorage:Object.entries(currentSave).map(([name,value])=>({name,value}))}]};
  console.log('Release audit: isolated practice errors, stale cache, FR/EN and small screens…');
  for(const failure of ['denied','malformed']){
@@ -30,11 +30,11 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
   ctx.on('request',r=>{if(/\.(?:js|mjs|css)(?:\?|$)/.test(r.url()))requests.push(r.url());});
   const p=await ctx.newPage();try{
    await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
-   await p.click('#choosePractice');await p.click('#practiceCustom');await p.locator('input[value="FRA"]').check();await p.click('#startCustomPractice');await p.locator('#playing').waitFor({state:'visible'});
+   await p.evaluate(()=>{GeoFactCore.shuffle=list=>list.includes('FRA')?['FRA']:list;});await p.click('#choosePractice');await p.click('#practiceByDifficulty');await p.click('[data-level=easy]');await p.locator('#playing').waitFor({state:'visible'});
    await tap('BEL','mouse',p);check((await p.locator('#distanceReaction').textContent()).includes('voisin'),'current border code despite stale cache');
    await tap('FRA','mouse',p);await p.locator('#result').waitFor({state:'visible'});
    equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','current permanent-green map despite stale cache');
-   check(requests.length>=12,'reward module graph loaded');for(const request of requests)equal(new URL(request).searchParams.get('v'),'20261009-fix1','versioned release resource');
+   check(requests.length>=12,'reward module graph loaded');for(const request of requests)equal(new URL(request).searchParams.get('v'),'20261009-update1','versioned release resource');
   }finally{await ctx.close();}
  }
  for(const [width,height] of [[320,568],[360,640],[375,667],[390,844],[430,932],[568,320],[768,1024],[1280,800]]){
@@ -53,7 +53,7 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
     equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await p.click('#brand');
     await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await p.click('#brand');
    }
-   await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-fix1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'viewport:'+n,roundId:'viewport-round:'+n,mode:'practice',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.4},['FRA']);}finally{r.close();}});
+   await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'viewport:'+n,roundId:'viewport-round:'+n,mode:'practice',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.4},['FRA']);}finally{r.close();}});
    await p.click('#openCollection');await p.click('#brand');await p.click('#openBonusRewards');await p.locator('#bonusChestStage').waitFor({state:'visible'});await fit('bonus dialog');
    check(await p.locator('#bonusDialog').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'bonus modal fits width');await p.click('#openBonusChest');await p.locator('#bonusCardReveal').waitFor({state:'visible'});await fit('bonus reveal');await p.click('#closeBonusRewards');check(await p.locator('#openBonusRewards').isHidden(),'chest action hidden after last opening');
   }finally{await ctx.close();}

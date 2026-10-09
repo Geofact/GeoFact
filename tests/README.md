@@ -63,3 +63,13 @@ L'export autonome `GeoFact.html` et son script `export.py` sont absents de ce d�
 Le serveur de test sert les `.mjs` avec un MIME JavaScript. Les en-têtes et caches du véritable hébergement restent à vérifier. La croissance des reçus n'est pas limitée ; une éventuelle purge exige de préserver l'idempotence.
 
 `iphone-regression.mjs` teste le Nigeria dans les quatre modes sur 320×568, avec touches natives, animations et réduction des animations. Il vérifie les réponses suivantes, l'opacité réelle de l'anecdote, la sauvegarde et sa récupération, les compteurs FR/EN immédiats sous verrou transactionnel, le rechargement et deux onglets. Le scénario iPhone rapporté n'est pas confirmé par l'émulation Chromium ; voir `docs/iphone-validation-bonus-ui.md`.
+
+## Mise à jour bonus, préférences et statistiques
+
+`tests/update-integration.mjs` vérifie l'entraînement par difficulté et les Défis partageant la série/quota, l'exclusion des listes personnalisées, les onglets simultanés, la navigation vers la collection pendant une ouverture, la langue avant chargement et dans les cartes ouvertes, les sons (dont le chemin `webkitAudioContext` simulé), leur coupure entre onglets, la persistance et la télémétrie anonyme. Il est exécuté par `npm run test:browser`.
+
+`tests/preferences-audio-stats.test.js` fait partie de `npm test` : stockage refusé, reprise/périphérique audio fermé, création d'IDs avec Web Locks simulés et absence d'IDs éphémères.
+
+`npm run test:restart` lance réellement Chromium quatre fois avec un profil temporaire isolé et la même origine HTTP. Il vérifie la série partielle, le coffre scellé, la carte fixe, le crédit unique, les préférences, l'identifiant anonyme et les anciennes clés. Tous les appels Supabase sont simulés avant navigation ; tout autre trafic externe est bloqué. Le profil généré est supprimé à la fin, jamais les sauvegardes d'un joueur. Même variables `PLAYWRIGHT_MODULE` et `CHROMIUM_PATH` que la suite HTTP principale.
+
+Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt forcé avant commit. WebKit doit être installé séparément pour vérifier son moteur ; un contexte Chromium mobile ne constitue pas un test Safari iPhone réel.

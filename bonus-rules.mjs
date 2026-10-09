@@ -4,6 +4,11 @@ export const BONUS_DAILY_LIMIT = 2;
 export const BONUS_RARITY_WEIGHTS = Object.freeze({classic:6225,silver:2500,gold:1050,shiny:225});
 const own = (record,key) => Object.hasOwn(record,key);
 
+// The historical practice commands remain compatible. A custom list is never eligible.
+export function isBonusEligibleMode(mode,custom = false) {
+  return !custom && ['practice','game','challenge'].includes(mode);
+}
+
 export function createBonusState() {
   return {version:1,progress:0,grantsByDay:{},chests:{},operations:{},solvedRounds:{}};
 }
@@ -63,7 +68,7 @@ function duplicate(state,command,type) {
   if (!own(state.operations,command.id)) return null;
   const receipt=state.operations[command.id];
   if (receipt.type !== type || (type === 'answer' ?
-      receipt.roundId !== command.roundId || receipt.correct !== command.correct : receipt.chestId !== command.chestId))
+      receipt.roundId !== command.roundId || receipt.correct !== command.correct || (receipt.mode || 'practice') !== command.mode : receipt.chestId !== command.chestId))
     throw new TypeError('Operation identifier reused for a different command');
   return {state,status:'duplicate',chest:receipt.chestId?state.chests[receipt.chestId]:null,credit:null};
 }
@@ -71,14 +76,14 @@ function duplicate(state,command,type) {
 export function applyBonusAnswer(state,command,catalog) {
   validateState(state);
   if (!command || typeof command.mode !== 'string' || !command.mode) throw new TypeError('A mode is required');
-  if (command.mode !== 'practice') return {state,status:'ignored',chest:null,credit:null};
+  if (!isBonusEligibleMode(command.mode,command.custom === true)) return {state,status:'ignored',chest:null,credit:null};
   identifier(command.id);identifier(command.roundId);
   if (typeof command.correct !== 'boolean') throw new TypeError('An answer must be correct or incorrect');
   const replay=duplicate(state,command,'answer');
   if (replay) return replay;
   // A late second click (even with a different operation ID) cannot solve a round twice.
   if (own(state.solvedRounds,command.roundId)) return {state:{...state,
-    operations:{...state.operations,[command.id]:{type:'answer',roundId:command.roundId,correct:command.correct,chestId:null}}},
+    operations:{...state.operations,[command.id]:{type:'answer',mode:command.mode,roundId:command.roundId,correct:command.correct,chestId:null}}},
     status:'ignored',chest:null,credit:null};
   const quota=bonusProgress(state,command.at);
   let progress=state.progress,chest=null,grantsByDay=state.grantsByDay,chests=state.chests;
@@ -95,7 +100,7 @@ export function applyBonusAnswer(state,command,catalog) {
       chests={...chests,[chestId]:chest};
     }
   }
-  const receipt={type:'answer',roundId:command.roundId,correct:command.correct,day:quota.day,chestId:chest?.id||null};
+  const receipt={type:'answer',mode:command.mode,roundId:command.roundId,correct:command.correct,day:quota.day,chestId:chest?.id||null};
   return {state:{...state,progress,grantsByDay,chests,
     operations:{...state.operations,[command.id]:receipt},
     solvedRounds:command.correct?{...state.solvedRounds,[command.roundId]:true}:state.solvedRounds},

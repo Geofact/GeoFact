@@ -39,7 +39,7 @@ test('Metadata uses the declared production domain and local assets exist',()=>{
  for(const m of html.matchAll(/(?:src|href)="(assets\/[^\"]+)"/g))assert.ok(existsSync(new URL(m[1],root)),m[1]);
 });
 test('Runtime contains no private key or privileged credential patterns; Supabase key is publishable',()=>{
- const files=['index.html','app.js','core.js','map.js','i18n.js','bonus-rules.mjs','reward-repository.mjs','daily-rewards.mjs','legacy-rewards.mjs'];
+ const files=['index.html','app.js','preferences.js','sound.js','public-statistics.js','core.js','map.js','i18n.js','bonus-rules.mjs','reward-repository.mjs','daily-rewards.mjs','legacy-rewards.mjs'];
  const privateCredential=/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|sb_secret_[A-Za-z0-9_-]{12,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[A-Z0-9]{16}/;
  for(const file of files)assert.ok(!privateCredential.test(read(file)),file);
  assert.match(app,/const STATS_KEY = 'sb_publishable_[A-Za-z0-9_]+'/);

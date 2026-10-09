@@ -1350,3 +1350,23 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 
 .practice-input-recovery { flex-basis: 100%; min-width: 0; }
 .practice-input-recovery p { margin: 4px 0 8px; }
+
+/* Compact controls and consistent, pointer-only home card feedback. */
+.header-controls { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.sound-toggle { width: 44px; height: 44px; flex: 0 0 44px; padding: 11px; border: 1px solid #d5d6c9; border-radius: 10px; background: #fffaf2; color: var(--blue); }
+.sound-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sound-toggle .sound-off, .sound-toggle[data-muted="true"] .sound-waves { display: none; }
+.sound-toggle[data-muted="true"] .sound-off { display: block; }
+.sound-toggle:focus-visible, #openCollection:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+#choosePractice > span { overflow-wrap: anywhere; font-size: 13px !important; line-height: 1.4 !important; }
+#openCollection { transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+@media (hover: hover) and (pointer: fine) {
+  #openCollection:hover { transform: translateY(-3px) rotate(-.15deg); }
+}
+@media (hover: none) {
+  #openCollection:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #openCollection, #openCollection:hover { transition: none; transform: none; }
+}
+#bonusViewCollection { margin-top: 14px; }
