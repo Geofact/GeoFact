@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 // Actual Chromium process restarts with an isolated on-disk profile and HTTP origin.
 import assert from 'node:assert/strict';
 import {readFile,mkdtemp,rm} from 'node:fs/promises';
@@ -45,9 +46,9 @@ async function answer(p,next=true){
 }
 try{
  console.log('Native persistent restart: committed streak, sealed chest, preferences and single credit…');
- let p=await launch(true);const original=await snapshot(p);await p.selectOption('#lang','en');await p.click('#toggleSound');await practice(p);for(let n=0;n<8;n++)await answer(p);
+ let p=await launch(true);const original=await snapshot(p);await setLanguage(p,'en');await p.click('#toggleSound');await practice(p);for(let n=0;n<8;n++)await answer(p);
  const partial=await snapshot(p);equal(partial.bonus.progress,8,'eight committed answers');await context.close();context=null;
- p=await launch();equal((await snapshot(p)).bonus,partial.bonus,'actual browser close/reopen preserves partial streak');equal(await p.locator('#lang').inputValue(),'en','language persists on disk');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute persists on disk');await practice(p);await answer(p);await answer(p,false);
+ p=await launch();equal((await snapshot(p)).bonus,partial.bonus,'actual browser close/reopen preserves partial streak');equal(await p.locator('#lang').getAttribute('value'),'en','language persists on disk');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute persists on disk');await practice(p);await answer(p);await answer(p,false);
  const sealed=await snapshot(p),chest=Object.values(sealed.bonus.chests)[0];check(!!chest,'tenth earns sealed chest');equal(sealed.collection,original.collection,'no early collection credit');equal(chest.openedAt,null,'sealed before restart');await context.close();context=null;
  p=await launch();const restored=await snapshot(p);equal(restored.bonus,sealed.bonus,'sealed card and quota survive process restart');equal(restored.daily,original.daily,'Daily preserved');equal(restored.dailyChests,original.dailyChests,'Daily chests preserved');await p.click('#openBonusRewards');await p.locator('#bonusChestStage').waitFor({state:'visible'});await p.locator('#openBonusChest').evaluate(b=>{b.click();b.click();});await p.locator('#bonusCardReveal').waitFor({state:'visible'});
  const opened=await snapshot(p);equal(copies(opened),copies(original)+1,'double opening credits once');equal(Object.values(opened.bonus.chests)[0].card,chest.card,'same fixed card');await context.close();context=null;

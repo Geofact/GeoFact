@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 // The border label must not influence the existing distance-based penalty.
 export async function testBorders({newContext,url,core,tap,check,equal}) {
   const messages={fr:"Tout près ! C'est un pays voisin.",en:"Very close! It's a neighbouring country."};
@@ -19,7 +20,7 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
   }
   async function feedback(p,neighbour,label) {
     check(await p.locator('#distanceRow').isVisible(),label+': wrong-answer feedback visible');
-    const lang=await p.locator('#lang').inputValue(),text=await p.locator('#distanceReaction').textContent();
+    const lang=await p.locator('#lang').getAttribute('value'),text=await p.locator('#distanceReaction').textContent();
     equal(text.endsWith(messages[lang]),neighbour,label+': exact translated neighbour text');
     equal(await p.locator('#distance').isVisible(),!neighbour,label+': kilometres visibility');
     if(neighbour) equal(await p.locator('#distance').textContent(),'',label+': no kilometres');
@@ -64,9 +65,9 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
       await nativeBelgium(p,mobile); await feedback(p,true,label+' France–Belgium FR');
       equal(await p.locator('#roundPoints').textContent(),'19 points',label+': unchanged neighbour penalty');
       equal(await snapshot(p),saved,label+': wrong answer writes no saves');
-      await p.selectOption('#lang','en'); await feedback(p,true,label+' France–Belgium EN');
+      await setLanguage(p,'en'); await feedback(p,true,label+' France–Belgium EN');
       equal(await p.locator('#penalty').textContent(),'−1 points',label+': translation preserves penalty');
-      await p.selectOption('#lang','fr');
+      await setLanguage(p,'fr');
       await tap('GBR',input,p); await feedback(p,false,label+' France–UK sea crossing');
       const seaKM=await originalDistance(p,'GBR','FRA');
       check(seaKM<250,label+': close sea crossing is not a neighbour');
@@ -102,13 +103,13 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
         await feedback(p,neighbour,`${label} ${target} / ${guess}`);
         check(!(await p.locator('#penalty').isVisible()),label+': practice has no penalty');
         equal(await snapshot(p),before,label+': practice wrong answer preserves saves');
-        await p.selectOption('#lang','en');await feedback(p,neighbour,`${label} ${target} / ${guess} EN`);
+        await setLanguage(p,'en');await feedback(p,neighbour,`${label} ${target} / ${guess} EN`);
         check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+': neighbour feedback has no horizontal overflow');
       }
 
       // Deterministic Daily has Indonesia first, with real land neighbour Malaysia.
       const daily=await ctx.newPage();await daily.clock.setFixedTime(new Date('2026-10-08T12:00:00Z'));
-      await daily.goto(url);await daily.selectOption('#lang','fr');await daily.click('#chooseDaily');
+      await daily.goto(url);await setLanguage(daily,'fr');await daily.click('#chooseDaily');
       await daily.locator('#playing').waitFor({state:'visible'});
       equal(await daily.locator('#countryName').textContent(),'Indonésie',label+': deterministic Daily');
       const dailyBefore=await snapshot(daily),dailyKM=await originalDistance(daily,'IDN','MYS');

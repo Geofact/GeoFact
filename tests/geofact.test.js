@@ -128,7 +128,7 @@ test('Daily result marks use GeoFact circles without revealing countries', () =>
   assert.equal(['green','yellow','orange','red'].map(core.dailyShareCircle).join(''), '🟢🟡🟠🔴');
 });
 test('Daily home has one primary daily action plus practice and friend challenge', () => {
-  for (const id of ['chooseDaily','choosePractice','chooseGame','dailyCountdown','dailyStreak','dailyBestStreak','dailyPlayed','dailyHomeErrors','dailyFinalErrors']) assert.ok(html.includes(`id="${id}"`));
+  for (const id of ['chooseDaily','choosePractice','chooseGame','dailyCountdown','dailyStreak','dailyBestStreak','dailyPlayed','dailyFinalErrors']) assert.ok(html.includes(`id="${id}"`));
   assert.ok(html.includes('data-i18n="homeDailyDescription"'));
 });
 

@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 // Behavioural checks use computed SVG colours, not only the presence of a class.
 export async function testHighlight({newContext, url, core, tap, check, equal}) {
   const green = 'rgb(74, 222, 128)';
@@ -47,7 +48,7 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
   }
   async function interact(p, iso, label) {
     const saved = await snapshot(p), score = await p.locator('#totalScore').textContent();
-    const originalLanguage = await p.locator('#lang').inputValue();
+    const originalLanguage = await p.locator('#lang').getAttribute('value');
     const view = await p.locator('#map').getAttribute('viewBox');
     await p.click('#zoomIn');
     check(await p.locator('#map').getAttribute('viewBox') !== view, label + ': zoom works');
@@ -60,9 +61,9 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
     equal(await p.locator('#map').getAttribute('viewBox'), '0 0 1200 600', label + ': recentre works');
     await expectGreen(p, iso, label + ' after recentre');
     equal(await snapshot(p), saved, label + ': map gestures do not write saves');
-    await p.selectOption('#lang', originalLanguage === 'fr' ? 'en' : 'fr');
+    await setLanguage(p,originalLanguage === 'fr' ? 'en' : 'fr');
     await expectGreen(p, iso, label + ' after translation');
-    await p.selectOption('#lang', originalLanguage);
+    await setLanguage(p,originalLanguage);
     await tap(iso === 'BEL' ? 'JPN' : 'BEL', 'touch', p);
     equal(await p.locator('#totalScore').textContent(), score, label + ': interactions preserve score');
     equal(await snapshot(p), {...saved, 'wg-lang':originalLanguage}, label + ': only language preference may be saved');

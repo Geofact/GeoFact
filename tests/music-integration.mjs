@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 // Native Chromium Web Audio, with visibility/device suspension simulated explicitly.
 export async function testMusicIntegration({newContext,url,check,equal}){
  console.log('Music: native audio, one scheduler, mute, background and foreground…');
@@ -22,7 +23,7 @@ export async function testMusicIntegration({newContext,url,check,equal}){
   const practice=await p.locator('#choosePractice').boundingBox();await p.touchscreen.tap(practice.x+practice.width/2,practice.y+practice.height/2);await p.waitForFunction(()=>musicProbe.timers.size===1);
   equal(await p.evaluate(()=>musicProbe.created),1,'music and effects share one context');
   check(await p.evaluate(()=>musicProbe.started.some(n=>n.type==='custom')),'native soft 8-bit voice plays');
-  await p.click('#practiceByDifficulty');await p.selectOption('#lang','en');await p.click('#howToPlay');await p.click('#closeHow');
+  await p.click('#practiceByDifficulty');await setLanguage(p,'en');await p.click('#howToPlay');await p.click('#closeHow');
   equal(await p.evaluate(()=>musicProbe.timers.size),1,'screen changes and repeated gestures never stack music');
   await p.evaluate(()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));});
   equal(await p.evaluate(()=>musicProbe.timers.size),0,'background stops scheduler');

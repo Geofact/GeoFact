@@ -295,13 +295,7 @@
     $('dailyStreak').textContent = format(activeDailyStreak());
     $('dailyBestStreak').textContent = format(dailyData.bestStreak);
     $('dailyPlayed').textContent = format(dailyData.played);
-    $('dailyCompleted').classList.toggle('hidden', !daily.result);
     $('chooseDaily').textContent = t(daily.result ? 'dailyView' : 'dailyPlay');
-    if (daily.result) {
-      $('dailyHomeScore').textContent = `${format(daily.result.score)} / ${format(core.SCORE_MAX)}`;
-      renderDailyMarks($('dailyHomeTiles'), daily.result.tiles);
-      $('dailyHomeErrors').textContent = Number.isSafeInteger(daily.result.errors) ? dailyErrorsText(daily.result.errors) : '';
-    }
     const oldPending = Object.entries(dailyData.days).filter(([key,r]) => key !== daily.key && r.card && !r.cardOpened).sort(([a],[b])=>a.localeCompare(b))[0];
     $('resumeDailyChest').classList.toggle('hidden', !oldPending);
     if(oldPending) { $('resumeDailyChest').dataset.day = oldPending[0]; $('resumeDailyChest').textContent = t('resumeDailyChest',{date:oldPending[0]}); }
@@ -431,7 +425,6 @@
     // Move the same controls: their handlers and saved preferences remain unchanged.
     const header = document.querySelector('.top'), headerParent = state.screen === 'home' ? $('home') : document.querySelector('main.app');
     if (header.parentElement !== headerParent) headerParent.prepend(header);
-    for (const option of $('lang').options) option.textContent = option.value.toUpperCase();
     $('languageBadge').textContent = lang.toUpperCase();
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
@@ -443,6 +436,7 @@
     const arcText=$('heroArcText'), arcEnd=$('heroArcEnd'), arcCopy=document.querySelector('.hero-arc-copy'); if(arcText) arcText.textContent=t('homeTitleArc'); if(arcEnd) arcEnd.textContent=t('homeTitleEnd'); if(arcCopy) arcCopy.setAttribute('aria-label',t('homeTitle'));
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    $('lang').setAttribute('aria-label', `${t('language')} : ${lang.toUpperCase()} → ${lang === 'fr' ? 'EN' : 'FR'}`);
     for(const id of ['lang','openPublicStats','howToPlay'])$(id).title=$(id).getAttribute('aria-label');
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)); });
     for (const id of ['home', 'publicStats', 'collection', 'practiceSetup', 'difficulty', 'challengeIntro', 'playing', 'final']) $(id).classList.toggle('hidden', id !== state.screen);
@@ -818,8 +812,8 @@
   $('brand').addEventListener('click', home);
   $('toggleSound').addEventListener('click',()=>{sounds.setEnabled(!sounds.isEnabled());if(sounds.isEnabled())sounds.unlock();render();});
   window.addEventListener('storage',event=>{if(event.key===GeoFactSound.SOUND_KEY){sounds.setEnabled(event.newValue!=='off',{persist:false});render();}});
-  $('lang').addEventListener('change', e => {
-    lang = e.target.value;
+  $('lang').addEventListener('click', () => {
+    lang = lang === 'fr' ? 'en' : 'fr';
     GeoFactPreferences.language.set(lang);
     const openCollectionIso = !$('collectionDetail')?.classList.contains('hidden')
       ? $('collectionDetail')?.dataset.iso

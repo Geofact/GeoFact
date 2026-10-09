@@ -25,7 +25,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <script src="i18n.js?v=20261009-update1&amp;home=20261010-music1"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261010-music1">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261010-language2">
 </head>
 <body>
   <main class="app">
@@ -41,7 +41,7 @@
       <div class="top-actions">
         <div class="header-controls">
           <button id="toggleSound" class="sound-toggle" type="button" aria-pressed="false" aria-label="Couper les sons"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
-          <label class="language-control"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18m0-18c5 5 5 13 0 18"/></svg><span id="languageBadge" aria-hidden="true">FR</span><select id="lang" aria-label="Langue" data-i18n-aria="language"><option value="fr">Français</option><option value="en">English</option></select></label>
+          <button id="lang" class="language-control" type="button" value="fr" aria-label="Langue" data-i18n-aria="language"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18m0-18c5 5 5 13 0 18"/></svg><span id="languageBadge" aria-hidden="true">FR</span></button>
         </div>
         <button id="openPublicStats" class="how-link" type="button" data-i18n-aria="publicStats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12h3v8m3 0V4h3v16m3 0V8h3v12M3 20h18"/></svg></button>
         <button id="howToPlay" class="how-link" type="button" data-i18n-aria="homeHowToPlay"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 3v.1"/></svg></button>
@@ -63,10 +63,6 @@
         <div class="home-chest-preview"><svg viewBox="0 0 160 112" aria-hidden="true"><ellipse cx="80" cy="99" rx="58" ry="7" fill="#102e26" opacity=".25"/><path d="M26 49Q26 13 80 13T134 49" fill="#b87546" stroke="#edc68b" stroke-width="3"/><path d="M26 49H134V89Q80 108 26 89Z" fill="#945735" stroke="#edc68b" stroke-width="3"/><path d="M45 24V94M115 24V94M26 53H134" fill="none" stroke="#e4ad66" stroke-width="7"/><rect x="69" y="45" width="22" height="27" rx="5" fill="#f0c477"/><circle cx="80" cy="56" r="4" fill="#68452e"/><path d="M80 59V65" stroke="#68452e" stroke-width="3"/><path d="M9 22h12m-6-6v12M142 31h10m-5-5v10" stroke="#efcf94" stroke-width="2" stroke-linecap="round"/></svg><p data-i18n="homeChestQuestion">Quel drapeau découvriras-tu aujourd’hui ?</p></div></div>
         <button id="resumeDailyChest" class="secondary hidden" type="button"></button>
         <button id="chooseDaily" class="primary daily-button" data-i18n="dailyPlay">Jouer le Daily</button>
-        <div id="dailyCompleted" class="daily-completed hidden">
-          <div class="daily-score-lockup"><strong id="dailyHomeScore"></strong><span id="dailyHomeErrors" class="daily-errors"></span></div>
-          <div id="dailyHomeTiles" class="daily-marks" aria-label="Performance par pays" data-i18n-aria="performanceByCountry"></div>
-        </div>
         <div class="daily-home-streak">🔥 <span data-i18n="dailyStreak">Série</span> <strong id="dailyStreak">0</strong></div>
         <div class="daily-stats-hidden" aria-hidden="true"><strong id="dailyBestStreak">0</strong><strong id="dailyPlayed">0</strong></div>
         <div class="daily-countdown"><span data-i18n="nextChest">Prochain coffre disponible dans</span> <strong id="dailyCountdown">--:--:--</strong></div>
@@ -159,6 +155,6 @@
   <script src="public-statistics.js?v=20261009-update1"></script>
   <script src="core.js?v=20261009-update1"></script>
   <script src="map.js?v=20261009-update1"></script>
-  <script src="app.js?v=20261009-update1&amp;home=20261010-music1"></script>
+  <script src="app.js?v=20261009-update1&amp;home=20261010-language2"></script>
 </body>
 </html>
