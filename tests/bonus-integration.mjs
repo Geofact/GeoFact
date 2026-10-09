@@ -10,7 +10,8 @@ export async function testBonusIntegration({newContext,url,tap,check,equal,telem
   const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T12:00:00Z')});await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();return {ctx,p};
  }
  async function practice(p) {
-  await p.click('#choosePractice');await p.click('#practiceCustom');await p.locator('#practiceCountryList input[value="FRA"]').check();await p.click('#startCustomPractice');await p.locator('#playing').waitFor({state:'visible'});
+  await p.evaluate(()=>{GeoFactCore.shuffle=list=>list.includes('FRA')?['FRA']:list;});
+  await p.click('#choosePractice');await p.click('#practiceByDifficulty');await p.click('[data-level=easy]');await p.locator('#playing').waitFor({state:'visible'});
  }
  async function answer(p,next=true) {
   await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});
@@ -105,7 +106,7 @@ export async function testBonusIntegration({newContext,url,tap,check,equal,telem
  {
   const {ctx,p}=await setup();try {
    await practice(p);await repeat(p,7);let s=await snapshot(p);await p.click('#brand');const series=['FRA','JPN','USA','GBR','NOR'];await p.goto(url+'?challenge='+core.encodeChallenge('easy',series,100));await p.click('#acceptChallenge');await tap('JPN','touch',p);await tap('FRA','touch',p);
-   equal((await snapshot(p)).bonus,s.bonus,'challenge answers leave practice bonus unchanged');await p.click('#brand');await p.click('#chooseDaily');await p.locator('#playing').waitFor({state:'visible'});const daily=await p.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries));
+   await p.waitForFunction(()=>!sessionStorage.getItem('gf-pending-practice-v1'));s=await snapshot(p);equal(s.bonus.progress,1,'challenge wrong resets shared series then correct starts at one');await p.click('#brand');await p.click('#chooseDaily');await p.locator('#playing').waitFor({state:'visible'});const daily=await p.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries));
    for(const iso of daily){await tap(iso,'touch',p);await p.locator('#result').waitFor({state:'visible'});await p.click('#next');}await p.locator('#dailyChest').waitFor({state:'visible'});
    const earned=await snapshot(p);equal(earned.bonus,s.bonus,'Daily completion does not change practice series/quota/chests');await p.click('#openChest');await p.locator('#cardReveal').waitFor({state:'visible'});equal((await snapshot(p)).bonus,s.bonus,'Daily opening independent');
   }finally{await ctx.close();}

@@ -2,8 +2,8 @@ import {currentSave} from './save-fixtures.mjs';
 export async function testIphoneRegression({newContext,url,tap,core,check,equal}) {
  const origin=new URL(url).origin;
  const profile={cookies:[],origins:[{origin,localStorage:Object.entries(currentSave).map(([name,value])=>({name,value}))}]};
- const read=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-fix1');const r=await openRewardRepository();try{return await r.read();}finally{r.close();}});
- async function practice(p){await p.click('#choosePractice');await p.click('#practiceCustom');await p.locator('input[value="NGA"]').check();await p.click('#startCustomPractice');await p.locator('#playing').waitFor({state:'visible'});}
+ const read=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{return await r.read();}finally{r.close();}});
+ async function practice(p){await p.evaluate(()=>{GeoFactCore.shuffle=list=>list.includes('NGA')?['NGA']:list;});await p.click('#choosePractice');await p.click('#practiceByDifficulty');const level=await p.evaluate(()=>GeoFactCountries.find(c=>c.iso==='NGA').difficulty);await p.click(`[data-level="${level}"]`);await p.locator('#playing').waitFor({state:'visible'});}
  async function nativeNigeria(p){
   // Wrong-answer pulses transform neighbouring SVG paths; wait before sampling hit coordinates.
   await p.waitForFunction(()=>!document.querySelector('#map .country-wrong'));

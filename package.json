@@ -3,9 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test tests/geofact.test.js tests/bonus-rules.test.mjs tests/reward-repository.test.mjs tests/legacy-rewards.test.mjs tests/daily-rewards.test.mjs tests/release-audit.test.mjs",
+    "test": "node --test tests/geofact.test.js tests/bonus-rules.test.mjs tests/reward-repository.test.mjs tests/legacy-rewards.test.mjs tests/daily-rewards.test.mjs tests/release-audit.test.mjs tests/preferences-audio-stats.test.js",
     "test:browser": "node tests/browser.mjs",
-    "start": "python3 -m http.server 8000"
+    "start": "python3 -m http.server 8000",
+    "test:restart": "node tests/persistent-restart.mjs"
   },
-  "devDependencies": { "playwright": "1.63.0" }
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
 }

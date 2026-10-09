@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createBonusState,applyBonusAnswer,openBonusChest,bonusProgress,bonusUTCDate,
-  rollBonusRarity,pickBonusCard,BONUS_RARITY_WEIGHTS} from '../bonus-rules.mjs';
+  rollBonusRarity,pickBonusCard,BONUS_RARITY_WEIGHTS,isBonusEligibleMode} from '../bonus-rules.mjs';
 
 const catalog=['FRA','JPN','USA'];
 const at=Date.parse('2026-10-08T12:00:00Z');
@@ -91,9 +91,9 @@ test('the next day resumes from 0 after a capped day, and old quotas remain reme
   assert.equal(chestCount(state),3);assert.equal(state.progress,0);
 });
 
-test('other game modes leave the entire training state untouched',()=>{
+test('Daily and custom-list modes leave the entire shared bonus state untouched',()=>{
   const state=freeze(run(7).state);
-  for(const mode of ['game','classic','daily','challenge']) for(const correct of [true,false]) {
+  for(const mode of ['classic','daily','custom-practice']) for(const correct of [true,false]) {
     const result=apply(state,8,{mode,correct});assert.strictEqual(result.state,state);assert.equal(result.credit,null);
   }
 });
@@ -244,4 +244,27 @@ test('invalid versions, progress, quotas, timestamps and command IDs fail explic
   for(const time of [null,NaN,Infinity,-1,1.5,253402300800000]) assert.throws(()=>bonusUTCDate(time),TypeError);
   for(const id of ['',null,'unsafe space','a'.repeat(161),'__proto__']) assert.throws(()=>apply(createBonusState(),1,{id}),TypeError);
   assert.throws(()=>apply(createBonusState(),1,{correct:1}),TypeError);
+});
+
+
+test('practice and both challenge commands share progress, quotas and stable receipts',()=>{
+ let state=createBonusState();
+ for(let n=1;n<=20;n++)state=apply(state,n,{mode:n%3===0?'challenge':n%2===0?'game':'practice'}).state;
+ assert.equal(chestCount(state),2);assert.equal(state.grantsByDay['2026-10-08'],2);
+ assert.equal(apply(state,21,{mode:'game'}).state.progress,0);
+ const resumed=apply(state,22,{mode:'challenge',at:nextDay});assert.equal(resumed.state.progress,1);
+ const duplicate=apply(resumed.state,22,{mode:'challenge',at:nextDay+1000});assert.equal(duplicate.status,'duplicate');
+ assert.throws(()=>apply(resumed.state,22,{mode:'practice'}),/reused/);
+ const wrong=apply(resumed.state,23,{mode:'practice',correct:false,at:nextDay});assert.equal(wrong.state.progress,0);
+});
+
+test('custom lists neither increment nor reset; legacy practice receipts remain replayable',()=>{
+ const state=run(7).state;
+ for(const mode of ['practice','game','challenge'])for(const correct of [true,false]){
+  assert.equal(isBonusEligibleMode(mode,true),false);
+  assert.strictEqual(apply(state,8,{mode,custom:true,correct}).state,state);
+ }
+ const legacy=structuredClone(state);delete legacy.operations['answer:7'].mode;
+ assert.equal(apply(legacy,7).status,'duplicate');
+ assert.throws(()=>apply(legacy,7,{mode:'game'}),/reused/);
 });
