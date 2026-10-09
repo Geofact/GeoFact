@@ -8,3 +8,14 @@ Captures HTTP Chromium pleine page, données fictives et Supabase simulé. Aucun
 - [mobile-375-fr.png](mobile-375-fr.png) — 218062 octets — SHA-256 9d53e2db0326a942786ced7c0fda8fa7f15f8f312a764a45be9a89135f264d61
 - [ordinateur-en.png](ordinateur-en.png) — 406717 octets — SHA-256 597044da7b039a6c55c4e6c6bf74f4a9328de08cd4875ba09d2c4c13f58d9391
 - [ordinateur-fr.png](ordinateur-fr.png) — 412761 octets — SHA-256 1e16fdd7040fab0e361b8fcf0f2589f9588ecd7793a42f718c2b49cbe17b59f7
+
+## Version mobile compacte
+
+Source : 3bbd5bbef2d00b5c9c6b784156a56e25a408e001, branche redesign/home-only. Accroche principale supprimée.
+
+- [mobile-compact-320-fr.png](mobile-compact-320-fr.png)
+- [mobile-compact-320-en.png](mobile-compact-320-en.png)
+- [mobile-compact-375-fr.png](mobile-compact-375-fr.png)
+- [mobile-compact-375-en.png](mobile-compact-375-en.png)
+- [mobile-compact-390-fr.png](mobile-compact-390-fr.png)
+- [mobile-compact-390-en.png](mobile-compact-390-en.png)
