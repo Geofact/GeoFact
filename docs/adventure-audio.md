@@ -29,3 +29,9 @@ Un test historique de deux ouvertures simultanées attendait la visibilité des 
 L’audit lisait également la couleur verte aussitôt après le succès, sans laisser passer la première image de l’animation réduite. Une lecture intermédiaire a échoué. Il attend maintenant le vert final avant le changement de langue, puis conserve sa vérification immédiate après ce changement, conformément à l’approche du test dédié `highlight.mjs`. Les styles de carte et la logique géographique restent inchangés.
 
 Validation finale : 95 tests Node et 2 672 assertions navigateur HTTP réussis (Chromium, Supabase simulé), incluant Web Audio natif, les gestuelles tactiles, le mute et son rechargement, l’arrière-plan, le retour de cache de page, les activations répétées, la jonction de boucle et les non-régressions des modes, récompenses, sauvegardes et cartes. Captures de l’accueil FR/EN à 1280, 320, 375 et 390 px. WebKit et Safari/iPhone réel non testés. Export portable non testé, GeoFact.html/export.py absents.
+
+## Notification de réussite plus positive
+
+Branche `fix/joyful-success-sound` : seule la mélodie `correct` change. Trois notes ascendantes de sol majeur (784, 988, 1175 Hz), avec un effet de 225 ms et l’amplitude précédente de 0,035. Musique, sons d’erreur et mélodies des coffres inchangés. La requête de cache de sound.js est actualisée sans changer les sauvegardes.
+
+L’aperçu `joyful-success-preview.wav` est rendu par Chromium OfflineAudioContext avec le même code, sans normalisation (fichier de 300 ms incluant la fin silencieuse). 95 tests Node et 104 assertions HTTP ciblant musique, mute, reprise audio simulée, interactions et récompenses passent, Supabase intercepté. La suite complète HTTP n’est pas relancée pour ce changement de notes seul. Safari/iPhone réel reste non vérifié. Aucun déploiement de ce correctif.
