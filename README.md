@@ -40,3 +40,7 @@ Captures home-polish : cercle retiré, collection pêche, logo réduit et texte 
 ## Commandes verticales et présentation partagée
 
 Captures vertical-home et vertical-practice de 37f5f529d678a9cb3d824a787e423515aa170299, FR/EN ordinateur et mobiles. 90 tests Node et 2644 assertions HTTP passent. Code non déployé, audio Safari réel non confirmé.
+
+## Commandes centrées et musique : 6bf0480417695c20e369e3db33e309a0a05e9e17
+
+Captures centered-home FR/EN sur ordinateur et mobiles ; quatre icônes de 20 px dans des commandes de 44 px. geofact-adventure-preview.wav : composition originale de 40 secondes, rendue avec le même code Web Audio et le même volume. 95 tests Node et 2672 assertions HTTP passent. Code non fusionné et non déployé, Safari réel à confirmer.
