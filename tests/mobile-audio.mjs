@@ -26,8 +26,8 @@ export async function testMobileAudio({newContext,url,tap,check,equal}) {
   await p.waitForFunction(()=>!sessionStorage.getItem('gf-pending-practice-v1'));
   equal(await p.evaluate(()=>mobileAudio.resumes),1,'pending mobile resume is not duplicated');
   equal(await p.evaluate(()=>mobileAudio.notes.length),0,'no sound before device resumes');
-  await p.evaluate(()=>mobileAudio.finish());await p.waitForFunction(()=>mobileAudio.notes.length===3);
-  equal(await p.evaluate(()=>mobileAudio.notes),[784,988,1175],'first validated answer is heard after delayed resume');
+  await p.evaluate(()=>mobileAudio.finish());await p.waitForFunction(()=>mobileAudio.notes.length===4);
+  equal(await p.evaluate(()=>mobileAudio.notes),[784,988,1175,1568],'first validated answer is heard after delayed resume');
   await p.click('#next');await p.evaluate(()=>{mobileAudio.notes=[];mobileAudio.device.state='interrupted';});
   await p.dispatchEvent('#map','touchend');equal(await p.evaluate(()=>mobileAudio.resumes),2,'touchend alone resumes an interrupted device');
   await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});
