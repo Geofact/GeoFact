@@ -13,7 +13,7 @@
     gold:[[523,.09,0],[659,.10,.08],[784,.12,.16],[1047,.24,.25]],
     shiny:[[659,.08,0],[784,.08,.07],[988,.10,.14],[1319,.28,.23]]
   });
-  function createSoundEffects({storage,createContext,now=()=>Date.now()}={}) {
+  function createSoundEffects({storage,createContext,preparePlayback,now=()=>Date.now()}={}) {
     let enabled=true,context=null,lastAnswer=-Infinity,lastEffect=null,resumeAttempt=null,pendingEffect=null;
     const active=new Set();
     try{enabled=storage?.getItem(SOUND_KEY)!=='off';}catch{/* Default on; persistence is optional. */}
@@ -24,12 +24,24 @@
     }
     function unlock(){
       if(!enabled||!createContext)return;
+      // iOS can route Web Audio through a session silenced by the hardware switch.
+      // Request playback only in a gesture, and only when the browser supports it.
+      try{preparePlayback?.();}catch{/* An unsupported audio session must not block Web Audio. */}
       try{
         if(context?.state==='closed'){context=null;resumeAttempt=null;pendingEffect=null;}
         context ||= createContext();
         if(!context)return;
         if((context.state==='suspended'||context.state==='interrupted')&&!resumeAttempt){
           const attempt={context};resumeAttempt=attempt;
+          // Older iOS Web Audio needs a source started inside the touch gesture,
+          // not only a resume promise. A one-sample silent buffer unlocks output.
+          try{
+            if(context.createBufferSource&&context.createBuffer){
+              const source=context.createBufferSource();
+              source.buffer=context.createBuffer(1,1,context.sampleRate||44100);
+              source.connect(context.destination);source.onended=()=>source.disconnect();source.start(0);
+            }
+          }catch{/* Resume still works if buffer priming is unsupported. */}
           Promise.resolve(context.resume()).then(()=>{
             if(resumeAttempt!==attempt)return;
             resumeAttempt=null;const pending=pendingEffect;pendingEffect=null;

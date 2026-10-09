@@ -66,3 +66,13 @@ L’aperçu WAV téléchargeable est synthétisé à partir des fréquences et e
 Validation ciblée : 88 tests Node et 475 assertions HTTP (audio mobile simulé + accueil FR/EN, ordinateur et 320/375/390 px) réussis. WebKit/Safari réel reste indisponible dans cet environnement. Aucun déploiement de cette version effectué.
 
 Validation complète finale : 88 tests Node et 2 617 assertions navigateur HTTP réussis (Chromium, Supabase simulé). Export portable non testé : les fichiers GeoFact.html/export.py sont absents. Safari/iPhone réel reste à confirmer.
+
+## Commandes verticales et présentation partagée
+
+Sur la branche `fix/mobile-audio-shared-layout`, les gestionnaires existants restent uniques. Son, langue, Stats et Comment jouer sont empilés en haut à droite, avec des cibles de 44 px et FR/EN compact sur tous les écrans. Sur l’accueil, la colonne est positionnée à côté du logo animé, qui remonte ; les cartes restent sous les commandes pour empêcher les superpositions. Les écrans d’entraînement, difficulté, défi, résultat, collection et Stats reprennent les fonds crème, bordures chaudes et couleurs de titres de l’accueil. Les couleurs de la carte et des raretés sont conservées.
+
+Le propriétaire confirme que Safari iPhone reste muet même hors mode silencieux. La cause réelle n’est donc pas établie et le premier correctif n’a pas suffi sur cet appareil. Deux mesures de compatibilité sont préparées : demander la catégorie `navigator.audioSession.type = 'playback'` lorsqu’elle existe et amorcer Web Audio avec un tampon silencieux d’un échantillon, lancé dans le geste utilisateur avant `resume()`. Ces opérations ne sont jamais déclenchées à l’arrivée sur la page ni quand le son est désactivé ; les API absentes ou refusées n’interrompent pas le jeu. Le tampon se déconnecte après lecture. La notification et les mélodies restent identiques. La clé de mute et les sauvegardes ne changent pas.
+
+Ces mesures ne constituent pas une reproduction ni une confirmation de réparation du téléphone. Un test Safari/iPhone physique demeure nécessaire ; si le problème persiste, relever la version d’iOS, la sortie utilisée (haut-parleur/Bluetooth) et l’état ou l’erreur de l’AudioContext dans l’inspecteur Safari distant. WebKit n’est pas installé dans cet environnement.
+
+Validation : 90 tests Node et 2 644 assertions navigateur HTTP réussis (Chromium, Supabase simulé), FR/EN, ordinateur et 320/375/390 px. Capture et contrôle de débordement de l’accueil, de l’entraînement et de la collection ; suite complète des modes, sauvegardes, frontières, quotas et préférences. Export portable non testé car GeoFact.html/export.py absents. Aucun déploiement effectué.

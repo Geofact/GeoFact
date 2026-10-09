@@ -42,7 +42,8 @@
   }
   let lang = GeoFactPreferences.language.get();
   const sounds = GeoFactSound.createSoundEffects({storage:GeoFactPreferences.availableStorage(),
-    createContext:()=>{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;return Audio?new Audio():null;}});
+    createContext:()=>{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;return Audio?new Audio():null;},
+    preparePlayback:()=>{const session=navigator.audioSession;if(session&&session.type!=='playback')session.type='playback';}});
   // Resume inside the actual user gesture, before any asynchronous reward operation.
   for(const event of ['pointerdown','pointerup','touchend','click'])document.addEventListener(event,()=>sounds.unlock(),{capture:true});
   document.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' ')sounds.unlock();},{capture:true});
@@ -421,7 +422,7 @@
     // Move the same controls: their handlers and saved preferences remain unchanged.
     const header = document.querySelector('.top'), headerParent = state.screen === 'home' ? $('home') : document.querySelector('main.app');
     if (header.parentElement !== headerParent) headerParent.prepend(header);
-    for (const option of $('lang').options) option.textContent = state.screen === 'home' ? option.value.toUpperCase() : option.value === 'fr' ? 'Français' : 'English';
+    for (const option of $('lang').options) option.textContent = option.value.toUpperCase();
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
     $('lang').value = lang;

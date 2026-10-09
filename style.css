@@ -1544,3 +1544,36 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
  html[lang="en"] #home .hero-orbit-copy text { font-size:30px!important; }
  html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:33px!important; }
 }
+
+/* Shared warm presentation and a compact, vertical command rail. */
+.top .top-actions,
+.app:has(#home:not(.hidden)) #home .top-actions {
+ display:flex; flex-direction:column; align-items:flex-end; flex-wrap:nowrap; gap:0;
+}
+.top .header-controls, #home .header-controls { display:contents; }
+.top #lang { width:66px; min-height:44px; padding:6px; font-size:12px; }
+.top .how-link { min-height:44px; max-width:100px; padding:4px; font-size:12px; color:#35493c; }
+.top .sub { display:none; }
+#home .top { position:absolute; top:12px; right:12px; width:94px; margin:0; z-index:3; }
+#home .home-hero.hero-orbit { margin:0 auto 0 0!important; width:calc(100% - 94px)!important; height:180px!important; }
+#home .home-intro-copy { margin-top:4px; }
+.app > .top { min-height:176px; margin-bottom:8px; }
+.app > .top .brand { margin-top:8px; }
+:is(#practiceSetup,#difficulty,#challengeIntro,#final,#collection,#publicStats) {
+ color:#263d35; background:#fff8ec; border-color:#e1cfb5; box-shadow:0 8px 24px rgba(65,48,26,.06);
+}
+:is(#practiceSetup,#difficulty,#challengeIntro,#final,#collection,#publicStats) h1 { color:#294553; }
+:is(#practiceSetup,#difficulty,#challengeIntro,#final) .primary,
+#difficulty .levels button { background:#efb46b; color:#263d35; border-color:#d9a460; }
+#practiceSetup .practice-path { background:#faf0df; border-color:#dfc6a8; }
+#practiceSetup .practice-path strong { color:#294553; }
+#collection .collection-tools { background:#f5dfc4; border-radius:14px; padding:12px; }
+#publicStats .public-stats-grid article { background:#faf0df; border-color:#dfc6a8; }
+@media(max-width:600px) {
+ #home .top { top:8px; right:8px; width:88px; }
+ #home .home-hero.hero-orbit { width:calc(100% - 88px)!important; height:180px!important; }
+ #home .hero-brand { width:130px!important; }
+ #home .hero-spark, #home .hero-compass, #home .hero-route { display:none; }
+ :is(#practiceSetup,#difficulty,#challengeIntro,#final) { margin-top:0; }
+}
+.app > .top { align-items:flex-start; }

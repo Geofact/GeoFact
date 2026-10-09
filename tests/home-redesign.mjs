@@ -13,6 +13,8 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
   try {
    const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T11:59:59Z')});await p.clock.pauseAt(new Date('2026-10-09T12:00:00Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
    const before=await snapshot(p);
+   const commandBoxes=await Promise.all(['#toggleSound','#lang','#openPublicStats','#howToPlay'].map(s=>p.locator(s).boundingBox()));
+   check(commandBoxes.every((b,i)=>i===0||b.y>=commandBoxes[i-1].y+commandBoxes[i-1].height-1),'four home controls stacked without overlap');
    equal(await p.locator('#home > .top').count(),1,'one existing header integrated into home');
    check(await p.locator('#brand').isHidden(),'small duplicate home logo hidden');
    equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Jouer le Daily':'Play the Daily','available Daily action');
@@ -37,9 +39,9 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    await p.clock.runFor(2000);equal(await p.locator('#dailyCountdown').textContent(),'11:59:58','countdown ticks from actual UTC clock');
    await p.click('#howToPlay');check(await p.locator('#howModal').isVisible(),'help accessible');await p.click('#closeHow');
    await p.click('#openPublicStats');check(await p.locator('#publicStats').isVisible(),'stats accessible');await p.click('#brand');
-   await p.click('#choosePractice');await p.clock.runFor(500);check(await p.locator('#practiceSetup').isVisible(),'practice handler retained');await p.click('#brand');
+   await p.click('#choosePractice');await p.clock.runFor(500);check(await p.locator('#practiceSetup').isVisible(),'practice handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'practice layout fits');if(captures)await p.screenshot({path:`${captures}/practice-${width}-${lang}.png`,fullPage:true});await p.click('#brand');
    await p.click('#chooseGame');await p.clock.runFor(500);check(await p.locator('#difficulty').isVisible(),'challenge handler retained');await p.click('#brand');
-   await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});equal(await p.locator('main.app > .top').count(),1,'normal header restored on other screens');check(await p.locator('#collection').isVisible(),'collection handler retained');await p.click('#brand');
+   await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});equal(await p.locator('main.app > .top').count(),1,'normal header restored on other screens');check(await p.locator('#collection').isVisible(),'collection handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'collection layout fits');if(captures)await p.screenshot({path:`${captures}/collection-${width}-${lang}.png`,fullPage:true});await p.click('#brand');
    equal(await snapshot(p),before,'home consultations never alter rewards');
    for(const [key,value] of Object.entries(seed))equal(await p.evaluate(key=>localStorage.getItem(key),key),value,'original save retained '+key);
    await p.selectOption('#lang',lang==='fr'?'en':'fr');equal(await p.locator('[data-i18n=homeDailyTitle]').textContent(),lang==='fr'?'Your daily exploration':'L’exploration quotidienne','instant language change');

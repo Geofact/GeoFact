@@ -118,3 +118,22 @@ test('correct-answer notification is higher, ascending and shorter than 120ms',(
  assert.deepEqual(f.notes.filter(([value])=>value>1).map(([value])=>value),[880,1319]);
  assert.ok(Math.max(...stops)-f.audio.currentTime<.120);
 });
+
+test('playback session is requested only during an enabled gesture and failures are optional',()=>{
+ let calls=0;const store=memory(),f=fakeAudio();
+ const s=createSoundEffects({storage:store,createContext:()=>f.audio,preparePlayback:()=>calls++});
+ assert.equal(calls,0);s.answer(true);assert.equal(calls,0);s.unlock();assert.equal(calls,1);
+ s.setEnabled(false);s.unlock();assert.equal(calls,1);
+ const unavailable=createSoundEffects({createContext:()=>fakeAudio().audio,preparePlayback(){throw new Error('unsupported');}});
+ assert.doesNotThrow(()=>unavailable.unlock());assert.equal(unavailable.answer(true),true);
+});
+
+test('mobile output priming starts a silent source inside the gesture and disconnects it',()=>{
+ const f=fakeAudio(),events=[];let source;
+ f.audio.createBuffer=(channels,length,rate)=>{events.push(['buffer',channels,length,rate]);return {};};
+ f.audio.createBufferSource=()=>source={connect(){events.push('connect');},start(){events.push('start');},disconnect(){events.push('disconnect');}};
+ const resume=f.audio.resume;f.audio.resume=()=>{events.push('resume');return resume();};
+ const s=createSoundEffects({createContext:()=>f.audio});s.unlock();
+ assert.deepEqual(events,[['buffer',1,1,44100],'connect','start','resume']);
+ source.onended();assert.equal(events.at(-1),'disconnect');s.unlock();assert.equal(events.filter(x=>x==='start').length,1);
+});
