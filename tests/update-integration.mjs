@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 import {currentSave} from './save-fixtures.mjs';
 export async function testUpdateIntegration({newContext,url,tap,check,equal,telemetry,core}) {
  const origin=new URL(url).origin;
@@ -57,16 +58,18 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
   });
   const p=await ctx.newPage();try{
    await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();equal(await p.evaluate(()=>audioLog.length),0,'no autoplay on first load');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'false','sound defaults on');equal(await p.locator('[data-i18n=homePracticeDescription]').textContent(),'Play at your own pace, as much as you like.','exact English subtitle');
-   await practice(p);await tap('BEL','touch',p);check(await p.evaluate(()=>audioLog.includes(294)),'wrong answer soft sound via webkit context');await tap('FRA','touch',p);await settled(p);equal(await p.evaluate(()=>audioLog.filter(v=>typeof v==='number').slice(-2)),[880,1319],'correct answer positive sound');const after=await p.evaluate(()=>audioLog.length);await p.locator('#map [data-iso=JPN]').dispatchEvent('pointerover');await tap('JPN','touch',p);equal(await p.evaluate(()=>audioLog.length),after,'hover and ignored extra taps are silent');
+   await practice(p);await tap('BEL','touch',p);check(await p.evaluate(()=>audioLog.includes(294)),'wrong answer soft sound via webkit context');await tap('FRA','touch',p);await settled(p);equal(await p.evaluate(()=>audioLog.filter(v=>typeof v==='number').slice(-4)),[784,988,1175,1568],'correct answer positive sound');const after=await p.evaluate(()=>audioLog.length);await p.locator('#map [data-iso=JPN]').dispatchEvent('pointerover');await tap('JPN','touch',p);equal(await p.evaluate(()=>audioLog.length),after,'hover and ignored extra taps are silent');
    await p.click('#toggleSound');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute immediately active');const muted=await p.evaluate(()=>audioLog.length);await p.click('#next');await tap('BEL','touch',p);await correct(p,false);equal(await p.evaluate(()=>audioLog.length),muted,'muted validation schedules nothing');
-   await p.selectOption('#lang','fr');equal(await p.locator('#toggleSound').getAttribute('aria-label'),'Activer les sons','sound label follows language');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').inputValue(),'fr','manual language beats English browser on reload');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute persists on reload');equal(await p.evaluate(()=>audioLog.length),0,'muted reload creates no audio context');
+   await setLanguage(p,'fr');equal(await p.locator('#toggleSound').getAttribute('aria-label'),'Activer les sons','sound label follows language');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').getAttribute('value'),'fr','manual language beats English browser on reload');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute persists on reload');equal(await p.evaluate(()=>audioLog.length),0,'muted reload creates no audio context');
    await p.click('#toggleSound');check(await p.evaluate(()=>audioLog.includes('resume')),'explicit enable resumes in gesture');
    await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'sound:'+n,roundId:'sound-round:'+n,mode:'game',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.03},['FRA']);}finally{r.close();}window.dispatchEvent(new Event('focus'));});
-   await p.click('#openBonusRewards');await p.click('#openBonusChest');await p.locator('#bonusCardReveal').waitFor({state:'visible'});check(await p.evaluate(()=>audioLog.includes(1047)),'Gold reveal special sound after committed opening');const revealed=await p.evaluate(()=>audioLog.length);await p.selectOption('#lang','en');equal(await p.evaluate(()=>audioLog.length),revealed,'language rerender does not replay reveal');equal(await p.locator('#bonusViewCollection').textContent(),'View my collection','English collection action');
+   await p.click('#openBonusRewards');await p.click('#openBonusChest');await p.locator('#bonusCardReveal').waitFor({state:'visible'});check(await p.evaluate(()=>audioLog.includes(1047)),'Gold reveal special sound after committed opening');const revealed=await p.evaluate(()=>audioLog.length);
+   // Preserve the programmatic language-rerender regression behind this modal.
+   await p.locator('#lang').dispatchEvent('click');equal(await p.locator('#lang').getAttribute('value'),'en','bonus modal rerender switches language');equal(await p.evaluate(()=>audioLog.length),revealed,'language rerender does not replay reveal');equal(await p.locator('#bonusViewCollection').textContent(),'View my collection','English collection action');
    await p.click('#bonusViewCollection');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'small-screen collection/header fit');
    await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'shiny-sound:'+n,roundId:'shiny-sound-round:'+n,mode:'challenge',correct:true,at:Date.now(),countryDraw:0,rarityDraw:0},['FRA']);}finally{r.close();}window.dispatchEvent(new Event('focus'));});
    await p.click('#collectionBonusRewards');await p.click('#openBonusChest');await p.locator('#bonusCardReveal').waitFor({state:'visible'});equal(await p.evaluate(()=>audioLog.filter(value=>typeof value==='number').slice(-4)),[659,784,988,1319],'Shiny reveal retains its own committed melody');await p.click('#bonusViewCollection');
-   const state=await ctx.storageState({indexedDB:true});const again=await newContext({locale:'fr-FR',storageState:state,reducedMotion:'reduce'});const other=await again.newPage();try{await other.goto(url);await other.locator('#chooseDaily:enabled').waitFor();equal(await other.locator('#lang').inputValue(),'en','manual English survives reconstructed next visit');}finally{await again.close();}
+   const state=await ctx.storageState({indexedDB:true});const again=await newContext({locale:'fr-FR',storageState:state,reducedMotion:'reduce'});const other=await again.newPage();try{await other.goto(url);await other.locator('#chooseDaily:enabled').waitFor();equal(await other.locator('#lang').getAttribute('value'),'en','manual English survives reconstructed next visit');}finally{await again.close();}
   }finally{await ctx.close();}
  }
  {
@@ -77,7 +80,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
  }
  {
   const before=telemetry.length,ctx=await newContext({locale:'en-US',reducedMotion:'reduce'});await ctx.addInitScript(()=>{if(location.protocol==='http:')Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Denied','SecurityError');}});});const p=await ctx.newPage();try{
-   await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();await p.selectOption('#lang','fr');equal(await p.locator('#lang').inputValue(),'fr','language changes without storage');check(await p.locator('#toggleSound').isEnabled(),'sound switch usable without storage');await p.click('#toggleSound');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','memory-only mute');equal(telemetry.slice(before).filter(e=>e.rpc==='geofact_record_event').length,0,'denied storage never sends ephemeral visitor');
+   await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();await setLanguage(p,'fr');equal(await p.locator('#lang').getAttribute('value'),'fr','language changes without storage');check(await p.locator('#toggleSound').isEnabled(),'sound switch usable without storage');await p.click('#toggleSound');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','memory-only mute');equal(telemetry.slice(before).filter(e=>e.rpc==='geofact_record_event').length,0,'denied storage never sends ephemeral visitor');
   }finally{await ctx.close();}
  }
  {
@@ -93,7 +96,9 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
    await p.waitForFunction(()=>document.getElementById('partialLanguage').textContent==='Play without limits, earn bonus chests');equal(await p.locator('#partialLanguage').textContent(),'Play without limits, earn bonus chests','partial parser-like text is translated without duplication');await p.locator('#partialLanguage').evaluate(e=>e.remove());
    release();await p.locator('#chooseDaily:enabled').waitFor();await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});
    const card=p.locator('#collectionGrid .collection-card').first();await card.click();await p.locator('#collectionDetail .zoomable-card').first().click();await p.locator('#cardModal').waitFor({state:'visible'});
-   const iso=await p.locator('#cardModal').getAttribute('data-iso');await p.selectOption('#lang','fr');
+   const iso=await p.locator('#cardModal').getAttribute('data-iso');
+   // This retained rerender test intentionally changes language behind the modal overlay.
+   await p.locator('#lang').dispatchEvent('click');equal(await p.locator('#lang').getAttribute('value'),'fr','open modal language changes');
    equal(await p.locator('#cardModalContent h3').textContent(),await p.evaluate(iso=>GeoFactCountries.find(c=>c.iso===iso).name.fr,iso),'open card modal translates immediately');
    await p.click('#closeCardModal');
   }finally{release();await ctx.close();}
@@ -113,7 +118,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
   });
   const p=await ctx.newPage();try{
    await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();await p.click('#openPublicStats');await p.locator('#statsStatus').filter({hasText:'Chargement'}).waitFor();
-   await p.selectOption('#lang','en');equal(await p.locator('#statsStatus').textContent(),'Loading statistics…','pending stats message translates');
+   await setLanguage(p,'en');equal(await p.locator('#statsStatus').textContent(),'Loading statistics…','pending stats message translates');
    await p.selectOption('#statsPeriod','0');await p.locator('#statVisitors').filter({hasText:'21'}).waitFor();
    const response=p.waitForResponse(r=>r.url().endsWith('/geofact_stats')&&r.request().postDataJSON().period_days===30);release();await response;
    await p.evaluate(()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok))));equal(await p.locator('#statVisitors').textContent(),'21','stale 30-day response cannot overwrite all-time period');
@@ -122,7 +127,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
  }
  {
   const ctx=await newContext({locale:'en-US',reducedMotion:'reduce'},{failSupabase:true}),p=await ctx.newPage();try{
-   await p.goto(url);await p.click('#openPublicStats');await p.locator('#statsStatus').filter({hasText:'unavailable'}).waitFor();await p.selectOption('#lang','fr');equal(await p.locator('#statsStatus').textContent(),'Statistiques temporairement indisponibles.','stats error translates immediately');
+   await p.goto(url);await p.click('#openPublicStats');await p.locator('#statsStatus').filter({hasText:'unavailable'}).waitFor();await setLanguage(p,'fr');equal(await p.locator('#statsStatus').textContent(),'Statistiques temporairement indisponibles.','stats error translates immediately');
   }finally{await ctx.close();}
  }
 

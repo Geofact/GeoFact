@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 import {currentSave} from './save-fixtures.mjs';
 export async function testIphoneRegression({newContext,url,tap,core,check,equal}) {
  const origin=new URL(url).origin;
@@ -34,7 +35,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
    check(await p.locator('#practiceInputRecovery').isVisible(),condition+' displays recovery beside map');
    check(await p.locator('#practiceInputStatus').evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}),condition+' explanation is in mobile viewport after ignored touch');
    check((await p.locator('#practiceInputStatus').textContent()).includes(condition==='loading'?'Attends':'suspendue'),condition+' explains why answers are paused');
-   await p.selectOption('#lang','en');
+   await setLanguage(p,'en');
    check((await p.locator('#practiceInputStatus').textContent()).includes(condition==='loading'?'Wait':'paused'),condition+' English explanation');
    console.log('Reproduced and explained practice guard:',condition);
    if(condition==='loading'){release();await p.waitForFunction(()=>!document.getElementById('chooseDaily').disabled);await nativeNigeria(p);await p.locator('#result').waitFor({state:'visible'});await settled(p);}
@@ -71,7 +72,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
    const fact=await p.locator('#fact').textContent(),score=await p.locator('#totalScore').textContent();
    for(const iso of ['BEN','GHA','FRA','NGA'])await tap(iso,'touch',p);
    equal(await p.locator('#fact').textContent(),fact,'extra taps preserve anecdote');equal(await p.locator('#totalScore').textContent(),score,'extra taps do not score');equal(await p.locator('#map .country-found').count(),1,'only Nigeria validated green');
-   await p.selectOption('#lang','en');check((await p.locator('#fact').textContent()).trim().length>10,'Nigeria anecdote translates');
+   await setLanguage(p,'en');check((await p.locator('#fact').textContent()).trim().length>10,'Nigeria anecdote translates');
    if(mode==='practice')await settled(p);
    await p.click('#next');await p.locator('#result').waitFor({state:'hidden'});equal(await p.locator('#map .country-found').count(),0,'next round clears success');
    const iso=await p.evaluate(()=>GeoFactCountries.find(c=>c.name.en===document.getElementById('countryName').textContent).iso);await tap(iso,'touch',p);await p.locator('#result').waitFor({state:'visible'});check((await p.locator('#fact').textContent()).trim().length>10,'following round progresses');
@@ -85,7 +86,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
    // A native transaction holds the write queue; the UI must still update synchronously.
    await p.evaluate(async()=>{const db=await new Promise((ok,bad)=>{const q=indexedDB.open('geofact-rewards');q.onsuccess=()=>ok(q.result);q.onerror=()=>bad(q.error);});const tx=db.transaction(['state','chests','sessions'],'readwrite'),start=performance.now();const pump=()=>{const q=tx.objectStore('sessions').get('hold');q.onsuccess=()=>{if(performance.now()-start<700)pump();};};pump();tx.oncomplete=()=>db.close();});
    await tap('NGA','touch',p);equal(await p.locator('#practiceBonusProgress').textContent(),"Pays trouvés d'affilée : 2/10",'streak updates before write confirmation');equal(await p.locator('#practiceBonusQuota').textContent(),'Coffres bonus : 0/2','quota remains committed');equal(await p.locator('#practiceBonusMeter').getAttribute('aria-label'),"Pays trouvés d'affilée : 2/10",'accessible meter');await settled(p);
-   await p.selectOption('#lang','en');equal(await p.locator('#practiceBonusProgress').textContent(),'Countries found in a row: 2/10','English streak');equal(await p.locator('#practiceBonusQuota').textContent(),'Bonus chests: 0/2','English practice quota');
+   await setLanguage(p,'en');equal(await p.locator('#practiceBonusProgress').textContent(),'Countries found in a row: 2/10','English streak');equal(await p.locator('#practiceBonusQuota').textContent(),'Bonus chests: 0/2','English practice quota');
    await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#homeBonusProgress').textContent(),'Bonus chests earned: 0/2 today','reload home has no streak');await practice(p);equal(await p.locator('#practiceBonusProgress').textContent(),'Countries found in a row: 2/10','reload restores streak');
    const q=await ctx.newPage();await q.goto(url);await q.locator('#chooseDaily:enabled').waitFor();await practice(q);await tap('NGA','touch',q);await settled(q);await p.waitForFunction(()=>document.getElementById('practiceBonusProgress').textContent.endsWith('3/10'));equal(await p.locator('#practiceBonusQuota').textContent(),'Bonus chests: 0/2','two tabs same quota');await q.close();
    const before=await read(p);await p.evaluate(()=>{window.iphoneOriginalTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Full','QuotaExceededError');return iphoneOriginalTransaction.call(this,stores,mode,...rest);};});

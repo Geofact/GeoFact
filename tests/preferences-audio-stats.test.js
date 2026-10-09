@@ -29,7 +29,7 @@ test('sound defaults on but cannot play before a gesture unlocks its context',()
  const f=fakeAudio();let creations=0;
  const sound=createSoundEffects({storage:memory(),createContext:()=>{creations++;return f.audio;}});
  assert.equal(sound.isEnabled(),true);assert.equal(sound.answer(true),false);assert.equal(creations,0);
- sound.unlock();assert.equal(creations,1);assert.equal(f.resumes(),1);assert.equal(sound.answer(true),true);assert.equal(f.nodes.length,2);
+ sound.unlock();assert.equal(creations,1);assert.equal(f.resumes(),1);assert.equal(sound.answer(true),true);assert.equal(f.nodes.length,4);
 });
 test('mute stops active sounds immediately, persists and can be restored without any reward writes',()=>{
  const store=memory(),f=fakeAudio();const sound=createSoundEffects({storage:store,createContext:()=>f.audio});
@@ -96,8 +96,8 @@ test('an answer during asynchronous mobile resume is played once when ready',asy
  f.audio.resume=()=>{resumes++;return new Promise(resolve=>{finish=()=>{f.audio.state='running';resolve();};});};
  const s=createSoundEffects({storage:memory(),createContext:()=>f.audio});s.unlock();s.unlock();
  assert.equal(resumes,1);assert.equal(s.answer(true),true);assert.equal(f.nodes.length,0);
- finish();await Promise.resolve();assert.equal(f.nodes.length,2);
- await Promise.resolve();assert.equal(f.nodes.length,2);
+ finish();await Promise.resolve();assert.equal(f.nodes.length,4);
+ await Promise.resolve();assert.equal(f.nodes.length,4);
 });
 test('mute, failed resume and stale delayed sounds never produce late audio',async()=>{
  for(const scenario of ['mute','stale','failure']){
@@ -110,13 +110,15 @@ test('mute, failed resume and stale delayed sounds never produce late audio',asy
  }
 });
 
-test('correct-answer notification is higher, ascending and shorter than 120ms',()=>{
- const f=fakeAudio();const stops=[];
+test('correct-answer notification ends with a softer high sparkle within 300ms',()=>{
+ const f=fakeAudio();const stops=[],levels=[];
+ const createGain=f.audio.createGain;f.audio.createGain=()=>{const gain=createGain();gain.gain.linearRampToValueAtTime=value=>levels.push(value);return gain;};
  const oscillator=f.audio.createOscillator;
  f.audio.createOscillator=()=>{const n=oscillator();const stop=n.stop;n.stop=at=>{stops.push(at);stop();};return n;};
  const s=createSoundEffects({createContext:()=>f.audio});s.unlock();s.answer(true);
- assert.deepEqual(f.notes.filter(([value])=>value>1).map(([value])=>value),[880,1319]);
- assert.ok(Math.max(...stops)-f.audio.currentTime<.120);
+ assert.deepEqual(f.notes.filter(([value])=>value>1).map(([value])=>value),[784,988,1175,1568]);
+ assert.ok(Math.max(...stops)-f.audio.currentTime<.300);
+ assert.deepEqual(levels,[.035,.035,.035,.012]);
 });
 
 test('playback session is requested only during an enabled gesture and failures are optional',()=>{
@@ -166,7 +168,7 @@ test('same sound preference gates music and effects, visibility and suspended fo
  const f=musicDevice(),store=memory();f.audio.state='suspended';
  const s=createSoundEffects({storage:store,createContext:()=>f.audio,createMusic:c=>musicModule.createAdventureMusic(c,f.options)});
  assert.equal(f.timers.size,0);s.unlock();s.unlock();assert.equal(f.timers.size,1);
- const before=f.nodes.length;assert.equal(s.answer(true),true);assert.equal(f.nodes.length,before+2,'effects remain independently audible');
+ const before=f.nodes.length;assert.equal(s.answer(true),true);assert.equal(f.nodes.length,before+4,'effects remain independently audible');
  s.setVisible(false);assert.equal(f.timers.size,0);assert.equal(s.answer(true),false);
  s.setVisible(true);assert.equal(f.timers.size,1);
  s.setVisible(false);f.audio.state='suspended';const resumes=f.resumes();s.setVisible(true);assert.equal(f.timers.size,0);assert.equal(f.resumes(),resumes,'foreground does not request unauthorized resume');

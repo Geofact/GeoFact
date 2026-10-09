@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -113,16 +114,16 @@ try {
   await tap('BEL'); await visible('result',false); await visible('distanceRow');
   equal(await page.locator('#distance').textContent(),'','no kilometres for land neighbour');await visible('distance',false);check((await page.locator('#distanceReaction').textContent()).includes("Tout près ! C'est un pays voisin."),'French neighbour message');equal(await page.locator('#penalty').textContent(),'−1 points','wrong-guess penalty');
   equal(await page.locator('#map circle.microstate').count(),29,'microstate geometries');equal(await page.locator('#map circle.microstate-marker').count(),29,'microstate display markers');
-  await page.selectOption('#lang','en');equal(await countryName(),'France');equal(await page.locator('#roundPoints').textContent(),'19 points');
+  await setLanguage(page,'en');equal(await countryName(),'France');equal(await page.locator('#roundPoints').textContent(),'19 points');
   // Native mouse input at a genuine interior point of metropolitan France.
   const centre=await page.evaluate(()=>{const s=document.getElementById('map'),p=s.createSVGPoint();p.x=(2.5+180)/.3;p.y=(90-48)/.3;const q=p.matrixTransform(s.getScreenCTM());return{x:q.x,y:q.y};});
   await page.mouse.click(centre.x,centre.y);await visible('result');
   equal(await page.locator('#totalScore').textContent(),'19 / 100','round total');
   const frenchBefore=await page.evaluate(()=>localStorage.getItem('wg-seen-facts'));
   const factEN=await page.locator('#fact').textContent();
-  await page.selectOption('#lang','fr');const factFR=await page.locator('#fact').textContent();check(factFR!==factEN,'fact translated');
+  await setLanguage(page,'fr');const factFR=await page.locator('#fact').textContent();check(factFR!==factEN,'fact translated');
   equal(await page.evaluate(()=>localStorage.getItem('wg-seen-facts')),frenchBefore,'language preserves fact selection');
-  await page.selectOption('#lang','en');equal(await page.locator('#fact').textContent(),factEN,'same fact when switching back');
+  await setLanguage(page,'en');equal(await page.locator('#fact').textContent(),factEN,'same fact when switching back');
   await page.click('#shareFact');
   const share=await page.evaluate(()=>window.shared[0]);equal(share.title,'GeoFact');check(share.text.includes(factEN),'shares current fact');check(!share.text.includes(share.url),'native URL only in URL field');equal(share.url,url);
   await page.click('#zoomIn');const zoomed=await page.locator('#map').getAttribute('viewBox');

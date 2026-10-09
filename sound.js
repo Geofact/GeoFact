@@ -6,7 +6,7 @@
   'use strict';
   const SOUND_KEY='gf-sound-v1';
   const melodies=Object.freeze({
-    correct:[[880,.045,0],[1319,.070,.030]],
+    correct:[[784,.055,0],[988,.065,.055],[1175,.100,.110],[1568,.060,.205,.012]],
     wrong:[[294,.10,0],[247,.08,.08]],
     classic:[[392,.09,0],[523,.10,.08],[659,.18,.16]],
     silver:[[440,.09,0],[659,.10,.08],[880,.20,.16]],
@@ -81,11 +81,11 @@
       }
       try{
         const start=context.currentTime;
-        for(const [frequency,duration,delay] of notes){
+        for(const [frequency,duration,delay,level=.035] of notes){
           const oscillator=context.createOscillator(),gain=context.createGain();
           oscillator.type='sine';oscillator.frequency.setValueAtTime(frequency,start+delay);
           gain.gain.setValueAtTime(0,start+delay);
-          gain.gain.linearRampToValueAtTime(.035,start+delay+.012);
+          gain.gain.linearRampToValueAtTime(level,start+delay+.012);
           gain.gain.exponentialRampToValueAtTime(.0001,start+delay+duration);
           oscillator.connect(gain);gain.connect(context.destination);active.add(oscillator);
           oscillator.onended=()=>{active.delete(oscillator);oscillator.disconnect();gain.disconnect();};

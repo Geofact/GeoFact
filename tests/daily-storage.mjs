@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 import {currentSave,legacySave} from './save-fixtures.mjs';
 export async function testDailyStorage({newContext,url,tap,check,equal,telemetry}) {
  const origin=new URL(url).origin;
@@ -67,7 +68,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
    const before=await snapshot(p),series=await launch(p);
    await p.evaluate(()=>{window.originalTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Quota exceeded','QuotaExceededError');return originalTransaction.call(this,stores,mode,...rest);};});
    await solve(p,series);await p.locator('#rewardStatus').filter({hasText:'Récompense non confirmée'}).waitFor();check(await p.locator('#dailyChest').isHidden(),'failed save never offers a reward');equal(await snapshot(p),before,'failed write preserves canonical data');
-   await p.selectOption('#lang','en');check((await p.locator('#rewardStatus').textContent()).includes('Reward not confirmed'),'failure translated English');
+   await setLanguage(p,'en');check((await p.locator('#rewardStatus').textContent()).includes('Reward not confirmed'),'failure translated English');
    await p.evaluate(()=>IDBDatabase.prototype.transaction=originalTransaction);await p.click('#retryRewards');await p.locator('#dailyChest').waitFor({state:'visible'});
    const earned=await snapshot(p);equal(copies(earned),copies(before)+1,'retry credits once');
    await p.evaluate(()=>{IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Quota exceeded','QuotaExceededError');return originalTransaction.call(this,stores,mode,...rest);};});

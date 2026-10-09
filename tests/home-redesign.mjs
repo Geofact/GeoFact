@@ -9,10 +9,12 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
  const snapshot=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs');const r=await openRewardRepository();try{return await r.read();}finally{r.close();}});
  for(const width of [1280,320,375,390])for(const lang of ['fr','en']) {
   const seed={...currentSave,'wg-lang':lang};
-  const ctx=await newContext({viewport:{width,height:900},locale:lang==='fr'?'fr-FR':'en-US',storageState:{cookies:[],origins:[{origin,localStorage:Object.entries(seed).map(([name,value])=>({name,value}))}]}});
+  const ctx=await newContext({viewport:{width,height:900},hasTouch:width<=600,isMobile:width<=600,locale:lang==='fr'?'fr-FR':'en-US',storageState:{cookies:[],origins:[{origin,localStorage:Object.entries(seed).map(([name,value])=>({name,value}))}]}});
   try {
    const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T11:59:59Z')});await p.clock.pauseAt(new Date('2026-10-09T12:00:00Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
    const before=await snapshot(p);
+   equal(await p.locator('#lang').evaluate(e=>e.tagName),'BUTTON','language is a direct toggle without a menu');
+   equal(await p.locator('#lang select').count(),0,'no language selector');
    const commandBoxes=await Promise.all(['#toggleSound','#lang','#openPublicStats','#howToPlay'].map(s=>p.locator(s).boundingBox()));
    check(commandBoxes.every(b=>Math.abs(b.y-commandBoxes[0].y)<1&&b.width===44&&b.height===44),'four same-size controls in one row');
    const row=await p.locator('.top-actions').boundingBox(),card=await p.locator('#home').boundingBox();check(Math.abs(row.x+row.width/2-card.x-card.width/2)<2,'controls centered over home');
@@ -45,8 +47,11 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});equal(await p.locator('main.app > .top').count(),1,'normal header restored on other screens');check(await p.locator('#collection').isVisible(),'collection handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'collection layout fits');if(captures)await p.screenshot({path:`${captures}/collection-${width}-${lang}.png`,fullPage:true});await p.click('#brand');
    equal(await snapshot(p),before,'home consultations never alter rewards');
    for(const [key,value] of Object.entries(seed))equal(await p.evaluate(key=>localStorage.getItem(key),key),value,'original save retained '+key);
-   await p.selectOption('#lang',lang==='fr'?'en':'fr');equal(await p.locator('[data-i18n=homeDailyTitle]').textContent(),lang==='fr'?'Your daily exploration':'L’exploration quotidienne','instant language change');
-   await p.click('#toggleSound');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').inputValue(),lang==='fr'?'en':'fr','language saved');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','sound preference saved');
+   if(width<=600) {const b=await p.locator('#lang').boundingBox();await p.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);} else await p.click('#lang');
+   equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','one touch toggles language');
+   check((await p.locator('#lang').getAttribute('aria-label')).endsWith(lang==='fr'?'FR':'EN'),'accessible label announces next language');
+   await p.locator('#lang').focus();await p.keyboard.press('Enter');equal(await p.locator('#lang').getAttribute('value'),lang,'Enter toggles back');await p.keyboard.press('Space');equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','Space toggles language');equal(await p.locator('[data-i18n=homeDailyTitle]').textContent(),lang==='fr'?'Your daily exploration':'L’exploration quotidienne','instant language change');
+   await p.click('#toggleSound');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','language saved');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','sound preference saved');
   } finally {await ctx.close();}
  }
  // Completed/revealed and past sealed chests are real committed fixtures, never UI placeholders.
@@ -54,9 +59,9 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
   const save={...currentSave,'wg-lang':lang};const daily=JSON.parse(save['gf-daily-v1']);daily.days['2026-10-09']={...daily.days['2026-10-07'],number:3,cardOpened:opened};save['gf-daily-v1']=JSON.stringify(daily);
   const ctx=await newContext({viewport:{width:375,height:900},locale:lang, reducedMotion:'reduce',storageState:{cookies:[],origins:[{origin,localStorage:Object.entries(save).map(([name,value])=>({name,value}))}]}});
   try {const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T23:59:57Z')});await p.clock.pauseAt(new Date('2026-10-09T23:59:58Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();const before=await snapshot(p);
-   equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Voir mon résultat':'View my result','completed Daily action');check(await p.locator('#dailyCompleted').isVisible(),'real result shown');
+   equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Voir mon résultat':'View my result','completed Daily action');equal(await p.locator('#dailyCompleted,#dailyHomeScore,#dailyHomeErrors,#dailyHomeTiles').count(),0,'completed Daily summary omitted from home');check(await p.locator('.daily-home-streak').isVisible(),'completed Daily keeps visible streak');
    if(captures)await p.screenshot({path:`${captures}/daily-${opened?'opened':'sealed'}-${lang}.png`,fullPage:true});
-   await p.click('#chooseDaily');await p.locator('#final').waitFor({state:'visible'});check(await p.locator(opened?'#cardReveal':'#dailyChest').isVisible(),'correct real chest state');await p.click('#brand');
+   await p.click('#chooseDaily');await p.locator('#final').waitFor({state:'visible'});check(await p.locator(opened?'#cardReveal':'#dailyChest').isVisible(),'correct real chest state');equal(await p.locator('#finalScore').textContent(),`${daily.days['2026-10-09'].score} / 100`,'full Daily score remains in result');check(await p.locator('#dailyFinalErrors').isVisible(),'errors remain in result');equal(await p.locator('#dailyFinalTiles .daily-mark').count(),5,'country marks remain in result');await p.click('#brand');
    await p.clock.runFor(3000);equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Jouer le Daily':'Play the Daily','next UTC day available');check(await p.locator('#resumeDailyChest').isVisible()===!opened,'past sealed chest preserved');equal(await snapshot(p),before,'UTC rollover never credits or resets');
   }finally{await ctx.close();}
  }

@@ -1,3 +1,4 @@
+import {setLanguage} from './language-control.mjs';
 import {currentSave} from './save-fixtures.mjs';
 export async function testBonusIntegration({newContext,url,tap,check,equal,telemetry,core}) {
  const origin=new URL(url).origin;
@@ -38,7 +39,7 @@ export async function testBonusIntegration({newContext,url,tap,check,equal,telem
    const b=await snapshot(p);
    equal(await p.locator('[data-i18n="practiceBonusText"]').count(),0,'explanatory paragraph removed');
    equal(await p.locator('#homeBonusProgress').textContent(),"Coffres bonus obtenus : 0/2 aujourd'hui",'French home quota only');
-   await p.selectOption('#lang','en');equal(await p.locator('#homeBonusProgress').textContent(),'Bonus chests earned: 0/2 today','English home quota');await p.selectOption('#lang','fr');
+   await setLanguage(p,'en');equal(await p.locator('#homeBonusProgress').textContent(),'Bonus chests earned: 0/2 today','English home quota');await setLanguage(p,'fr');
    await practice(p);await repeat(p,9);let s=await snapshot(p);equal(s.bonus.progress,9,'nine correct = 9');equal(chests(s).length,0,'nine no chest');check((await p.locator('#practiceBonusProgress').textContent()).includes('9/10'),'discreet 9/10');
    await answer(p,false);s=await snapshot(p);equal(s.bonus.progress,0,'tenth resets');equal(chests(s).length,1,'tenth chest');equal(s.collection,b.collection,'attribution does not credit');equal(s.bonus.grantsByDay['2026-10-09'],1,'first quota');check((await p.locator('#practiceChestNotice').textContent()).includes('enregistré'),'only confirmed notice');
    await sealed(p);equal(await p.locator('#map [data-iso=FRA]').evaluate(el=>getComputedStyle(el).fill),'rgb(74, 222, 128)','found country remains green with bonus dialog');await p.click('#closeBonusRewards');await p.click('#next');
