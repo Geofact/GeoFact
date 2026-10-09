@@ -1,5 +1,15 @@
 globalThis.GeoFactTranslations = {
   fr: {
+    resumeDailyChest: 'Ouvrir mon coffre Daily du {date}',
+    rewardLoading: 'Chargement des sauvegardes…',
+    collectionUnavailable: 'Collection indisponible : tes sauvegardes ne sont pas remplacées.',
+    rewardImportFailed: 'Impossible d’importer les sauvegardes. Elles sont conservées ; aucune collection vide ne les remplace.',
+    rewardUnavailable: 'Sauvegarde des récompenses indisponible. Tes données existantes sont conservées.',
+    rewardSaveFailed: 'Récompense non confirmée : impossible de sauvegarder ce Daily. Réessaie avant de quitter.',
+    rewardRevealFailed: 'Impossible de sauvegarder la révélation du coffre. Réessaie ; la carte déjà enregistrée est conservée.',
+    rewardRetry: 'Réessayer la sauvegarde',
+    legacyRewardWarning: 'Une ancienne sauvegarde a changé. La collection IndexedDB est conservée, sans fusion automatique. Ferme les anciens onglets.',
+
     neighbour: "Tout près ! C'est un pays voisin.",
     publicStats: 'Stats',
     publicStatsKicker: 'GeoFact en chiffres',
@@ -41,6 +51,16 @@ globalThis.GeoFactTranslations = {
     against: 'Score de ton ami : {score} / 100', loading: 'Chargement…'
   },
   en: {
+    resumeDailyChest: 'Open my Daily chest from {date}',
+    rewardLoading: 'Loading saved progress…',
+    collectionUnavailable: 'Collection unavailable: your saves have not been replaced.',
+    rewardImportFailed: 'Unable to import your saves. They are preserved; no empty collection replaces them.',
+    rewardUnavailable: 'Reward storage is unavailable. Your existing data is preserved.',
+    rewardSaveFailed: 'Reward not confirmed: unable to save this Daily. Retry before leaving.',
+    rewardRevealFailed: 'Unable to save the chest reveal. Retry; the previously saved card is preserved.',
+    rewardRetry: 'Retry saving',
+    legacyRewardWarning: 'An old save has changed. The IndexedDB collection is preserved without automatic merging. Close old tabs.',
+
     neighbour: "Very close! It's a neighbouring country.",
     publicStats: 'Stats',
     publicStatsKicker: 'GeoFact by the numbers',

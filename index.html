@@ -50,6 +50,7 @@
       <div class="daily-card" id="dailyCard">
         <div class="daily-top"><strong class="daily-label"><span class="daily-chest-mark" aria-hidden="true"><i></i></span><span data-i18n="daily">Daily</span></strong><span id="dailyNumber" class="daily-number"></span></div>
         <p data-i18n="dailyDescription">5 pays · Les mêmes pour tout le monde</p>
+        <button id="resumeDailyChest" class="secondary hidden" type="button"></button>
         <button id="chooseDaily" class="primary daily-button" data-i18n="dailyPlay">Jouer le Daily</button>
         <div id="dailyCompleted" class="daily-completed hidden">
           <div class="daily-score-lockup"><strong id="dailyHomeScore"></strong><span id="dailyHomeErrors" class="daily-errors"></span></div>
@@ -126,6 +127,7 @@
       <p class="versus hidden" id="versus"></p><p class="hidden" id="opponentScore"></p>
       <div class="actions final-actions"><button id="challengeFriend" class="primary" data-i18n="challengeFriend">Défier un ami</button><button id="replay" class="secondary" data-i18n="replay">Rejouer</button><button class="secondary" data-home data-i18n="home">Accueil</button></div>
     </section>
+    <p id="rewardStatus" class="hidden" role="status"></p><button id="retryRewards" class="secondary hidden" type="button"></button>
     <div id="toast" class="toast hidden" role="status"></div>
   <div id="howModal" class="how-modal hidden" role="dialog" aria-modal="true" aria-labelledby="howTitle"><div class="how-sheet"><button id="closeHow" class="how-close" type="button" aria-label="Fermer">×</button><span class="home-kicker" data-i18n="howKicker">GeoFact en 1 minute</span><h2 id="howTitle" data-i18n="howTitle">Comment jouer ?</h2><div class="how-grid"><article><b data-i18n="howDailyTitle">Daily</b><p data-i18n="howDailyText">Trouve les 5 pays du jour sur la carte. Une erreur coûte des points selon ta distance. Termine le Daily pour ouvrir ton coffre quotidien.</p></article><article><b data-i18n="howPracticeTitle">Entraînement</b><p data-i18n="howPracticeText">Joue sans limite, par difficulté ou avec les pays que tu choisis toi-même. Aucun score à protéger.</p></article><article><b data-i18n="howChallengeTitle">Défie tes amis</b><p data-i18n="howChallengeText">Joue 5 pays puis partage ton lien. Ton ami reçoit exactement la même série et tente de battre ton score.</p></article><article><b data-i18n="howMapTitle">Sur la carte</b><p data-i18n="howMapText">Clique ou touche le pays que tu penses juste. Si tu te trompes, GeoFact t’indique la distance. Tu peux déplacer et zoomer la carte.</p></article><article><b data-i18n="howFactsTitle">Apprends</b><p data-i18n="howFactsText">Quand tu trouves un pays, découvre un fait surprenant et partage-le si tu veux.</p></article><article><b data-i18n="howCollectionTitle">Collection</b><p data-i18n="howCollectionText">Chaque Daily terminé donne un coffre. Ton score améliore tes chances de tirer une carte Silver, Gold ou Shiny.</p></article></div></div></div>
 
@@ -136,9 +138,9 @@
   <script src="data/borders.js"></script>
   <script src="data/facts.js"></script>
   <script src="data/flag-cards.js"></script>
-  <script src="i18n.js?v=stats-20261008b"></script>
+  <script src="i18n.js?v=rewards-4b4"></script>
   <script src="core.js"></script>
   <script src="map.js"></script>
-  <script src="app.js?v=stats-20261008b"></script>
+  <script src="app.js?v=rewards-4b4"></script>
 </body>
 </html>

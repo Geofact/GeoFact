@@ -8,6 +8,7 @@ import {testHighlight} from './highlight.mjs';
 import {testBorders} from './borders.mjs';
 import {testRepository} from './repository.mjs';
 import {testLegacyImport} from './legacy-import.mjs';
+import {testDailyStorage} from './daily-storage.mjs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const browserTypes = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -202,11 +203,12 @@ try {
   }
 
   console.log('Existing saves, Daily rewards and storage failures…');
+  const rewardSnapshot=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs');const repo=await openRewardRepository();try{return await repo.read();}finally{repo.close();}});
   const snapshot=p=>p.evaluate(()=>Object.fromEntries(Object.entries(localStorage)));
   async function savedContext(seed, {quotaExceeded=false}={}) {
     const ctx=await newContext({locale:'fr-FR',storageState:{cookies:[],origins:[{origin:new URL(url).origin,localStorage:Object.entries(seed).map(([name,value])=>({name,value}))}]}});
     if(quotaExceeded) await ctx.addInitScript(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota exceeded','QuotaExceededError');};});
-    const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-08T12:00:00Z')});await p.goto(url);
+    const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-08T12:00:00Z')});await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
     return {ctx,p};
   }
   for(const [label,seed] of [['current',currentSave],['legacy',legacySave]]) {
@@ -241,10 +243,12 @@ try {
   for(const iso of dailySeries) { await tap(iso,'touch',dailyPage);await dailyPage.locator('#result').waitFor({state:'visible'});await dailyPage.click('#next'); }
   await dailyPage.locator('#final').waitFor({state:'visible'});
   equal(await dailyPage.locator('#map .country-found, #map .country-correct').count(),0,'finishing Daily clears the answer');
-  const earned=await snapshot(dailyPage),daily=JSON.parse(earned['gf-daily-v1']);
+  const earned=await snapshot(dailyPage),earnedState=await rewardSnapshot(dailyPage),daily=earnedState.daily;
+  equal(earned['gf-collection-v1'],currentSave['gf-collection-v1'],'Daily leaves old collection untouched');
+  equal(earned['gf-daily-v1'],currentSave['gf-daily-v1'],'Daily leaves old history untouched');
   equal(daily.days['2026-10-07'],JSON.parse(currentSave['gf-daily-v1']).days['2026-10-07'],'historical Daily preserved');
   equal([daily.played,daily.streak,daily.bestStreak],[8,4,5],'Daily counters extend existing history');
-  const newCollection=JSON.parse(earned['gf-collection-v1']),oldCollection=JSON.parse(currentSave['gf-collection-v1']);
+  const newCollection=earnedState.collection,oldCollection=JSON.parse(currentSave['gf-collection-v1']);
   let addedCopies=0;
   for(const [iso,entry] of Object.entries(newCollection)) {
     for(const [rarity,count] of Object.entries(entry.counts)) addedCopies+=count-(oldCollection[iso]?.counts[rarity]||0);
@@ -262,9 +266,9 @@ try {
   const openedBefore=telemetry.filter(e=>e.body?.p_event_type==='chest_opened').length;
   await dailyPage.locator('#openChest').evaluate(button=>{button.click();button.click();});
   await dailyPage.locator('#cardReveal').waitFor({state:'visible'});
-  equal(JSON.parse((await snapshot(dailyPage))['gf-daily-v1']).days['2026-10-08'].cardOpened,true,'chest opening saved');
+  equal((await rewardSnapshot(dailyPage)).daily.days['2026-10-08'].cardOpened,true,'chest opening saved');
   equal(telemetry.filter(e=>e.body?.p_event_type==='chest_opened').length-openedBefore,1,'double click records a single opening');
-  equal((await snapshot(dailyPage))['gf-collection-v1'],earned['gf-collection-v1'],'opening does not award another card');
+  equal((await rewardSnapshot(dailyPage)).collection,earnedState.collection,'opening does not award another card');
   const opened=await snapshot(dailyPage);await dailyPage.reload();await dailyPage.click('#chooseDaily');await dailyPage.locator('#final').waitFor({state:'visible'});
   equal(await snapshot(dailyPage),opened,'completed Daily replay does not alter saves or reward again');
   await dailyContext.close();
@@ -295,6 +299,7 @@ try {
   console.log('Isolated transactional reward repository…');
   await testRepository({newContext,url,check,equal});
   await testLegacyImport({newContext,url,check,equal});
+  await testDailyStorage({newContext,url,tap,check,equal,telemetry});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');

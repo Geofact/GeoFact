@@ -53,37 +53,56 @@
   const bestScores = storage.read('gf-best-scores', {});
   // One-time transparent migration from the historical 5,000-point scale to 100.
   for (const key of Object.keys(bestScores)) if (Number.isSafeInteger(bestScores[key]) && bestScores[key] > core.SCORE_MAX) bestScores[key] = Math.round(bestScores[key] / 50);
-  const storedDaily = storage.read('gf-daily-v1', {});
-  const dailyData = storedDaily && typeof storedDaily === 'object' ? storedDaily : {};
-  if (!dailyData.days || typeof dailyData.days !== 'object') dailyData.days = {};
-  if (!Number.isSafeInteger(dailyData.played)) dailyData.played = Object.keys(dailyData.days).length;
-  if (!Number.isSafeInteger(dailyData.streak)) dailyData.streak = 0;
-  if (!Number.isSafeInteger(dailyData.bestStreak)) dailyData.bestStreak = 0;
-  for (const day of Object.values(dailyData.days)) if (day && Number.isSafeInteger(day.score) && day.score > core.SCORE_MAX) day.score = Math.round(day.score / 50);
-  const storedCollection = storage.read('gf-collection-v1', {});
-  const collection = storedCollection && typeof storedCollection === 'object' && !Array.isArray(storedCollection) ? storedCollection : {};
+  let dailyData = {days:{},played:0,streak:0,bestStreak:0}, collection = null;
   const rarityRank = { classic: 0, silver: 1, gold: 2, shiny: 3 };
   const rarities = ['classic', 'silver', 'gold', 'shiny'];
-  // Migrate the first collection prototype (one best rarity per country) without losing cards.
-  for (const [iso, entry] of Object.entries(collection)) {
-    if (entry?.rarity && !Array.isArray(entry.rarities)) entry.rarities = [entry.rarity];
-    if (entry && Array.isArray(entry.rarities)) entry.rarities = [...new Set(entry.rarities.filter(r => rarities.includes(r)))];
-    if (entry && Array.isArray(entry.rarities)) {
-      const previous = entry.counts && typeof entry.counts === 'object' ? entry.counts : {};
-      entry.counts = Object.fromEntries(entry.rarities.map(r => [r, Number.isSafeInteger(previous[r]) && previous[r] > 0 ? previous[r] : 1]));
-    }
+  let rewardsRepository, rewardsLoading = true, rewardError = null, legacyWarning = false;
+  let nextBusy = false, rewardModules;
+  let rewardChannel = null, rewardRevision = -1;
+  try { if (typeof BroadcastChannel === 'function') rewardChannel = new BroadcastChannel('geofact-rewards'); } catch { /* Focus/navigation still refresh the canonical state. */ }
+  function applyRewardSnapshot(snapshot) {
+    if (snapshot.revision < rewardRevision) return;
+    rewardRevision = snapshot.revision;
+    collection = snapshot.collection;
+    dailyData = structuredClone(snapshot.daily);
+    // Display historical 5,000-point results using the existing conversion, without rewriting them.
+    for (const result of Object.values(dailyData.days)) if(result.score > core.SCORE_MAX) result.score = Math.round(result.score / 50);
   }
-  function cardCopies(iso, rarity) { const n = collection[iso]?.counts?.[rarity]; return Number.isSafeInteger(n) && n > 0 ? n : (ownedRarities(iso).includes(rarity) ? 1 : 0); }
-  function ownedRarities(iso) { return Array.isArray(collection[iso]?.rarities) ? collection[iso].rarities : []; }
+  async function initializeRewards() {
+    rewardsLoading = true; rewardError = null; render();
+    try {
+      rewardModules ||= Promise.all([import('./reward-repository.mjs'), import('./daily-rewards.mjs')]);
+      const [repositoryModule] = await rewardModules;
+      rewardsRepository?.close(); rewardsRepository = await repositoryModule.openRewardRepository();
+      let snapshot = await rewardsRepository.read();
+      if (!snapshot.dailyActive) { await rewardsRepository.activateDaily(localStorage); snapshot = await rewardsRepository.read(); }
+      applyRewardSnapshot(snapshot);
+      try {
+        legacyWarning = Object.entries(snapshot.legacyImport.raw).some(([key,value]) => localStorage.getItem(key) !== value);
+      } catch { /* IndexedDB remains authoritative after a completed migration. */ }
+    } catch (error) { rewardError = ['INVALID_LEGACY_SAVES','LEGACY_SOURCE_CHANGED','IMPORT_TARGET_NOT_EMPTY'].includes(error.code) ? 'rewardImportFailed' : 'rewardUnavailable'; }
+    finally { rewardsLoading = false; render(); }
+  }
+  async function refreshRewards() {
+    if (!rewardsRepository || rewardsLoading || rewardError) return;
+    try { applyRewardSnapshot(await rewardsRepository.read()); render(); }
+    catch { rewardError = 'rewardUnavailable'; render(); }
+  }
+  rewardChannel?.addEventListener('message', refreshRewards);
+  window.addEventListener('focus', refreshRewards);
+  window.addEventListener('storage', event => {
+    if (['gf-collection-v1','gf-daily-v1'].includes(event.key)) { legacyWarning = true; render(); }
+  });
+  function cardCopies(iso, rarity) { const n = collection?.[iso]?.counts?.[rarity]; return Number.isSafeInteger(n) && n > 0 ? n : (ownedRarities(iso).includes(rarity) ? 1 : 0); }
+  function ownedRarities(iso) { return Array.isArray(collection?.[iso]?.rarities) ? collection?.[iso].rarities : []; }
   function bestRarity(iso) { return ownedRarities(iso).reduce((best, r) => best == null || rarityRank[r] > rarityRank[best] ? r : best, null); }
   function acquiredAt(iso, rarity) {
-    const times = collection[iso]?.acquiredAt;
+    const times = collection?.[iso]?.acquiredAt;
     if (times && Number.isFinite(times[rarity])) return times[rarity];
-    return collection[iso]?.firstUnlocked ? Date.parse(collection[iso].firstUnlocked) || 0 : 0;
+    return collection?.[iso]?.firstUnlocked ? Date.parse(collection?.[iso].firstUnlocked) || 0 : 0;
   }
   let justUnlockedCard = false;
   let finalWasRecord = false;
-  let viewingDailyResult = false;
   let renderedDailyKey = core.utcDayKey();
   function blankState() {
     return { screen: 'home', mode: null, difficulty: 'easy', series: [], queue: [], index: 0, current: null,
@@ -176,19 +195,13 @@
       renderDailyMarks($('dailyHomeTiles'), daily.result.tiles);
       $('dailyHomeErrors').textContent = Number.isSafeInteger(daily.result.errors) ? dailyErrorsText(daily.result.errors) : '';
     }
+    const oldPending = Object.entries(dailyData.days).filter(([key,r]) => key !== daily.key && r.card && !r.cardOpened).sort(([a],[b])=>a.localeCompare(b))[0];
+    $('resumeDailyChest').classList.toggle('hidden', !oldPending);
+    if(oldPending) { $('resumeDailyChest').dataset.day = oldPending[0]; $('resumeDailyChest').textContent = t('resumeDailyChest',{date:oldPending[0]}); }
     updateCountdown();
   }
   function cardFlag(iso) { return flag(byISO.get(iso)); }
   function rarityLabel(rarity) { return ({ classic: 'Classic', silver: 'Silver', gold: 'Gold', shiny: 'Shiny' })[rarity] || rarity; }
-  function rollRarity(score, random = Math.random) {
-    const q = Math.max(0, Math.min(1, score / core.SCORE_MAX));
-    const shiny = .005 + .035 * q, gold = .05 + .11 * q, silver = .20 + .10 * q;
-    const r = random();
-    if (r < shiny) return 'shiny';
-    if (r < shiny + gold) return 'gold';
-    if (r < shiny + gold + silver) return 'silver';
-    return 'classic';
-  }
   function randomUnit() {
     try {
       if (globalThis.crypto?.getRandomValues) {
@@ -199,21 +212,12 @@
     } catch { /* Fall back for restricted local-file contexts. */ }
     return Math.random();
   }
-  function awardDailyCard(score) {
-    // Daily countries are shared worldwide; the chest reward is intentionally personal.
-    // Two players with the same Daily score can receive different countries/rarities.
-    const pool = Object.keys(flagCards), iso = pool[Math.floor(randomUnit() * pool.length)], rarity = rollRarity(score, randomUnit);
-    const owned = ownedRarities(iso);
-    const isNew = !owned.includes(rarity);
-    const firstUnlocked = collection[iso]?.firstUnlocked || core.utcDayKey();
-    const acquiredAt = { ...(collection[iso]?.acquiredAt || {}) };
-    if (isNew) acquiredAt[rarity] = Date.now();
-    const counts = { ...(collection[iso]?.counts || {}) };
-    counts[rarity] = (Number.isSafeInteger(counts[rarity]) && counts[rarity] > 0 ? counts[rarity] : (isNew ? 0 : 1)) + 1;
-    collection[iso] = { ...collection[iso], rarities: isNew ? [...owned, rarity] : owned, firstUnlocked, acquiredAt, counts };
-    storage.write('gf-collection-v1', collection);
-    return { iso, rarity, upgraded: isNew, copies: counts[rarity] };
+  async function awardDailyCard(score) {
+    const [,rules] = await rewardModules;
+    const pool = Object.keys(flagCards);
+    return {iso:pool[Math.floor(randomUnit()*pool.length)],rarity:rules.rollDailyRarity(score,randomUnit())};
   }
+  function selectedDailyResult() { return dailyData.days[state.dailyKey] || null; }
   function cardElement(iso, rarity, detailed = false) {
     const c = byISO.get(iso), data = flagCards[iso], article = document.createElement('article');
     article.className = `flag-card ${rarity}`;
@@ -266,6 +270,7 @@
   }
   function renderCollection() {
     const grid = $('collectionGrid'); if (!grid) return; grid.replaceChildren();
+    if (collection === null) { $('collectionCount').textContent = t(rewardsLoading ? 'rewardLoading' : 'collectionUnavailable'); return; }
     const unlocked = Object.keys(collection).filter(iso => flagCards[iso] && ownedRarities(iso).length);
     const cardCount = unlocked.reduce((sum, iso) => sum + ownedRarities(iso).length, 0);
     $('collectionCount').textContent = t('collectionCount', { count: format(cardCount), total: format(countries.length * rarities.length) });
@@ -294,6 +299,15 @@
     const reveal = $('cardReveal'); reveal.dataset.rarity = result.card.rarity; const revealedCard=cardElement(result.card.iso, result.card.rarity, true); revealedCard.classList.add('zoomable-card'); revealedCard.tabIndex=0; revealedCard.setAttribute('role','button'); revealedCard.addEventListener('click',()=>openCardModal(result.card.iso,result.card.rarity)); reveal.replaceChildren(revealedCard); const collectionButton=document.createElement('button'); collectionButton.className='secondary reveal-collection'; collectionButton.textContent=t('openCollectionNow'); collectionButton.addEventListener('click',()=>{ state=blankState(); state.screen='collection'; render(); }); reveal.appendChild(collectionButton); reveal.classList.remove('hidden');
     $('dailyChest').classList.add('hidden');
   }
+  function renderRewardStatus() {
+    $('chooseDaily').disabled = rewardsLoading;
+    const message = rewardError || (rewardsLoading ? 'rewardLoading' : legacyWarning ? 'legacyRewardWarning' : null);
+    $('rewardStatus').textContent = message ? t(message) : '';
+    $('rewardStatus').classList.toggle('hidden', !message);
+    $('retryRewards').classList.toggle('hidden', !rewardError);
+    $('retryRewards').textContent = t('rewardRetry');
+    $('retryRewards').disabled = nextBusy || rewardsLoading;
+  }
   function render() {
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
@@ -305,6 +319,8 @@
     for (const id of ['home', 'publicStats', 'collection', 'practiceSetup', 'difficulty', 'challengeIntro', 'playing', 'final']) $(id).classList.toggle('hidden', id !== state.screen);
     $('modeTitle').textContent = state.mode === 'practice' ? t('practice') : t('game');
     renderDailyHome();
+    renderRewardStatus();
+    if (collection === null) for (const id of ['dailyStreak','dailyBestStreak','dailyPlayed']) $(id).textContent = '—';
     renderCollection();
     $('mapHint').textContent = t(matchMedia('(pointer: coarse)').matches ? 'mapHint' : 'mapHintDesktop');
     const game = state.mode === 'game' || state.mode === 'daily';
@@ -369,12 +385,14 @@
         $('dailyFinalErrors').textContent = dailyErrorsText(state.dailyErrors);
         $('dailyFinalStats').innerHTML = `<span>🔥 <b>${t('dailyStreak')}</b> <strong>${format(activeDailyStreak())}</strong></span><span>🏆 <b>${t('dailyBestStreak')}</b> <strong>${format(dailyData.bestStreak)}</strong></span><span>✓ <b>${t('dailyPlayed')}</b> <strong>${format(dailyData.played)}</strong></span>`;
         $('challengeFriend').textContent = t('dailyShare');
-        const dailyResult = todayDaily().result;
+        const dailyResult = selectedDailyResult();
         const hasCard = !!dailyResult?.card;
         const opened = !!dailyResult?.cardOpened;
-        $('dailyChest').classList.toggle('hidden', !hasCard || opened || viewingDailyResult);
-        $('cardReveal').classList.toggle('hidden', !hasCard || !opened || viewingDailyResult);
-        if (hasCard && opened && !viewingDailyResult) revealDailyCard(dailyResult);
+        if (!$('openChest').classList.contains('opening')) {
+        $('dailyChest').classList.toggle('hidden', !hasCard || opened);
+        $('cardReveal').classList.toggle('hidden', !hasCard || !opened);
+        if (hasCard && opened) revealDailyCard(dailyResult);
+        }
       } else {
         $('dailyChest').classList.add('hidden'); $('cardReveal').classList.add('hidden');
         $('dailyFinalErrors').classList.add('hidden');
@@ -396,7 +414,7 @@
   function clearURL() {
     try { const url = new URL(location.href); url.search = ''; url.hash = ''; history.replaceState(null, '', url); } catch { /* Some browsers restrict file URL history. */ }
   }
-  function home() { state = blankState(); viewingDailyResult = false; justUnlockedCard = false; map.reset(); clearURL(); render(); $('chooseDaily').focus({ preventScroll: true }); }
+  function home() { state = blankState(); justUnlockedCard = false; map.reset(); clearURL(); render(); $('chooseDaily').focus({ preventScroll: true }); }
 
   function transitionFromHome(action) {
     const homeEl = $('home');
@@ -417,7 +435,8 @@
     recordEvent(mode === 'daily' ? 'daily_started' : 'game_started');
     const pool = Array.isArray(customPool) && customPool.length ? [...customPool] : countries.filter(c => c.difficulty === difficulty).map(c => c.iso);
     state.practicePool = mode === 'practice' ? [...pool] : [];
-    state.series = challenge ? [...challenge.c] : mode === 'daily' ? core.dailySeries(countries) : mode === 'game' ? core.shuffle(pool).slice(0, 5) : [];
+    if (mode === 'daily') { const daily = todayDaily(); state.dailyKey = daily.key; state.dailyNumber = daily.number; }
+    state.series = challenge ? [...challenge.c] : mode === 'daily' ? core.dailySeries(countries, new Date(state.dailyKey+'T12:00:00Z')) : mode === 'game' ? core.shuffle(pool).slice(0, 5) : [];
     state.queue = mode === 'practice' ? core.shuffle(pool) : [];
     round();
   }
@@ -456,35 +475,39 @@
     }
     if (state.answered) celebrateCorrect(iso);
   }
-  function next() {
-    if (!state.answered) return;
-    state.index++;
-    if ((state.mode === 'game' || state.mode === 'daily') && state.index === 5) {
-      if (state.mode === 'daily') {
-        const daily = todayDaily();
-        if (!dailyData.days[daily.key]) {
-          const yesterday = core.utcDayKey(new Date(Date.now() - 86400000));
-          dailyData.streak = dailyData.lastDate === yesterday ? dailyData.streak + 1 : 1;
-          dailyData.bestStreak = Math.max(dailyData.bestStreak, dailyData.streak);
-          dailyData.played += 1; dailyData.lastDate = daily.key;
-          const card = awardDailyCard(state.score);
-          dailyData.days[daily.key] = { score: state.score, tiles: [...state.dailyTiles], errors: state.dailyErrors, number: daily.number, card, cardOpened: false };
-          storage.write('gf-daily-v1', dailyData);
-          recordEvent('daily_completed');
-        }
-      } else {
-        recordEvent('challenge_completed');
-        const previous = Number.isSafeInteger(bestScores[state.difficulty]) ? bestScores[state.difficulty] : 0;
-        finalWasRecord = state.score > previous;
-        if (finalWasRecord) { bestScores[state.difficulty] = state.score; storage.write('gf-best-scores', bestScores); }
+  async function saveDaily(gameState) {
+    try {
+      if (!rewardsRepository || rewardError || rewardsLoading) throw new Error('Rewards unavailable');
+      if (!gameState.pendingDaily) gameState.pendingDaily = {day:gameState.dailyKey,number:gameState.dailyNumber,score:gameState.score,
+        tiles:[...gameState.dailyTiles],errors:gameState.dailyErrors,at:Date.now(),card:await awardDailyCard(gameState.score)};
+      const outcome = await rewardsRepository.completeDaily(gameState.pendingDaily);
+      applyRewardSnapshot(await rewardsRepository.read()); gameState.pendingDaily = null; rewardError = null;
+      if (outcome.status === 'completed') recordEvent('daily_completed');
+      rewardChannel?.postMessage('changed');
+      if (state === gameState) {
+        state.score = outcome.result.score; state.dailyTiles = [...outcome.result.tiles]; state.dailyErrors = outcome.result.errors;
       }
-      state.screen = 'final'; render(); $('challengeFriend').focus({ preventScroll: true });
+      return true;
+    } catch { rewardError = 'rewardSaveFailed'; return false; }
+  }
+  async function next() {
+    if (!state.answered || nextBusy) return;
+    const gameState = state;
+    if ((state.mode === 'game' || state.mode === 'daily') && state.index === 4) {
+      nextBusy = true; $('next').disabled = true;
+      try {
+        if (state.mode === 'daily') await saveDaily(gameState);
+        else {
+          recordEvent('challenge_completed');
+          const previous = Number.isSafeInteger(bestScores[state.difficulty]) ? bestScores[state.difficulty] : 0;
+          finalWasRecord = state.score > previous;
+          if (finalWasRecord) { bestScores[state.difficulty] = state.score; storage.write('gf-best-scores', bestScores); }
+        }
+        if (state === gameState) { state.screen = 'final'; render(); $('challengeFriend').focus({ preventScroll: true }); }
+      } finally { nextBusy = false; $('next').disabled = false; }
     } else {
-      round();
-      setTimeout(() => {
-        const mapWrap = $('map')?.closest('.map-wrap');
-        scrollToElement(mapWrap || $('playing'), 'center');
-      }, 80);
+      state.index++; round();
+      setTimeout(() => { const mapWrap = $('map')?.closest('.map-wrap'); scrollToElement(mapWrap || $('playing'), 'center'); }, 80);
     }
   }
   function baseURL() { const url = new URL(location.href); url.search = ''; url.hash = ''; return url; }
@@ -496,7 +519,7 @@
     if (state.screen !== 'final') return null;
     const url = baseURL();
     if (state.mode === 'daily') {
-      const daily = todayDaily(), result = dailyData.days[daily.key] || { score: state.score, tiles: state.dailyTiles, errors: state.dailyErrors, number: daily.number };
+      const daily = {number:state.dailyNumber}, result = selectedDailyResult() || { score: state.score, tiles: state.dailyTiles, errors: state.dailyErrors, number: daily.number };
       const marks = result.tiles.map(normalizeDailyMark).map(core.dailyShareCircle).join('');
       const errors = Number.isSafeInteger(result.errors) ? result.errors : state.dailyErrors;
       return { title: 'GeoFact Daily', text: t('dailyShareText', { number: result.number, score: format(result.score), errors: dailyErrorsText(errors), tiles: marks, streak: format(activeDailyStreak()) }), url: url.href };
@@ -550,11 +573,19 @@
   }
   $('openPublicStats').addEventListener('click', () => { state = blankState(); state.screen = 'publicStats'; render(); loadPublicStats(); });
   $('statsPeriod').addEventListener('change', loadPublicStats);
-  $('chooseDaily').addEventListener('click', () => {
+  $('chooseDaily').addEventListener('click', async () => {
+    await refreshRewards();
     const daily = todayDaily();
     if (daily.result) {
-      state = blankState(); state.mode = 'daily'; state.series = daily.series; state.score = daily.result.score; state.dailyTiles = [...daily.result.tiles].map(normalizeDailyMark); state.dailyErrors = Number.isSafeInteger(daily.result.errors) ? daily.result.errors : 0; state.screen = 'final'; viewingDailyResult = true; render();
-    } else { viewingDailyResult = false; transitionFromHome(() => start('daily', 'daily')); }
+      state = blankState(); state.mode = 'daily'; state.dailyKey = daily.key; state.dailyNumber = daily.number; state.series = daily.series; state.score = daily.result.score; state.dailyTiles = [...daily.result.tiles].map(normalizeDailyMark); state.dailyErrors = Number.isSafeInteger(daily.result.errors) ? daily.result.errors : 0; state.screen = 'final'; render();
+    } else { transitionFromHome(() => start('daily', 'daily')); }
+  });
+  $('resumeDailyChest').addEventListener('click', async () => {
+    const day = $('resumeDailyChest').dataset.day; await refreshRewards();
+    const result = dailyData.days[day]; if (!result?.card || result.cardOpened) return;
+    state = blankState(); state.mode = 'daily'; state.dailyKey = day; state.dailyNumber = result.number;
+    state.score = result.score; state.dailyTiles = [...result.tiles].map(normalizeDailyMark); state.dailyErrors = result.errors || 0;
+    state.screen = 'final'; render();
   });
   $('chooseGame').addEventListener('click', () => transitionFromHome(() => chooseMode('game')));
   $('choosePractice').addEventListener('click', () => transitionFromHome(() => chooseMode('practice')));
@@ -565,20 +596,37 @@
   $('clearPractice')?.addEventListener('click',()=>{ customPracticeSelection.clear(); renderPracticePicker(); });
   $('startCustomPractice')?.addEventListener('click',()=>{ if(customPracticeSelection.size) start('practice','custom',null,[...customPracticeSelection]); });
   document.querySelectorAll('[data-level]').forEach(button => button.addEventListener('click', () => start(state.mode, button.dataset.level)));
-  $('openCollection').addEventListener('click', () => { state = blankState(); state.screen = 'collection'; render(); });
+  $('openCollection').addEventListener('click', async () => { await refreshRewards(); state = blankState(); state.screen = 'collection'; render(); });
   const openHow=()=>{ $('howModal')?.classList.remove('hidden'); document.body.classList.add('modal-open'); };
   const closeHow=()=>{ $('howModal')?.classList.add('hidden'); document.body.classList.remove('modal-open'); };
   $('howToPlay')?.addEventListener('click',openHow); $('closeHow')?.addEventListener('click',closeHow); $('howModal')?.addEventListener('click',e=>{if(e.target===$('howModal')) closeHow();});
   $('openChest').addEventListener('click', async () => {
-    const daily = todayDaily(), result = dailyData.days[daily.key]; if (!result?.card || result.cardOpened || $('openChest').classList.contains('opening')) return;
+    const gameState = state, day = state.dailyKey, result = selectedDailyResult();
+    if (!result?.card || result.cardOpened || $('openChest').classList.contains('opening')) return;
     const button=$('openChest'); button.dataset.rarity=result.card.rarity; button.classList.add('opening'); button.disabled=true;
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    await new Promise(resolve=>setTimeout(resolve,reduced?80:4650));
-    result.cardOpened = true; storage.write('gf-daily-v1', dailyData);
-    recordEvent('chest_opened');
-    $('dailyChest').classList.add('chest-fade');
-    await new Promise(resolve=>setTimeout(resolve,reduced?0:260));
-    revealDailyCard(result); button.classList.remove('opening'); button.disabled=false; $('dailyChest').classList.remove('chest-fade');
+    try {
+      await new Promise(resolve=>setTimeout(resolve,reduced?80:4650));
+      const outcome = await rewardsRepository.revealDaily({day,at:Date.now()});
+      applyRewardSnapshot(await rewardsRepository.read()); rewardError = null; renderRewardStatus();
+      if (outcome.status === 'revealed') recordEvent('chest_opened');
+      rewardChannel?.postMessage('changed');
+      if (state !== gameState) return;
+      $('dailyChest').classList.add('chest-fade');
+      await new Promise(resolve=>setTimeout(resolve,reduced?0:260));
+      if (state === gameState) revealDailyCard(outcome.result);
+    } catch { rewardError = 'rewardRevealFailed'; render(); }
+    finally { button.classList.remove('opening'); button.disabled=false; $('dailyChest').classList.remove('chest-fade'); }
+  });
+  $('retryRewards').addEventListener('click', async () => {
+    if (nextBusy || rewardsLoading) return;
+    const gameState = state; nextBusy = true;
+    try {
+    await initializeRewards();
+    if (!rewardError && gameState === state && state.mode === 'daily' && state.screen === 'final' && !selectedDailyResult()) {
+      await saveDaily(gameState); render();
+    }
+    } finally { nextBusy = false; renderRewardStatus(); }
   });
   $('collectionSort')?.addEventListener('change', renderCollection);
   $('closeCardModal')?.addEventListener('click', closeCardModal);
@@ -608,6 +656,7 @@
   const challenge = params.getAll('challenge').length === 1 ? core.parseChallenge(params.get('challenge'), countries) : null;
   if (challenge) { state.screen = 'challengeIntro'; state.challenge = challenge; }
   render();
+  initializeRewards();
   recordEvent('visit');
   setInterval(() => { updateCountdown(); const key = core.utcDayKey(); if (key !== renderedDailyKey) { renderedDailyKey = key; if (state.screen === 'home') render(); } }, 1000);
 })();

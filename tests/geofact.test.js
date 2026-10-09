@@ -148,8 +148,10 @@ test('Exploration collection is Daily-only, bilingual and keeps verified source 
   assert.ok(html.includes('id="openChest"'));
   assert.ok(html.includes('id="openCollection"'));
   assert.ok(app.includes("if (state.mode === 'daily')"));
-  assert.ok(app.includes('awardDailyCard(state.score)'));
-  assert.ok(app.includes("storage.write('gf-collection-v1'"));
+  assert.ok(app.includes('rewardsRepository.completeDaily(gameState.pendingDaily)'));
+  assert.ok(!app.includes('rewardsRepository.answer('));
+  assert.ok(!app.includes("storage.write('gf-collection-v1'"));
+  assert.ok(!app.includes("storage.write('gf-daily-v1'"));
   for (const rarity of ['classic','silver','gold','shiny']) assert.ok(app.includes(rarity));
   for (const key of ['collectionCount','chestReady','openChest','newCard']) assert.ok(translations.includes(key));
   assert.ok(cardsSource.includes('source:'));

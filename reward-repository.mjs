@@ -1,5 +1,6 @@
 // Isolated IndexedDB repository. Importing this module never opens a database.
 import {createBonusState,applyBonusAnswer,openBonusChest,bonusProgress,bonusUTCDate} from './bonus-rules.mjs';
+import {completeDailyReward} from './daily-rewards.mjs';
 import {readLegacyRewardValues,prepareLegacyRewards,sameLegacyValues} from './legacy-rewards.mjs';
 
 export const REWARD_DB_VERSION=1;
@@ -174,19 +175,68 @@ export function openRewardRepository({name=REWARD_DB_NAME,indexedDB=globalThis.i
             return {status:'imported',revision:updated.revision};
           });
         },
+        activateDaily:async storage=>{
+          await repository.importLegacy(storage);
+          return transact('readwrite',async({tx,read})=>{
+            const record=await read('state','rewards');validate(record);
+            if(record.dailyActive) return {status:'ready'};
+            // importLegacy deliberately leaves a truly absent source unmarked in 4B.3.
+            // Activation records that empty origin so new players migrate only once.
+            const raw=record.legacyImport?.raw||readLegacyRewardValues(storage);
+            if(!record.legacyImport && (raw['gf-collection-v1']!==null||raw['gf-daily-v1']!==null))
+              throw new RewardStorageError('LEGACY_SOURCE_CHANGED','Saves appeared before activation');
+            const daily={...record.daily,days:record.daily?.days||{},played:record.daily?.played??Object.keys(record.daily?.days||{}).length,
+              streak:record.daily?.streak??0,bestStreak:record.daily?.bestStreak??0};
+            for(const [day,result] of Object.entries(daily.days)) if(result.card)
+              tx.objectStore('chests').add({id:'daily:'+day,type:'daily',earnedDay:day,card:result.card,revealed:!!result.cardOpened,revealedAt:null,imported:true});
+            tx.objectStore('state').put({...record,revision:record.revision+1,daily,dailyActive:1,
+              legacyImport:record.legacyImport||{version:1,raw}});
+            return {status:'ready'};
+          });
+        },
+        completeDaily:input=>{
+          const command=structuredClone(input);
+          return transact('readwrite',async({tx,read})=>{
+            const record=await read('state','rewards');validate(record);
+            if(!record.dailyActive)throw new RewardStorageError('NOT_READY','Daily storage is not activated');
+            let transition;
+            try {transition=completeDailyReward(record.collection,record.daily,command);}
+            catch(cause){throw failure(cause,'INVALID_COMMAND');}
+            if(transition.status==='already-completed')return {status:transition.status,result:transition.result};
+            const id='daily:'+command.day,card=transition.result.card;
+            tx.objectStore('chests').add({id,type:'daily',earnedDay:command.day,card,revealed:false,revealedAt:null,earnedAt:command.at});
+            tx.objectStore('sessions').add({id:'daily-complete:'+command.day,kind:'daily-complete',day:command.day});
+            tx.objectStore('state').put({...record,revision:record.revision+1,collection:transition.collection,daily:transition.daily,
+              credits:{...record.credits,['credit:'+id]:{id:'credit:'+id,chestId:id,iso:card.iso,rarity:card.rarity,acquiredAt:command.at}}});
+            return {status:transition.status,result:transition.result};
+          });
+        },
+        revealDaily:({day,at})=>transact('readwrite',async({tx,read})=>{
+          bonusUTCDate(at);
+          const [record,chest]=await Promise.all([read('state','rewards'),read('chests','daily:'+day)]);validate(record);
+          if(!record.dailyActive||!chest||chest.type!=='daily'||!record.daily.days[day]?.card)
+            throw new RewardStorageError('MISSING_DAILY_CHEST','Daily chest is unavailable');
+          if(chest.revealed)return {status:'already-revealed',result:record.daily.days[day]};
+          const result={...record.daily.days[day],cardOpened:true};
+          tx.objectStore('state').put({...record,revision:record.revision+1,daily:{...record.daily,days:{...record.daily.days,[day]:result}}});
+          tx.objectStore('chests').put({...chest,revealed:true,revealedAt:at});
+          tx.objectStore('sessions').add({id:'daily-reveal:'+day,kind:'daily-reveal',day});
+          return {status:'revealed',result};
+        }),
         answer:(command,catalog)=>mutate('answer',command,catalog),
         openChest:command=>mutate('open',command),
         read:()=>transact('readonly',async({read})=>{
           const [record,chests,sessions]=await Promise.all([read('state','rewards'),read('chests'),read('sessions')]);
           validate(record);
           const bonus={...createBonusState(),progress:record.progress,grantsByDay:record.grantsByDay};
-          for(const chest of chests) bonus.chests[chest.id]=chest;
+          for(const chest of chests) if(chest.type!=='daily') bonus.chests[chest.id]=chest;
           for(const session of sessions) {
             if(session.kind==='operation') Object.defineProperty(bonus.operations,session.id.slice(3),{value:session.value,enumerable:true,writable:true,configurable:true});
             else if(session.kind==='round') Object.defineProperty(bonus.solvedRounds,session.id.slice(6),{value:true,enumerable:true,writable:true,configurable:true});
           }
           return {schemaVersion:record.schemaVersion,revision:record.revision,bonus,collection:record.collection,credits:record.credits,
-            ...(record.legacyImport?{daily:record.daily,legacyImport:record.legacyImport}:{})};
+            ...(record.legacyImport?{daily:record.daily,legacyImport:record.legacyImport}:{}),
+            ...(record.dailyActive?{dailyActive:record.dailyActive,dailyChests:Object.fromEntries(chests.filter(c=>c.type==='daily').map(c=>[c.id,c]))}:{})};
         }),
         export:async()=>({format:'geofact-reward-export',version:1,databaseVersion:REWARD_DB_VERSION,state:await repository.read()}),
         close:()=>{closed=true;db.close();}
