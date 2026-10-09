@@ -82,7 +82,7 @@
   async function initializeRewards() {
     rewardsLoading = true; rewardError = null; render();
     try {
-      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-audit1'), import('./daily-rewards.mjs?v=20261009-audit1'), import('./bonus-rules.mjs?v=20261009-audit1')]);
+      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-fix1'), import('./daily-rewards.mjs?v=20261009-fix1'), import('./bonus-rules.mjs?v=20261009-fix1')]);
       const [repositoryModule,,rules] = await rewardModules; bonusRules = rules;
       rewardsRepository?.close(); rewardsRepository = await repositoryModule.openRewardRepository();
       let snapshot = await rewardsRepository.read();
@@ -135,10 +135,23 @@
   }
   function renderBonusRewards() {
     const info = bonusSnapshot && bonusRules ? bonusRules.bonusProgress(bonusSnapshot,Date.now()) : null;
-    const resetPending = pendingPractice.some(c=>!c.correct);
-    const progress = info ? `${resetPending?0:info.progress}/${info.target}` : '—/10';
-    const detail = info ? t(info.paused?'bonusPaused':'bonusQuota',{count:info.obtained,limit:info.limit}) : t('rewardLoading');
-    for (const id of ['practiceBonusProgress','homeBonusProgress']) $(id).textContent = `${t('bonusProgress')} ${progress} · ${detail}${pendingPractice.length?' · '+t('bonusSaving'):''}`;
+    // Preview pending answers with the same pure rules; only committed quotas/chests are confirmed.
+    let preview = bonusSnapshot, displayedProgress = info?.progress;
+    if (preview && bonusRules) for (const command of pendingPractice) {
+      try {
+        const transition = bonusRules.applyBonusAnswer(preview,command,Object.keys(flagCards));
+        preview = transition.state;
+        displayedProgress = transition.chest && transition.status === 'applied' ? 10 : preview.progress;
+      } catch { break; } // Recovery errors are displayed separately; never invent a saved reward.
+    }
+    const quota = {count:info?.obtained ?? '—',limit:info?.limit ?? 2};
+    $('homeBonusProgress').textContent = t('bonusHomeQuota',quota);
+    $('practiceBonusQuota').textContent = t('bonusPracticeQuota',quota);
+    const streakText = t('bonusPracticeStreak',{count:displayedProgress ?? '—',target:info?.target ?? 10});
+    $('practiceBonusProgress').textContent = streakText;
+    $('practiceBonusMeter').value = displayedProgress ?? 0;
+    $('practiceBonusMeter').setAttribute('aria-label',streakText);
+    $('practiceBonusSaving').textContent = pendingPractice.length ? t(practiceBlocked ? 'bonusPending' : 'bonusSaving') : '';
     $('practiceBonus').classList.toggle('hidden',state.mode!=='practice'||state.screen!=='playing');
     const available = Object.values(bonusSnapshot?.chests||{}).filter(c=>c.openedAt===null).sort((a,b)=>a.earnedAt-b.earnedAt||a.id.localeCompare(b.id));
     for (const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards']) {
@@ -385,6 +398,12 @@
     $('retryRewards').textContent = t('rewardRetry');
     $('retryRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
     $('next').disabled = nextBusy || (state.mode === 'practice' && practiceBlocked);
+    const practiceMessage = rewardsLoading ? 'practiceLoading' : rewardError || practiceError;
+    $('practiceInputRecovery').classList.toggle('hidden', !practiceMessage);
+    $('practiceInputStatus').textContent = practiceMessage ? t(practiceMessage) : '';
+    $('retryPracticeRewards').classList.toggle('hidden', !rewardError && !practiceError);
+    $('retryPracticeRewards').textContent = t('rewardRetry');
+    $('retryPracticeRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
     $('bonusRewardStatus').textContent = message ? t(message) : '';
     $('retryBonusRewards').classList.toggle('hidden', !rewardError && !practiceError);
     $('retryBonusRewards').textContent = t('rewardRetry');
@@ -413,6 +432,7 @@
     $('penalty').classList.toggle('hidden', !game);
     $('roundEarned').classList.toggle('hidden', !game);
     $('streak').textContent = `${t('streak')} : ${state.streak}`;
+    $('streak').classList.toggle('hidden',state.mode==='practice');
     $('roundLabel').textContent = `${state.index + 1} / 5`;
     const progress = $('roundProgress');
     progress.innerHTML = '';
@@ -535,7 +555,11 @@
   }
   function guess(iso) {
     if (state.screen !== 'playing' || state.answered || (!byISO.has(iso) && !overseas[iso])) return;
-    if (state.mode === 'practice' && (practiceBlocked || rewardsLoading)) return;
+    if (state.mode === 'practice' && (practiceBlocked || rewardsLoading)) {
+      renderRewardStatus();
+      $('practiceInputRecovery').scrollIntoView({block:'nearest',behavior:'auto'});
+      return;
+    }
     state.attempts++;
     if (iso !== state.current.iso && overseas[iso]?.parent !== state.current.iso) {
       state.streak = 0;
@@ -731,6 +755,7 @@
   }
   $('retryRewards').addEventListener('click', retryRewards);
   $('retryBonusRewards').addEventListener('click', retryRewards);
+  $('retryPracticeRewards').addEventListener('click', retryRewards);
   const bonusChestButton=$('openChest').cloneNode(true);bonusChestButton.id='openBonusChest';
   $('bonusChestStage').appendChild(bonusChestButton);
   for(const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards']) $(id).addEventListener('click',openBonusRewards);

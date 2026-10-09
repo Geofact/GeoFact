@@ -1,7 +1,7 @@
 // Isolated IndexedDB repository. Importing this module never opens a database.
-import {createBonusState,applyBonusAnswer,openBonusChest,bonusProgress,bonusUTCDate} from './bonus-rules.mjs?v=20261009-audit1';
-import {completeDailyReward} from './daily-rewards.mjs?v=20261009-audit1';
-import {readLegacyRewardValues,prepareLegacyRewards,sameLegacyValues} from './legacy-rewards.mjs?v=20261009-audit1';
+import {createBonusState,applyBonusAnswer,openBonusChest,bonusProgress,bonusUTCDate} from './bonus-rules.mjs?v=20261009-fix1';
+import {completeDailyReward} from './daily-rewards.mjs?v=20261009-fix1';
+import {readLegacyRewardValues,prepareLegacyRewards,sameLegacyValues} from './legacy-rewards.mjs?v=20261009-fix1';
 
 export const REWARD_DB_VERSION=1;
 export const REWARD_STATE_VERSION=1;
