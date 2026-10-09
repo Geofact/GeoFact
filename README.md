@@ -19,3 +19,16 @@ Source : 3bbd5bbef2d00b5c9c6b784156a56e25a408e001, branche redesign/home-only. A
 - [mobile-compact-375-en.png](mobile-compact-375-en.png)
 - [mobile-compact-390-fr.png](mobile-compact-390-fr.png)
 - [mobile-compact-390-en.png](mobile-compact-390-en.png)
+
+## Commandes intégrées au bloc accueil
+
+Source : c747ef85022f04a7b81ce67efb6391c1a4a94f24, branche redesign/home-only. Aucun déploiement.
+
+- [home-controls-320-fr.png](home-controls-320-fr.png)
+- [home-controls-320-en.png](home-controls-320-en.png)
+- [home-controls-375-fr.png](home-controls-375-fr.png)
+- [home-controls-375-en.png](home-controls-375-en.png)
+- [home-controls-390-fr.png](home-controls-390-fr.png)
+- [home-controls-390-en.png](home-controls-390-en.png)
+- [home-controls-1280-fr.png](home-controls-1280-fr.png)
+- [home-controls-1280-en.png](home-controls-1280-en.png)
