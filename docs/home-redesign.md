@@ -39,3 +39,9 @@ Aucune fusion, publication ou modification distante pour cette refonte. Validati
 Validation adaptée après ce changement : 85 tests Node et 442 assertions HTTP ciblées d’accueil, FR/EN à 320/375/390/1280 px, y compris textes, absence de chevauchement du logo, modes, préférences, sauvegardes, Daily et minuit UTC. La suite HTTP complète n’a pas été relancée pour ce seul ajustement visuel ; son dernier résultat reste 2 558 assertions sur la première refonte.
 
 Accueil français à 375 px : hauteur de capture complète réduite de 1 355 à 945 px (environ 30 %), en conservant les textes secondaires, le compteur et les accès.
+
+## Commandes intégrées à l’accueil
+
+Le petit logo de l’en-tête est masqué à l’accueil. Les commandes existantes (son, langue FR/EN, Stats et Comment jouer) sont intégrées en haut à droite du bloc crème, sur une ligne avec des cibles tactiles de 44 px. Le grand logo et son animation restent conservés. Sur les autres écrans, le même header est remis à sa place habituelle ; aucun identifiant ou gestionnaire n’est dupliqué. La seule modification d’`app.js` concerne le parent du header et les libellés courts du sélecteur à l’accueil. Aucune logique de jeu, de sauvegarde ou de statistiques modifiée.
+
+Validation : 85 tests Node, 466 assertions ciblées d’accueil et 2 608 assertions de la suite HTTP complète réussis (Supabase simulé). La capture française à 375 px tient désormais dans la hauteur de 900 px du navigateur de test, y compris l’accès à la collection. Les captures couvrent aussi 320 et 390 px en FR/EN. Safari/iPhone réel reste à vérifier.

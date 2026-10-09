@@ -7,14 +7,14 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
  const count=s=>Object.values(s.collection).reduce((total,c)=>total+Object.values(c.counts).reduce((n,v)=>n+v,0),0);
  const current=p=>p.evaluate(()=>GeoFactCountries.find(c=>c.name[document.documentElement.lang]===document.getElementById('countryName').textContent).iso);
  async function practice(p,custom=false){
-  await p.click('#brand');await p.click('#choosePractice');
+  if(await p.locator('#home').isHidden())await p.click('#brand');await p.click('#choosePractice');
   if(custom){await p.click('#practiceCustom');await p.locator('input[value=FRA]').check();await p.click('#startCustomPractice');}
   else {await p.evaluate(()=>{window.updateOriginalShuffle ||= GeoFactCore.shuffle;GeoFactCore.shuffle=list=>list.includes('FRA')?['FRA']:list;});await p.click('#practiceByDifficulty');await p.click('[data-level=easy]');}
   await p.locator('#playing').waitFor({state:'visible'});
  }
  async function correct(p,next=true){await tap(await current(p),'touch',p);await p.locator('#result').waitFor({state:'visible'});await settled(p);if(next)await p.click('#next');}
  async function repeat(p,n){for(let i=0;i<n;i++)await correct(p);}
- async function game(p){await p.click('#brand');await p.evaluate(()=>{if(window.updateOriginalShuffle)GeoFactCore.shuffle=updateOriginalShuffle;});await p.click('#chooseGame');await p.click('[data-level=easy]');await p.locator('#playing').waitFor({state:'visible'});}
+ async function game(p){if(await p.locator('#home').isHidden())await p.click('#brand');await p.evaluate(()=>{if(window.updateOriginalShuffle)GeoFactCore.shuffle=updateOriginalShuffle;});await p.click('#chooseGame');await p.click('[data-level=easy]');await p.locator('#playing').waitFor({state:'visible'});}
  async function challenge(p){await p.goto(url+'?challenge='+core.encodeChallenge('easy',['FRA','JPN','USA','GBR','NOR'],90));await p.locator('#acceptChallenge').waitFor({state:'visible'});await p.waitForFunction(()=>!document.getElementById('chooseDaily').disabled);await p.click('#acceptChallenge');await p.locator('#playing').waitFor({state:'visible'});}
  console.log('Update: shared bonus modes, excluded custom lists, collection navigation, language, sound and visitor IDs…');
  {

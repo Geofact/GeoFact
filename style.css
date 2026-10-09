@@ -1510,3 +1510,20 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:35px!important;
  #home .mode-choice { padding:11px 13px!important; }
  #home .home-daily-content { grid-template-columns:minmax(0,1fr) 82px; gap:8px; }
 }
+
+/* The home controls live inside its card; other screens keep their normal header. */
+#home .top { width:100%; padding:0; margin:0 0 2px; justify-content:flex-end; }
+#home .top > div:first-child { display:none; }
+.app:has(#home:not(.hidden)) #home .top-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:5px; }
+#home .header-controls { display:flex; align-items:center; gap:5px; }
+#home #lang { width:66px; padding:6px; font-size:12px; }
+.app:has(#home:not(.hidden)) #home .how-link { font-size:12px; padding:4px; white-space:nowrap; }
+#home .sound-toggle { width:44px; min-width:44px; }
+@media(max-width:600px) {
+ #home { margin-top:0; }
+ #home .top { margin-bottom:0; }
+ .app:has(#home:not(.hidden)) #home .top-actions { gap:3px; }
+ #home .header-controls { gap:3px; }
+}
+.app:has(#home:not(.hidden)) #home .top-actions { flex-direction:row; }
+#home .how-link { min-width:44px; }

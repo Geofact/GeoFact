@@ -23,12 +23,13 @@
   <link rel="icon" href="assets/geofact-icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <script src="i18n.js?v=20261009-update1&amp;home=20261009-home2"></script>
+  <script src="i18n.js?v=20261009-update1&amp;home=20261009-home3"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261009-home2">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261009-home3">
 </head>
 <body>
   <main class="app">
+    <section id="home" class="card start">
     <header class="top">
       <div>
         <button id="brand" class="brand" aria-label="Accueil" data-i18n-aria="home">
@@ -39,7 +40,6 @@
       </div>
       <div class="top-actions"><div class="header-controls"><button id="toggleSound" class="sound-toggle" type="button" aria-pressed="false" aria-label="Couper les sons"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button><select id="lang" aria-label="Langue" data-i18n-aria="language"><option value="fr">Français</option><option value="en">English</option></select></div><button id="openPublicStats" class="how-link" type="button" data-i18n="publicStats">Stats</button><button id="howToPlay" class="how-link" type="button" data-i18n="homeHowToPlay">Comment jouer</button></div>
     </header>
-    <section id="home" class="card start">
       <div class="home-hero hero-orbit" aria-label="GeoFact">
         <svg class="hero-orbit-copy" viewBox="0 0 560 360" aria-hidden="true">
           <path id="heroArcPath" d="M 66 205 A 220 165 0 0 1 494 205" fill="none"/>
@@ -151,6 +151,6 @@
   <script src="public-statistics.js?v=20261009-update1"></script>
   <script src="core.js?v=20261009-update1"></script>
   <script src="map.js?v=20261009-update1"></script>
-  <script src="app.js?v=20261009-update1"></script>
+  <script src="app.js?v=20261009-update1&amp;home=20261009-home3"></script>
 </body>
 </html>

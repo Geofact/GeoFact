@@ -418,6 +418,10 @@
     $('retryBonusRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
   }
   function render() {
+    // Move the same controls: their handlers and saved preferences remain unchanged.
+    const header = document.querySelector('.top'), headerParent = state.screen === 'home' ? $('home') : document.querySelector('main.app');
+    if (header.parentElement !== headerParent) headerParent.prepend(header);
+    for (const option of $('lang').options) option.textContent = state.screen === 'home' ? option.value.toUpperCase() : option.value === 'fr' ? 'Français' : 'English';
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
     $('lang').value = lang;
