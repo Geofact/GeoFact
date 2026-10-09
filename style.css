@@ -1472,3 +1472,41 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 #home .hero-orbit-copy .orbit-bottom { font-size:38px!important; }
 html[lang="en"] #home .hero-orbit-copy text { font-size:33px!important; }
 html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:35px!important; }
+
+/* Compact mobile home: keep the desktop hierarchy without stacking every card. */
+@media(max-width:600px) {
+ #home { padding:12px; }
+ #home .home-hero.hero-orbit { height:130px!important; }
+ #home .hero-orbit-copy { height:140px; }
+ #home .hero-brand { width:165px!important; }
+ #home .home-intro-copy { margin:8px 0 14px; }
+ #home .home-intro-copy h1 { font-size:19px; line-height:1.25; }
+ #home .home-intro-copy p { margin-top:7px; font-size:14px; line-height:1.4; }
+ #home .daily-card { padding:14px!important; border-radius:18px; }
+ #home .daily-top { padding-bottom:8px!important; }
+ #home .daily-label { font-size:19px!important; }
+ #home .home-daily-content { grid-template-columns:minmax(0,1fr) 98px; gap:12px; }
+ #home .home-daily-description { margin:8px 0; font-size:14px; line-height:1.45; }
+ #home .home-chest-preview { flex-direction:column; gap:4px; margin:8px 0; text-align:center; }
+ #home .home-chest-preview svg { width:78px; height:55px; }
+ #home .home-chest-preview p { font-size:13px; line-height:1.35; }
+ #home .daily-button { min-height:48px; }
+ #home .daily-home-streak { margin-top:10px; }
+ #home .daily-countdown { margin-top:9px; padding-top:9px; font-size:12px; gap:8px; }
+ #home .secondary-modes { gap:10px; margin-top:12px; }
+ #home .mode-choice { min-height:0; padding:13px!important; }
+ #home .mode-choice strong { font-size:17px!important; margin-bottom:6px!important; }
+ #home .mode-choice span { font-size:15px!important; line-height:1.35!important; }
+ #home #homeBonusProgress { margin-top:9px; font-size:13px!important; }
+ #home .home-collection { margin-top:12px; padding:13px; gap:10px; }
+ #home .home-collection strong { font-size:18px; margin-bottom:4px; }
+ #home .home-collection span span { font-size:14px; line-height:1.35; }
+}
+@media(min-width:365px) and (max-width:600px) {
+ #home .secondary-modes { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:364px) {
+ #home .secondary-modes { grid-template-columns:1fr; }
+ #home .mode-choice { padding:11px 13px!important; }
+ #home .home-daily-content { grid-template-columns:minmax(0,1fr) 82px; gap:8px; }
+}

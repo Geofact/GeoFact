@@ -31,3 +31,11 @@ Aucune fusion, publication ou modification distante pour cette refonte. Validati
 - Captures contrôlées : accueil FR/EN sur ordinateur et mobile ; captures disponibles à 320, 375 et 390 px, et Daily terminé avec coffre ouvert/non ouvert.
 - Aucun débordement horizontal, cible tactile des commandes vérifiées ≥ 44 px, aucune erreur JavaScript ni ressource locale manquante dans la suite.
 - `GeoFact.html`/`export.py` absents : export portable non testé. Safari/iPhone réel reste à vérifier.
+
+## Ajustement mobile compact
+
+À la demande du propriétaire, l’accroche « Trouve le pays… » est supprimée dans les deux langues. Logo animé et ligne secondaire conservés. La disposition mobile réduit les espacements, conserve le coffre à côté du texte Daily, affiche Entraînement / Défis côte à côte à partir de 365 px et conserve une colonne compacte en dessous. Les règles restent limitées à l’accueil ; aucune modification du jeu ou des sauvegardes.
+
+Validation adaptée après ce changement : 85 tests Node et 442 assertions HTTP ciblées d’accueil, FR/EN à 320/375/390/1280 px, y compris textes, absence de chevauchement du logo, modes, préférences, sauvegardes, Daily et minuit UTC. La suite HTTP complète n’a pas été relancée pour ce seul ajustement visuel ; son dernier résultat reste 2 558 assertions sur la première refonte.
+
+Accueil français à 375 px : hauteur de capture complète réduite de 1 355 à 945 px (environ 30 %), en conservant les textes secondaires, le compteur et les accès.

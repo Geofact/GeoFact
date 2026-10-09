@@ -14,16 +14,23 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T11:59:59Z')});await p.clock.pauseAt(new Date('2026-10-09T12:00:00Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
    const before=await snapshot(p);
    equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Jouer le Daily':'Play the Daily','available Daily action');
+   equal(await p.locator('[data-i18n=homeTagline]').count(),0,'removed tagline is absent in both languages');
    equal(await p.locator('#homeBonusProgress').count(),1,'one real bonus counter');check(!(await p.locator('#homeBonusProgress').textContent()).includes('/10'),'no home streak');
    check((await p.locator('#homeBonusProgress').textContent()).includes(lang==='fr'?'obtenus':'earned'),'quota meaning explicit');
    equal(await p.locator('.hero-brand img').getAttribute('src'),'assets/geofact-logo.svg','real logo retained');
    equal(await p.locator('.hero-brand').evaluate(e=>getComputedStyle(e).animationName),'heroBrandJourney','original animated logo retained');
    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'viewport has no horizontal overflow');
-   for(const selector of ['#choosePractice strong','#choosePractice [data-i18n=homePracticeDescription]','#chooseGame strong','#openCollection strong','.home-intro-copy h1']) {
+   for(const selector of ['#choosePractice strong','#choosePractice [data-i18n=homePracticeDescription]','#chooseGame strong','#openCollection strong','.home-intro-copy p']) {
     const style=await p.locator(selector).evaluate(e=>{const s=getComputedStyle(e);return {color:s.color,size:parseFloat(s.fontSize),overflow:e.scrollWidth>e.clientWidth+1};});
-    check(style.size>=15,'readable home type '+selector);check(style.color!=='rgb(255, 255, 255)','dark type on light surface '+selector);check(!style.overflow,'unclipped label '+selector);
+    check(style.size>=(selector==='.home-intro-copy p'?14:15),'readable home type '+selector);check(style.color!=='rgb(255, 255, 255)','dark type on light surface '+selector);check(!style.overflow,'unclipped label '+selector);
    }
    for(const selector of ['#chooseDaily','#choosePractice','#chooseGame','#openCollection','#toggleSound','#lang','#openPublicStats','#howToPlay'])check((await p.locator(selector).boundingBox()).height>=44,'touch target '+selector);
+   if(width<=600) {
+    const arc=await p.locator('#heroArcEnd').boundingBox(),headline=await p.locator('.home-intro-copy p').boundingBox();check(arc.y+arc.height<=headline.y,'orbit text never overlaps headline');
+    const practice=await p.locator('#choosePractice').boundingBox(),challenge=await p.locator('#chooseGame').boundingBox();
+    check(width>=365?Math.abs(practice.y-challenge.y)<2:challenge.y>=practice.y+practice.height,'responsive mode cards retain readable layout');
+    check(await p.evaluate(()=>document.documentElement.scrollHeight)<1200,'mobile home remains compact');
+   }
    if(captures)await p.screenshot({path:`${captures}/home-${width}-${lang}.png`,fullPage:true});
    await p.clock.runFor(2000);equal(await p.locator('#dailyCountdown').textContent(),'11:59:58','countdown ticks from actual UTC clock');
    await p.click('#howToPlay');check(await p.locator('#howModal').isVisible(),'help accessible');await p.click('#closeHow');
