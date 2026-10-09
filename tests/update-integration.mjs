@@ -20,7 +20,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
  {
   const ctx=await newContext({locale:'fr-FR',viewport:{width:320,height:568},isMobile:true,hasTouch:true,reducedMotion:'reduce',storageState:profile});const p=await ctx.newPage();try{
    await p.clock.setFixedTime(new Date('2026-10-09T12:00:00Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();const original=await read(p);
-   equal(await p.locator('[data-i18n=practiceShort]').textContent(),'Joue sans limite, obtiens des coffres bonus','exact French subtitle');check(await p.locator('[data-i18n=practiceShort]').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=13),'subtitle remains readable at 320px');
+   equal(await p.locator('[data-i18n=homePracticeDescription]').textContent(),'Joue à ton rythme, sans limite.','exact French subtitle');check(await p.locator('[data-i18n=homePracticeDescription]').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=13),'subtitle remains readable at 320px');
    await practice(p);await repeat(p,7);const seven=await read(p);equal(seven.bonus.progress,7,'normal practice progresses');
    await practice(p,true);check(await p.locator('#practiceBonus').isHidden(),'custom list does not show an eligible streak');await tap('BEL','touch',p);await correct(p);await repeat(p,3);equal((await read(p)).bonus,seven.bonus,'custom wrong and correct leave bonus untouched');
    await game(p);await repeat(p,5);await p.locator('#final').waitFor({state:'visible'});let s=await read(p);equal(s.bonus.progress,2,'five challenge-game countries join practice series');equal(Object.keys(s.bonus.chests).length,1,'shared tenth awards one chest');equal(s.collection,original.collection,'sealed chest does not credit');check(await p.locator('#finalBonusRewards').isVisible(),'final offers earned bonus chest');
@@ -55,7 +55,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
    window.AudioContext=undefined;window.webkitAudioContext=Device;
   });
   const p=await ctx.newPage();try{
-   await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();equal(await p.evaluate(()=>audioLog.length),0,'no autoplay on first load');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'false','sound defaults on');equal(await p.locator('[data-i18n=practiceShort]').textContent(),'Play without limits, earn bonus chests','exact English subtitle');
+   await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();equal(await p.evaluate(()=>audioLog.length),0,'no autoplay on first load');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'false','sound defaults on');equal(await p.locator('[data-i18n=homePracticeDescription]').textContent(),'Play at your own pace, as much as you like.','exact English subtitle');
    await practice(p);await tap('BEL','touch',p);check(await p.evaluate(()=>audioLog.includes(294)),'wrong answer soft sound via webkit context');await tap('FRA','touch',p);await settled(p);check(await p.evaluate(()=>audioLog.includes(784)),'correct answer positive sound');const after=await p.evaluate(()=>audioLog.length);await p.locator('#map [data-iso=JPN]').dispatchEvent('pointerover');await tap('JPN','touch',p);equal(await p.evaluate(()=>audioLog.length),after,'hover and ignored extra taps are silent');
    await p.click('#toggleSound');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute immediately active');const muted=await p.evaluate(()=>audioLog.length);await p.click('#next');await tap('BEL','touch',p);await correct(p,false);equal(await p.evaluate(()=>audioLog.length),muted,'muted validation schedules nothing');
    await p.selectOption('#lang','fr');equal(await p.locator('#toggleSound').getAttribute('aria-label'),'Activer les sons','sound label follows language');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').inputValue(),'fr','manual language beats English browser on reload');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mute persists on reload');equal(await p.evaluate(()=>audioLog.length),0,'muted reload creates no audio context');
@@ -84,9 +84,9 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
   const ctx=await newContext({locale:'fr-FR',reducedMotion:'reduce',storageState:english});let release;const gate=new Promise(ok=>release=ok);
   await ctx.route('**/app.js*',async route=>{await gate;await route.continue();});
   const p=await ctx.newPage();try{
-   await p.goto(url,{waitUntil:'commit'});await p.locator('[data-i18n=practiceShort]').waitFor({state:'visible'});
+   await p.goto(url,{waitUntil:'commit'});await p.locator('[data-i18n=homePracticeDescription]').waitFor({state:'visible'});
    equal(await p.evaluate(()=>document.documentElement.lang),'en','saved language applied before game boot');
-   equal(await p.locator('[data-i18n=practiceShort]').textContent(),'Play without limits, earn bonus chests','static subtitle translated while app loading');
+   equal(await p.locator('[data-i18n=homePracticeDescription]').textContent(),'Play at your own pace, as much as you like.','static subtitle translated while app loading');
    await p.evaluate(()=>{const e=document.createElement('span');e.id='partialLanguage';e.dataset.i18n='practiceShort';document.getElementById('home').appendChild(e);});
    await p.locator('#partialLanguage').filter({hasText:'Play without limits'}).waitFor();await p.evaluate(()=>document.getElementById('partialLanguage').appendChild(document.createTextNode('Joue sans limite')));
    await p.waitForFunction(()=>document.getElementById('partialLanguage').textContent==='Play without limits, earn bonus chests');equal(await p.locator('#partialLanguage').textContent(),'Play without limits, earn bonus chests','partial parser-like text is translated without duplication');await p.locator('#partialLanguage').evaluate(e=>e.remove());

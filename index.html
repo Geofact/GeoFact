@@ -23,9 +23,9 @@
   <link rel="icon" href="assets/geofact-icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <script src="i18n.js?v=20261009-update1"></script>
+  <script src="i18n.js?v=20261009-update1&amp;home=20261009-home1"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261009-home1">
 </head>
 <body>
   <main class="app">
@@ -37,10 +37,10 @@
         </button>
         <p class="sub" data-i18n="subtitle">Trouve le pays. Apprends un truc surprenant. Partage-le.</p>
       </div>
-      <div class="top-actions"><div class="header-controls"><button id="toggleSound" class="sound-toggle" type="button" aria-pressed="false" aria-label="Couper les sons"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button><select id="lang" aria-label="Langue" data-i18n-aria="language"><option value="fr">Français</option><option value="en">English</option></select></div><button id="openPublicStats" class="how-link" type="button" >Stats</button><button id="howToPlay" class="how-link" type="button" data-i18n="howToPlay">? Comment jouer</button></div>
+      <div class="top-actions"><div class="header-controls"><button id="toggleSound" class="sound-toggle" type="button" aria-pressed="false" aria-label="Couper les sons"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button><select id="lang" aria-label="Langue" data-i18n-aria="language"><option value="fr">Français</option><option value="en">English</option></select></div><button id="openPublicStats" class="how-link" type="button" data-i18n="publicStats">Stats</button><button id="howToPlay" class="how-link" type="button" data-i18n="homeHowToPlay">Comment jouer</button></div>
     </header>
     <section id="home" class="card start">
-      <div class="home-hero hero-orbit" data-i18n-aria="homeTitle" aria-label="Ton tour du monde commence ici.">
+      <div class="home-hero hero-orbit" aria-label="GeoFact">
         <svg class="hero-orbit-copy" viewBox="0 0 560 360" aria-hidden="true">
           <path id="heroArcPath" d="M 66 205 A 220 165 0 0 1 494 205" fill="none"/>
           <path id="heroArcBottomPath" d="M 104 248 A 190 128 0 0 0 456 248" fill="none"/>
@@ -49,9 +49,11 @@
         </svg>
         <div class="hero-brand" aria-hidden="true"><span class="hero-spark spark-a">✦</span><span class="hero-spark spark-b">✦</span><span class="hero-route route-a"></span><span class="hero-route route-b"></span><img src="assets/geofact-logo.svg" alt=""><span class="hero-compass">⌖</span></div>
       </div>
+      <div class="home-intro-copy"><h1 data-i18n="homeTagline">Trouve le pays. Découvre l’insolite. Collectionne les drapeaux.</h1><p data-i18n="homeSecondary">Des défis quotidiens et des coffres d’exploration à débloquer.</p></div>
       <div class="daily-card" id="dailyCard">
-        <div class="daily-top"><strong class="daily-label"><span class="daily-chest-mark" aria-hidden="true"><i></i></span><span data-i18n="daily">Daily</span></strong><span id="dailyNumber" class="daily-number"></span></div>
-        <p data-i18n="dailyDescription">5 pays · Les mêmes pour tout le monde</p>
+        <div class="daily-top"><strong class="daily-label"><span class="daily-chest-mark" aria-hidden="true"><i></i></span><span data-i18n="homeDailyTitle">L’exploration quotidienne</span></strong><span id="dailyNumber" class="daily-number"></span></div>
+        <div class="home-daily-content"><div class="home-daily-copy"><p class="home-daily-description" data-i18n="homeDailyDescription">5 pays à retrouver sur la carte. Les mêmes pour tous, un nouveau défi chaque jour.</p></div>
+        <div class="home-chest-preview"><svg viewBox="0 0 160 112" aria-hidden="true"><ellipse cx="80" cy="99" rx="58" ry="7" fill="#102e26" opacity=".25"/><path d="M26 49Q26 13 80 13T134 49" fill="#b87546" stroke="#edc68b" stroke-width="3"/><path d="M26 49H134V89Q80 108 26 89Z" fill="#945735" stroke="#edc68b" stroke-width="3"/><path d="M45 24V94M115 24V94M26 53H134" fill="none" stroke="#e4ad66" stroke-width="7"/><rect x="69" y="45" width="22" height="27" rx="5" fill="#f0c477"/><circle cx="80" cy="56" r="4" fill="#68452e"/><path d="M80 59V65" stroke="#68452e" stroke-width="3"/><path d="M9 22h12m-6-6v12M142 31h10m-5-5v10" stroke="#efcf94" stroke-width="2" stroke-linecap="round"/></svg><p data-i18n="homeChestQuestion">Quel drapeau découvriras-tu aujourd’hui ?</p></div></div>
         <button id="resumeDailyChest" class="secondary hidden" type="button"></button>
         <button id="chooseDaily" class="primary daily-button" data-i18n="dailyPlay">Jouer le Daily</button>
         <div id="dailyCompleted" class="daily-completed hidden">
@@ -63,11 +65,11 @@
         <div class="daily-countdown"><span data-i18n="nextChest">Prochain coffre disponible dans</span> <strong id="dailyCountdown">--:--:--</strong></div>
       </div>
       <div class="mode-choices secondary-modes">
-        <div class="practice-choice"><button id="choosePractice" class="mode-choice mode-practice"><strong data-i18n="practice">🧭 Entraînement</strong><span data-i18n="practiceShort">Joue sans limite, obtiens des coffres bonus</span></button></div>
-        <button id="chooseGame" class="mode-choice mode-game"><strong data-i18n="game">⚔️ Défie tes amis</strong><span data-i18n="gameShort">Qui fera le meilleur score ?</span></button>
+        <div class="practice-choice"><button id="choosePractice" class="mode-choice mode-practice"><strong data-i18n="homePracticeTitle">Entraînement</strong><span data-i18n="homePracticeDescription">Joue à ton rythme, sans limite.</span><span id="homeBonusProgress" class="bonus-progress"></span></button></div>
+        <button id="chooseGame" class="mode-choice mode-game"><strong data-i18n="homeChallengeTitle">Défie tes amis</strong><span data-i18n="homeChallengeDescription">Envoie un défi et comparez vos résultats.</span></button>
       </div>
-      <p id="homeBonusProgress" class="bonus-progress"></p><button id="openBonusRewards" class="collection-link hidden" type="button"></button>
-      <button id="openCollection" class="collection-link" data-i18n="collection">Collection</button>
+      <button id="openBonusRewards" class="collection-link hidden" type="button"></button>
+      <button id="openCollection" class="home-collection" type="button"><span class="home-collection-icon" aria-hidden="true">⚑</span><span><strong data-i18n="homeCollectionTitle">Ma collection</strong><span data-i18n="homeCollectionDescription">Tes drapeaux &amp; leur rareté, tes découvertes.</span></span><span class="home-collection-arrow" aria-hidden="true">→</span></button>
     </section>
     <section id="publicStats" class="card public-stats-screen hidden" aria-labelledby="publicStatsTitle"><div class="collection-head"><div><span class="home-kicker" data-i18n="publicStatsKicker">GeoFact en chiffres</span><h1 id="publicStatsTitle" data-i18n="publicStats">Stats</h1></div><button class="text-button" data-home data-i18n="back">Retour</button></div><div class="public-stats-period"><label for="statsPeriod" data-i18n="statsPeriod">Période</label><select id="statsPeriod"><option value="30" data-i18n="statsLast30">30 derniers jours</option><option value="0" data-i18n="statsAllTime">Depuis le début</option></select></div><p id="statsStatus" class="public-stats-status" role="status"></p><div class="public-stats-grid"><article><span data-i18n="statsVisitors">Visiteurs uniques</span><strong id="statVisitors">—</strong></article><article><span data-i18n="statsPlayers">Joueurs uniques</span><strong id="statPlayers">—</strong></article><article><span data-i18n="statsDailyStarted">Daily commencés</span><strong id="statDailyStarted">—</strong></article><article><span data-i18n="statsDailyCompleted">Daily terminés</span><strong id="statDailyCompleted">—</strong></article><article><span data-i18n="statsChests">Coffres Daily ouverts</span><strong id="statChests">—</strong></article><article><span data-i18n="statsChallenges">Défis terminés</span><strong id="statChallenges">—</strong></article></div><p class="public-stats-note" data-i18n="statsNote">Comptage anonyme par navigateur, à partir de la mise en service.</p></section>
     <section id="collection" class="card collection-screen hidden">

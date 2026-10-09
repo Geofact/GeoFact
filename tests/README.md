@@ -73,3 +73,7 @@ Le serveur de test sert les `.mjs` avec un MIME JavaScript. Les en-têtes et cac
 `npm run test:restart` lance réellement Chromium quatre fois avec un profil temporaire isolé et la même origine HTTP. Il vérifie la série partielle, le coffre scellé, la carte fixe, le crédit unique, les préférences, l'identifiant anonyme et les anciennes clés. Tous les appels Supabase sont simulés avant navigation ; tout autre trafic externe est bloqué. Le profil généré est supprimé à la fin, jamais les sauvegardes d'un joueur. Même variables `PLAYWRIGHT_MODULE` et `CHROMIUM_PATH` que la suite HTTP principale.
 
 Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt forcé avant commit. WebKit doit être installé séparément pour vérifier son moteur ; un contexte Chromium mobile ne constitue pas un test Safari iPhone réel.
+
+### Accueil
+
+`tests/home-redesign.mjs` est intégré à la suite HTTP : FR/EN, 1280/320/375/390 px, contrastes de base, cibles tactiles, logo/animation existants, états Daily, minuit UTC, accès et sauvegardes. `HOME_CAPTURE_DIR=/chemin/local` active les captures PNG ; chaque contexte utilise des données fictives et les routes Supabase simulées de la suite.
