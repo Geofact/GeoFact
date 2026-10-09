@@ -1370,3 +1370,177 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
   #openCollection, #openCollection:hover { transition: none; transform: none; }
 }
 #bonusViewCollection { margin-top: 14px; }
+
+/* Home redesign: overrides are scoped to the home screen and its active header. */
+#home { max-width:800px; margin:12px auto 0; padding:24px 30px; min-height:0; display:block; color:#263d35; background:#fff8ec; }
+#home .home-hero.hero-orbit { height:160px!important; margin:0 auto!important; width:100%!important; }
+#home .hero-brand { width:230px!important; }
+#home .home-intro-copy { max-width:620px; margin:8px auto 22px; }
+#home .home-intro-copy h1 { margin:0; font-size:clamp(22px,3vw,28px); line-height:1.3; letter-spacing:-.5px; color:#263d35; }
+#home .home-intro-copy p { margin:10px 0 0; font-size:15px; line-height:1.5; color:#626253; }
+#home .daily-card { margin:0; padding:24px 28px; border-radius:22px; background:linear-gradient(130deg,#183e33,#285448); color:#fff8e8; }
+#home .daily-top { gap:14px; align-items:center; }
+#home .daily-label { font-size:21px; letter-spacing:0; text-transform:none; color:#fff8e8; }
+#home .daily-number { color:#f4d9ae; flex-shrink:0; }
+#home .home-daily-description { max-width:570px; margin:12px 0 8px; color:#f0eadb; font-size:15px; line-height:1.55; }
+#home .home-chest-preview { display:flex; align-items:center; justify-content:center; gap:20px; margin:12px 0; }
+#home .home-chest-preview svg { width:125px; height:88px; flex-shrink:0; }
+#home .home-chest-preview p { max-width:220px; margin:0; color:#f9e5c1; font-size:16px; font-weight:650; line-height:1.45; }
+#home .daily-button { min-height:52px; background:#edac67; color:#3b291e; font-size:17px; }
+#home .daily-button:hover { background:#f7bb7a; }
+#home .daily-home-streak { margin-top:16px; color:#fff8e8; }
+#home .daily-countdown { color:#e8e1cc; font-size:13px; line-height:1.5; }
+#home .daily-countdown strong { color:#fff8e8; white-space:nowrap; }
+#home #resumeDailyChest { color:#fff8e8; background:#335e50; border:1px solid #91ad94; margin:6px 0 12px; width:100%; }
+#home .daily-completed { color:#fff8e8; }
+#home .secondary-modes { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:18px 0 0; align-items:stretch; }
+#home .practice-choice { display:flex; }
+#home .mode-choice { width:100%; min-height:112px; padding:20px; background:#fffdf7; border:1px solid #ded6c4; border-radius:17px; color:#263d35; }
+#home .mode-choice strong { color:#294e40; font-size:19px; margin:0 0 7px; padding:0; }
+#home .mode-game strong { color:#8a4c35; }
+#home .mode-choice span { color:#606052; font-size:15px; line-height:1.45; }
+#home #homeBonusProgress { margin:14px 0; color:#606052; font-size:13px; line-height:1.5; }
+#home #openBonusRewards { color:#70432e; min-height:44px; margin:0 0 12px; }
+#home .home-collection { display:flex; align-items:center; gap:16px; width:100%; padding:20px; border:1px solid #d9d3bd; border-radius:17px; background:#efe9d7; color:#263d35; text-align:left; cursor:pointer; }
+#home .home-collection strong { display:block; font-size:20px; margin-bottom:5px; }
+#home .home-collection span span { display:block; color:#585e4d; font-size:15px; line-height:1.45; }
+#home .home-collection-icon { font-size:30px; color:#8a4c35; }
+#home .home-collection-arrow { margin-left:auto; font-size:23px; }
+.app:has(#home:not(.hidden)) .top { align-items:center; margin-bottom:8px; }
+.app:has(#home:not(.hidden)) .top .sub { display:none; }
+.app:has(#home:not(.hidden)) .top-actions { display:grid; grid-template-columns:auto auto; gap:3px 12px; justify-items:end; }
+.app:has(#home:not(.hidden)) .header-controls { grid-column:1/-1; }
+.app:has(#home:not(.hidden)) .how-link { min-height:44px; font-size:13px; color:#35493c; }
+@media(max-width:600px) {
+  #home { padding:18px 16px; margin-top:8px; border-radius:22px; }
+  #home .home-hero.hero-orbit { height:130px!important; }
+  #home .hero-brand { width:185px!important; }
+  #home .home-intro-copy { margin:6px 0 20px; }
+  #home .home-intro-copy h1 { font-size:22px; }
+  #home .daily-card { padding:20px 18px; }
+  #home .daily-label { font-size:19px; }
+  #home .daily-chest-mark { display:none; }
+  #home .home-chest-preview { gap:12px; }
+  #home .home-chest-preview svg { width:100px; height:76px; }
+  #home .home-chest-preview p { font-size:15px; }
+  #home .secondary-modes { grid-template-columns:1fr; gap:12px; }
+  #home .mode-choice { min-height:100px; padding:19px; }
+  #home .mode-choice strong { font-size:19px; }
+  #home .mode-choice span { font-size:15px; }
+  #home .home-collection { gap:12px; padding:18px 16px; }
+  #home .home-collection strong { font-size:19px; }
+  .app:has(#home:not(.hidden)) .top-actions { gap:0 8px; }
+  .app:has(#home:not(.hidden)) .how-link { font-size:12px; }
+}
+@media(max-width:360px) {
+  #home .daily-top { align-items:flex-start; gap:8px; }
+  #home .daily-label { max-width:180px; }
+  #home .hero-spark,#home .hero-route,#home .hero-compass { display:none; }
+  #home .home-collection-icon { display:none; }
+}
+/* Reference layout, keeping the original orbit lettering and animation. */
+#home .home-hero.hero-orbit { height:215px!important; width:min(360px,100%)!important; }
+#home .hero-orbit-copy { width:360px; max-width:100%; height:230px; }
+#home .hero-brand { width:210px!important; }
+#home .home-daily-content { display:grid; grid-template-columns:minmax(0,1fr) 150px; gap:24px; align-items:center; }
+#home .home-chest-preview { flex-direction:column; gap:4px; margin:6px 0 16px; text-align:center; }
+#home .home-chest-preview p { font-size:14px; }
+#home .daily-card { padding:24px 28px!important; background:linear-gradient(120deg,#1b4250,#23574a)!important; }
+#home .home-daily-description { color:#e7eee5!important; }
+#home .mode-choice { background:#faf0df!important; padding:20px!important; }
+#home .mode-choice strong { font-size:19px!important; line-height:1.3!important; white-space:normal!important; color:#294553!important; letter-spacing:0!important; }
+#home .mode-choice span { font-size:15px!important; line-height:1.45!important; }
+#home #homeBonusProgress { text-align:left; margin:14px 0 0; font-size:13px!important; }
+@media(max-width:600px) {
+ #home .home-hero.hero-orbit { height:190px!important; }
+ #home .hero-brand { width:180px!important; }
+ #home .daily-card { padding:20px 18px!important; }
+ #home .home-daily-content { grid-template-columns:1fr; gap:0; }
+ #home .home-chest-preview { flex-direction:row; gap:16px; text-align:left; margin:8px 0 16px; }
+ #home .home-chest-preview p { font-size:15px; }
+ #home .mode-choice { padding:18px!important; }
+}
+.app:has(#home:not(.hidden)) #lang { min-height:44px; }
+#home .daily-label { font-size:23px!important; letter-spacing:-.3px!important; text-transform:none!important; }
+#home .daily-label [data-i18n] { background:none; border:0; padding:0; }
+#home .home-collection { margin-top:16px; }
+#home .home-hero.hero-orbit { height:185px!important; }
+#home .hero-orbit-copy { height:200px; }
+@media(max-width:600px) { #home .daily-label { font-size:20px!important; } #home .home-hero.hero-orbit { height:165px!important; } #home .hero-orbit-copy { height:185px; } }
+#home .daily-label [data-i18n] { font-size:inherit!important; font-weight:inherit; line-height:1.25; letter-spacing:inherit!important; }
+#home .hero-orbit-copy text { font-size:40px!important; }
+#home .hero-orbit-copy .orbit-bottom { font-size:38px!important; }
+html[lang="en"] #home .hero-orbit-copy text { font-size:33px!important; }
+html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:35px!important; }
+
+/* Compact mobile home: keep the desktop hierarchy without stacking every card. */
+@media(max-width:600px) {
+ #home { padding:12px; }
+ #home .home-hero.hero-orbit { height:130px!important; }
+ #home .hero-orbit-copy { height:140px; }
+ #home .hero-brand { width:165px!important; }
+ #home .home-intro-copy { margin:8px 0 14px; }
+ #home .home-intro-copy h1 { font-size:19px; line-height:1.25; }
+ #home .home-intro-copy p { margin-top:7px; font-size:14px; line-height:1.4; }
+ #home .daily-card { padding:14px!important; border-radius:18px; }
+ #home .daily-top { padding-bottom:8px!important; }
+ #home .daily-label { font-size:19px!important; }
+ #home .home-daily-content { grid-template-columns:minmax(0,1fr) 98px; gap:12px; }
+ #home .home-daily-description { margin:8px 0; font-size:14px; line-height:1.45; }
+ #home .home-chest-preview { flex-direction:column; gap:4px; margin:8px 0; text-align:center; }
+ #home .home-chest-preview svg { width:78px; height:55px; }
+ #home .home-chest-preview p { font-size:13px; line-height:1.35; }
+ #home .daily-button { min-height:48px; }
+ #home .daily-home-streak { margin-top:10px; }
+ #home .daily-countdown { margin-top:9px; padding-top:9px; font-size:12px; gap:8px; }
+ #home .secondary-modes { gap:10px; margin-top:12px; }
+ #home .mode-choice { min-height:0; padding:13px!important; }
+ #home .mode-choice strong { font-size:17px!important; margin-bottom:6px!important; }
+ #home .mode-choice span { font-size:15px!important; line-height:1.35!important; }
+ #home #homeBonusProgress { margin-top:9px; font-size:13px!important; }
+ #home .home-collection { margin-top:12px; padding:13px; gap:10px; }
+ #home .home-collection strong { font-size:18px; margin-bottom:4px; }
+ #home .home-collection span span { font-size:14px; line-height:1.35; }
+}
+@media(min-width:365px) and (max-width:600px) {
+ #home .secondary-modes { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:364px) {
+ #home .secondary-modes { grid-template-columns:1fr; }
+ #home .mode-choice { padding:11px 13px!important; }
+ #home .home-daily-content { grid-template-columns:minmax(0,1fr) 82px; gap:8px; }
+}
+
+/* The home controls live inside its card; other screens keep their normal header. */
+#home .top { width:100%; padding:0; margin:0 0 2px; justify-content:flex-end; }
+#home .top > div:first-child { display:none; }
+.app:has(#home:not(.hidden)) #home .top-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:5px; }
+#home .header-controls { display:flex; align-items:center; gap:5px; }
+#home #lang { width:66px; padding:6px; font-size:12px; }
+.app:has(#home:not(.hidden)) #home .how-link { font-size:12px; padding:4px; white-space:nowrap; }
+#home .sound-toggle { width:44px; min-width:44px; }
+@media(max-width:600px) {
+ #home { margin-top:0; }
+ #home .top { margin-bottom:0; }
+ .app:has(#home:not(.hidden)) #home .top-actions { gap:3px; }
+ #home .header-controls { gap:3px; }
+}
+.app:has(#home:not(.hidden)) #home .top-actions { flex-direction:row; }
+#home .how-link { min-width:44px; }
+
+/* Warm, quieter home artwork; keep the original logo file and animation. */
+#home::after { display:none; }
+#home .home-collection { background:#f5dfc4; border-color:#dcba94; }
+#home .hero-brand { width:180px!important; }
+#home .hero-orbit-copy { width:100%; height:100%; }
+#home .hero-orbit-copy text { font-size:35px!important; }
+#home .hero-orbit-copy .orbit-bottom { font-size:32px!important; }
+html[lang="en"] #home .hero-orbit-copy text { font-size:29px!important; }
+html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important; }
+@media(max-width:600px) {
+ #home .hero-brand { width:145px!important; }
+ #home .hero-orbit-copy text { font-size:37px!important; }
+ #home .hero-orbit-copy .orbit-bottom { font-size:35px!important; }
+ html[lang="en"] #home .hero-orbit-copy text { font-size:30px!important; }
+ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:33px!important; }
+}

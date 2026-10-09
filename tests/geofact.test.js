@@ -129,7 +129,7 @@ test('Daily result marks use GeoFact circles without revealing countries', () =>
 });
 test('Daily home has one primary daily action plus practice and friend challenge', () => {
   for (const id of ['chooseDaily','choosePractice','chooseGame','dailyCountdown','dailyStreak','dailyBestStreak','dailyPlayed','dailyHomeErrors','dailyFinalErrors']) assert.ok(html.includes(`id="${id}"`));
-  assert.ok(html.includes('data-i18n="dailyDescription"'));
+  assert.ok(html.includes('data-i18n="homeDailyDescription"'));
 });
 
 test('Daily UI includes mistake tracking and mobile-first circular performance marks', () => {
