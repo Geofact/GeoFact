@@ -1,4 +1,4 @@
-// Pure bonus-reward model. Not loaded by the game; time and draws are inputs.
+// Pure bonus-reward model; time and draws are explicit inputs.
 export const BONUS_TARGET = 10;
 export const BONUS_DAILY_LIMIT = 2;
 export const BONUS_RARITY_WEIGHTS = Object.freeze({classic:6225,silver:2500,gold:1050,shiny:225});

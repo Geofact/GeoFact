@@ -9,6 +9,7 @@ import {testBorders} from './borders.mjs';
 import {testRepository} from './repository.mjs';
 import {testLegacyImport} from './legacy-import.mjs';
 import {testDailyStorage} from './daily-storage.mjs';
+import {testBonusIntegration} from './bonus-integration.mjs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const browserTypes = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -300,6 +301,7 @@ try {
   await testRepository({newContext,url,check,equal});
   await testLegacyImport({newContext,url,check,equal});
   await testDailyStorage({newContext,url,tap,check,equal,telemetry});
+  await testBonusIntegration({newContext,url,tap,check,equal,telemetry,core});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');

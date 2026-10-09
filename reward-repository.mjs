@@ -134,7 +134,7 @@ export function openRewardRepository({name=REWARD_DB_NAME,indexedDB=globalThis.i
               updated.collection={...record.collection,[credit.iso]:{
                 ...previous,rarities:owned.includes(credit.rarity)?owned:[...owned,credit.rarity],counts,
                 firstUnlocked:previous?.firstUnlocked||bonusUTCDate(credit.acquiredAt),
-                acquiredAt:own(previous?.acquiredAt||{},credit.rarity)?previous.acquiredAt:
+                acquiredAt:own(previous?.acquiredAt||{},credit.rarity)||owned.includes(credit.rarity)?(previous?.acquiredAt||{}):
                   {...previous?.acquiredAt,[credit.rarity]:credit.acquiredAt}}};
               updated.credits={...record.credits,[credit.id]:credit};
             }

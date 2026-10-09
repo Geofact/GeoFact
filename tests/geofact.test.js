@@ -141,7 +141,7 @@ test('Daily UI includes mistake tracking and mobile-first circular performance m
   assert.ok(translations.includes("dailyErrors: 'erreurs'"));
   assert.ok(translations.includes("dailyErrors: 'mistakes'"));
 });
-test('Exploration collection is Daily-only, bilingual and keeps verified source metadata', () => {
+test('Exploration collection is bilingual and keeps verified source metadata', () => {
   assert.ok(html.includes('value="continent"')); assert.ok(translations.includes("sortContinent: 'Continent'"));
   const cardsSource = fs.readFileSync(path.join(__dirname, '../data/flag-cards.js'), 'utf8');
   assert.ok(html.includes('id="dailyChest"'));
@@ -149,7 +149,7 @@ test('Exploration collection is Daily-only, bilingual and keeps verified source 
   assert.ok(html.includes('id="openCollection"'));
   assert.ok(app.includes("if (state.mode === 'daily')"));
   assert.ok(app.includes('rewardsRepository.completeDaily(gameState.pendingDaily)'));
-  assert.ok(!app.includes('rewardsRepository.answer('));
+  assert.ok(app.includes('rewardsRepository.answer(command,Object.keys(flagCards))'));
   assert.ok(!app.includes("storage.write('gf-collection-v1'"));
   assert.ok(!app.includes("storage.write('gf-daily-v1'"));
   for (const rarity of ['classic','silver','gold','shiny']) assert.ok(app.includes(rarity));
