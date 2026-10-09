@@ -1544,3 +1544,34 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
  html[lang="en"] #home .hero-orbit-copy text { font-size:30px!important; }
  html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:33px!important; }
 }
+
+/* Shared warm presentation for secondary screens. */
+:is(#practiceSetup,#difficulty,#challengeIntro,#final,#collection,#publicStats) {
+ color:#263d35; background:#fff8ec; border-color:#e1cfb5; box-shadow:0 8px 24px rgba(65,48,26,.06);
+}
+:is(#practiceSetup,#difficulty,#challengeIntro,#final,#collection,#publicStats) h1 { color:#294553; }
+:is(#practiceSetup,#difficulty,#challengeIntro,#final) .primary,
+#difficulty .levels button { background:#efb46b; color:#263d35; border-color:#d9a460; }
+#practiceSetup .practice-path { background:#faf0df; border-color:#dfc6a8; }
+#practiceSetup .practice-path strong { color:#294553; }
+#collection .collection-tools { background:#f5dfc4; border-radius:14px; padding:12px; }
+#publicStats .public-stats-grid article { background:#faf0df; border-color:#dfc6a8; }
+/* One centered command row, keeping the original controls and 44px targets. */
+.top, #home .top, .app > .top { position:relative; inset:auto; width:100%; min-height:0; display:flex; flex-direction:column; align-items:center; gap:8px; padding:0; margin:0 0 10px; }
+.top .sub { display:none; }
+.top .top-actions, .app:has(#home:not(.hidden)) #home .top-actions { display:flex; flex-direction:row; justify-content:center; align-items:center; flex-wrap:nowrap; gap:10px; }
+.top .header-controls, #home .header-controls { display:contents; }
+.top .sound-toggle, .top .how-link, .top .language-control,
+.app:has(#home:not(.hidden)) #home .how-link { display:grid; place-items:center; width:44px; min-width:44px; height:44px; min-height:44px; margin:0; padding:0; border:1px solid #dfd1bb; border-radius:11px; background:#fffaf2; color:#294553; text-decoration:none; cursor:pointer; }
+.top svg { display:block; width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.top .language-control { position:relative; }
+.top .language-control #lang, #home .language-control #lang { position:absolute; inset:-1px; width:44px; height:44px; min-height:44px; padding:0; opacity:0; cursor:pointer; }
+#languageBadge { position:absolute; bottom:1px; right:2px; font-size:8px; font-weight:800; line-height:1.1; background:#fffaf2; border-radius:3px; padding:1px; }
+.language-control:focus-within { outline:3px solid rgba(15,61,145,.28); outline-offset:3px; }
+#home .home-hero.hero-orbit { width:min(360px,100%)!important; height:150px!important; margin:0 auto!important; }
+#home .home-intro-copy { margin-top:4px; }
+@media(max-width:600px) {
+ #home .home-hero.hero-orbit { height:130px!important; }
+ #home .hero-brand { width:145px!important; }
+ :is(#practiceSetup,#difficulty,#challengeIntro,#final) { margin-top:0; }
+}

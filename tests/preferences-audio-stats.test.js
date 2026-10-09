@@ -118,3 +118,69 @@ test('correct-answer notification is higher, ascending and shorter than 120ms',(
  assert.deepEqual(f.notes.filter(([value])=>value>1).map(([value])=>value),[880,1319]);
  assert.ok(Math.max(...stops)-f.audio.currentTime<.120);
 });
+
+test('playback session is requested only during an enabled gesture and failures are optional',()=>{
+ let calls=0;const store=memory(),f=fakeAudio();
+ const s=createSoundEffects({storage:store,createContext:()=>f.audio,preparePlayback:()=>calls++});
+ assert.equal(calls,0);s.answer(true);assert.equal(calls,0);s.unlock();assert.equal(calls,1);
+ s.setEnabled(false);s.unlock();assert.equal(calls,1);
+ const unavailable=createSoundEffects({createContext:()=>fakeAudio().audio,preparePlayback(){throw new Error('unsupported');}});
+ assert.doesNotThrow(()=>unavailable.unlock());assert.equal(unavailable.answer(true),true);
+});
+
+test('mobile output priming starts a silent source inside the gesture and disconnects it',()=>{
+ const f=fakeAudio(),events=[];let source;
+ f.audio.createBuffer=(channels,length,rate)=>{events.push(['buffer',channels,length,rate]);return {};};
+ f.audio.createBufferSource=()=>source={connect(){events.push('connect');},start(){events.push('start');},disconnect(){events.push('disconnect');}};
+ const resume=f.audio.resume;f.audio.resume=()=>{events.push('resume');return resume();};
+ const s=createSoundEffects({createContext:()=>f.audio});s.unlock();
+ assert.deepEqual(events,[['buffer',1,1,44100],'connect','start','resume']);
+ source.onended();assert.equal(events.at(-1),'disconnect');s.unlock();assert.equal(events.filter(x=>x==='start').length,1);
+});
+
+const musicModule=require('../music.js');
+function musicDevice(){
+ const f=fakeAudio();let time=0;f.audio.state='running';Object.defineProperty(f.audio,'currentTime',{get:()=>time});
+ f.audio.createPeriodicWave=()=>({});
+ const original=f.audio.createOscillator;
+ f.audio.createOscillator=()=>{const n=original();n.setPeriodicWave=()=>{};n.start=at=>{n.at=at;};return n;};
+ const timers=new Map();let id=0;
+ const options={schedule(fn){timers.set(++id,fn);return id;},cancel:id=>timers.delete(id)};
+ return {...f,options,timers,advance(value){time=value;for(const fn of [...timers.values()])fn();}};
+}
+test('original music has a 40-second form, gentle register and sparse percussion',()=>{
+ assert.equal(musicModule.LENGTH,40);assert.equal(musicModule.score.filter(n=>n.voice==='pulse').length,4);
+ assert.ok(musicModule.score.every(n=>n.level<=.005&&n.at<40));
+ assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>musicModule.frequency(n.midi)<=524));
+ assert.notDeepEqual(musicModule.score.filter(n=>n.voice==='lead'&&n.at<20).map(n=>n.midi),musicModule.score.filter(n=>n.voice==='lead'&&n.at>=20).map(n=>n.midi));
+});
+test('music uses one scheduler, pauses at its position and never catches up with a burst',()=>{
+ const f=musicDevice(),m=musicModule.createAdventureMusic(f.audio,f.options);m.start();m.start();assert.equal(f.timers.size,1);assert.equal(f.nodes.length,2);
+ f.advance(2);assert.ok(f.nodes.length<=5,'only imminent notes are scheduled after a stalled clock');
+ m.stop();assert.equal(f.timers.size,0);assert.ok(f.nodes.every(n=>n.stops>=2));
+ const before=f.nodes.length;f.advance(30);m.start();m.start();assert.equal(f.timers.size,1);assert.ok(f.nodes.length-before<=3);
+ f.audio.state='interrupted';f.advance(31);assert.equal(f.timers.size,0);assert.equal(m.isRunning(),false);
+ f.audio.state='running';m.start();assert.equal(f.timers.size,1);m.dispose();m.start();assert.equal(f.timers.size,0);
+});
+test('same sound preference gates music and effects, visibility and suspended foreground',()=>{
+ const f=musicDevice(),store=memory();f.audio.state='suspended';
+ const s=createSoundEffects({storage:store,createContext:()=>f.audio,createMusic:c=>musicModule.createAdventureMusic(c,f.options)});
+ assert.equal(f.timers.size,0);s.unlock();s.unlock();assert.equal(f.timers.size,1);
+ const before=f.nodes.length;assert.equal(s.answer(true),true);assert.equal(f.nodes.length,before+2,'effects remain independently audible');
+ s.setVisible(false);assert.equal(f.timers.size,0);assert.equal(s.answer(true),false);
+ s.setVisible(true);assert.equal(f.timers.size,1);
+ s.setVisible(false);f.audio.state='suspended';const resumes=f.resumes();s.setVisible(true);assert.equal(f.timers.size,0);assert.equal(f.resumes(),resumes,'foreground does not request unauthorized resume');
+ s.unlock();assert.equal(f.timers.size,1);s.setEnabled(false);assert.equal(f.timers.size,0);assert.equal(store.getItem(SOUND_KEY),'off');
+ s.unlock();assert.equal(f.timers.size,0);assert.equal(createSoundEffects({storage:store}).isEnabled(),false);
+ for(let i=0;i<4;i++){s.setEnabled(true);s.unlock();assert.equal(f.timers.size,1);s.setEnabled(false);assert.equal(f.timers.size,0);}
+});
+test('failed or unavailable music cannot prevent effects or leak timers',()=>{
+ const f=musicDevice();f.audio.createOscillator=()=>{throw new Error('device unavailable');};const m=musicModule.createAdventureMusic(f.audio,f.options);assert.doesNotThrow(()=>m.start());assert.equal(f.timers.size,0);
+ const a=fakeAudio(),s=createSoundEffects({createContext:()=>a.audio,createMusic(){throw new Error('unsupported');}});s.unlock();assert.equal(s.answer(true),true);
+});
+
+test('the 40-second music seam schedules the next phrase once without restarting the timer',()=>{
+ const f=musicDevice(),m=musicModule.createAdventureMusic(f.audio,f.options);m.start();f.advance(39.9);
+ const seam=f.nodes.filter(n=>n.at>39.9);assert.equal(seam.length,2);assert.ok(seam.every(n=>Math.abs(n.at-40.03)<.001));
+ const before=f.nodes.length;f.advance(40);m.start();assert.equal(f.nodes.length,before);assert.equal(f.timers.size,1);m.dispose();
+});
