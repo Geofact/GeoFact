@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test tests/geofact.test.js tests/bonus-rules.test.mjs tests/reward-repository.test.mjs tests/legacy-rewards.test.mjs tests/daily-rewards.test.mjs",
+    "test": "node --test tests/geofact.test.js tests/bonus-rules.test.mjs tests/reward-repository.test.mjs tests/legacy-rewards.test.mjs tests/daily-rewards.test.mjs tests/release-audit.test.mjs",
     "test:browser": "node tests/browser.mjs",
     "start": "python3 -m http.server 8000"
   },

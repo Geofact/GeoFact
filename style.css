@@ -1336,3 +1336,6 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 .practice-choice .mode-choice{width:100%}
 .practice-bonus-copy{font-size:13px;line-height:1.5;color:var(--muted);margin:8px 3px 0}
 .secondary-modes{align-items:start}
+
+/* Conditional collection-style actions must respect the hidden state. */
+.collection-link.hidden { display: none !important; }

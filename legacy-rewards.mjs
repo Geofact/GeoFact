@@ -1,5 +1,5 @@
 // Minimal, read-only preparation of the two existing reward save keys.
-import {BONUS_RARITY_WEIGHTS,bonusUTCDate} from './bonus-rules.mjs';
+import {BONUS_RARITY_WEIGHTS,bonusUTCDate} from './bonus-rules.mjs?v=20261009-audit1';
 export const LEGACY_REWARD_KEYS=Object.freeze(['gf-collection-v1','gf-daily-v1']);
 export class LegacySaveError extends Error {
   constructor(code,message) {super(message);this.name='LegacySaveError';this.code=code;}

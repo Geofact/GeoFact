@@ -58,7 +58,7 @@
   const rarities = ['classic', 'silver', 'gold', 'shiny'];
   let rewardsRepository, rewardsLoading = true, rewardError = null, legacyWarning = false;
   let nextBusy = false, rewardModules, bonusRules, bonusSnapshot = null;
-  let practiceSaving = false, practiceBlocked = false, pendingPracticeUnreadable = false, pendingPractice = [], latestBonus = null;
+  let practiceError = null, practiceSaving = false, practiceBlocked = false, pendingPracticeUnreadable = false, pendingPractice = [], latestBonus = null;
   const PRACTICE_PENDING_KEY = 'gf-pending-practice-v1';
   try {
     const raw = sessionStorage.getItem(PRACTICE_PENDING_KEY);
@@ -82,7 +82,7 @@
   async function initializeRewards() {
     rewardsLoading = true; rewardError = null; render();
     try {
-      rewardModules ||= Promise.all([import('./reward-repository.mjs'), import('./daily-rewards.mjs'), import('./bonus-rules.mjs')]);
+      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-audit1'), import('./daily-rewards.mjs?v=20261009-audit1'), import('./bonus-rules.mjs?v=20261009-audit1')]);
       const [repositoryModule,,rules] = await rewardModules; bonusRules = rules;
       rewardsRepository?.close(); rewardsRepository = await repositoryModule.openRewardRepository();
       let snapshot = await rewardsRepository.read();
@@ -92,7 +92,7 @@
         legacyWarning = Object.entries(snapshot.legacyImport.raw).some(([key,value]) => localStorage.getItem(key) !== value);
       } catch { /* IndexedDB remains authoritative after a completed migration. */ }
     } catch (error) { rewardError = ['INVALID_LEGACY_SAVES','LEGACY_SOURCE_CHANGED','IMPORT_TARGET_NOT_EMPTY'].includes(error.code) ? 'rewardImportFailed' : 'rewardUnavailable'; }
-    finally { rewardsLoading = false; if (practiceBlocked) rewardError = pendingPracticeUnreadable ? 'bonusRecoveryFailed' : 'bonusSaveFailed'; render(); }
+    finally { rewardsLoading = false; if (practiceBlocked) practiceError = pendingPracticeUnreadable ? 'bonusRecoveryFailed' : 'bonusSaveFailed'; render(); }
   }
   async function refreshRewards() {
     if (!rewardsRepository || rewardsLoading || rewardError) return;
@@ -129,8 +129,8 @@
         pendingPractice.shift(); preservePracticeQueue();
         rewardChannel?.postMessage('changed');
       }
-      practiceBlocked = false; rewardError = null;
-    } catch { practiceBlocked = true; rewardError = 'bonusSaveFailed'; }
+      practiceBlocked = false; practiceError = null;
+    } catch { practiceBlocked = true; practiceError = 'bonusSaveFailed'; }
     finally { practiceSaving = false; render(); }
   }
   function renderBonusRewards() {
@@ -378,15 +378,15 @@
   }
   function renderRewardStatus() {
     $('chooseDaily').disabled = rewardsLoading;
-    const message = rewardError || (rewardsLoading ? 'rewardLoading' : legacyWarning ? 'legacyRewardWarning' : null);
+    const message = rewardError || practiceError || (rewardsLoading ? 'rewardLoading' : legacyWarning ? 'legacyRewardWarning' : null);
     $('rewardStatus').textContent = message ? t(message) : '';
     $('rewardStatus').classList.toggle('hidden', !message);
-    $('retryRewards').classList.toggle('hidden', !rewardError);
+    $('retryRewards').classList.toggle('hidden', !rewardError && !practiceError);
     $('retryRewards').textContent = t('rewardRetry');
     $('retryRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
     $('next').disabled = nextBusy || (state.mode === 'practice' && practiceBlocked);
     $('bonusRewardStatus').textContent = message ? t(message) : '';
-    $('retryBonusRewards').classList.toggle('hidden', !rewardError);
+    $('retryBonusRewards').classList.toggle('hidden', !rewardError && !practiceError);
     $('retryBonusRewards').textContent = t('rewardRetry');
     $('retryBonusRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
   }
@@ -590,7 +590,7 @@
           if (finalWasRecord) { bestScores[state.difficulty] = state.score; storage.write('gf-best-scores', bestScores); }
         }
         if (state === gameState) { state.screen = 'final'; render(); $('challengeFriend').focus({ preventScroll: true }); }
-      } finally { nextBusy = false; $('next').disabled = false; }
+      } finally { nextBusy = false; renderRewardStatus(); }
     } else {
       state.index++; round();
       setTimeout(() => { const mapWrap = $('map')?.closest('.map-wrap'); scrollToElement(mapWrap || $('playing'), 'center'); }, 80);
@@ -717,11 +717,11 @@
         const commands = JSON.parse(sessionStorage.getItem(PRACTICE_PENDING_KEY) || '[]');
         if (!Array.isArray(commands) || commands.some(c=>!c || c.mode!=='practice')) throw new Error('Invalid pending answers');
         pendingPractice = commands; pendingPracticeUnreadable = false;
-      } catch { rewardError = 'bonusRecoveryFailed'; render(); return; }
+      } catch { practiceError = 'bonusRecoveryFailed'; }
     }
     const gameState = state; nextBusy = true;
     try {
-    practiceBlocked = false;
+    practiceBlocked = pendingPracticeUnreadable; practiceError = pendingPracticeUnreadable ? 'bonusRecoveryFailed' : null;
     await initializeRewards();
     if (!rewardError && pendingPractice.length) await savePracticeAnswers();
     if (!rewardError && gameState === state && state.mode === 'daily' && state.screen === 'final' && !selectedDailyResult()) {

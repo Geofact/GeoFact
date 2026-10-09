@@ -36,13 +36,13 @@ Une panne Supabase est simulée séparément pour vérifier le message d'indispo
 
 La suite compare toutes les clés et leurs valeurs textuelles exactes après chargement et rechargement. Elle vérifie les changements attendus après une réponse et un Daily : statistiques incrémentées, historique existant conservé, une seule copie ajoutée, raretés et dates antérieures préservées. Une double ouverture dans le même onglet et une consultation du Daily terminé ne doivent pas ajouter de carte.
 
-Les normalisations historiques déjà présentes dans l'application sont conservées. Les tests ne créent aucune migration et ne changent aucune clé du jeu. Les données mal formées, le stockage inaccessible et les erreurs de quota sont aussi simulés. Le jeu peut continuer sans sauvegarder quand l'écriture est impossible : ces tests ne garantissent pas la persistance dans ce cas.
+Les imports compatibles, les données mal formées, le stockage inaccessible et les erreurs de quota sont simulés. Les anciennes clés de collection et Daily restent identiques. Une récompense n'est confirmée qu'après commit IndexedDB. Les pannes matérielles et l'effacement d'un profil ne sont pas simulés fidèlement.
 
 ## Interactions et géographie
 
-`bonus-rules.test.mjs` vérifie séparément le modèle pur `bonus-rules.mjs` : seuils, progression, quotas UTC, rejeux, cartes fixes, ouverture idempotente et probabilités exactes. Le module n’est pas intégré au jeu ou au stockage. Son contrat et les limites de cette sous-étape figurent dans `docs/bonus-rules-4b1.md`.
+`bonus-rules.test.mjs` vérifie séparément le modèle pur `bonus-rules.mjs` : seuils, progression, quotas UTC, rejeux, cartes fixes, ouverture idempotente et probabilités exactes. Le module est réutilisé par le dépôt transactionnel et l'intégration entraînement. Son contrat et les limites de cette sous-étape figurent dans `docs/bonus-rules-4b1.md`.
 
-`reward-repository.test.mjs` vérifie l’isolation et les erreurs d’ouverture du dépôt. `repository.mjs` teste IndexedDB natif dans deux pages partageant le même profil : transactions concurrentes, abort après écritures, crédit atomique, reprise après confirmation perdue, rechargement, UTC, export et schéma. Les sauvegardes fictives v1 doivent rester identiques octet pour octet. Le dépôt n’est pas branché au jeu. Fidélité des injections et limites détaillées dans `docs/reward-repository-4b2.md`.
+`reward-repository.test.mjs` vérifie l’isolation et les erreurs d’ouverture du dépôt. `repository.mjs` teste IndexedDB natif dans deux pages partageant le même profil : transactions concurrentes, abort après écritures, crédit atomique, reprise après confirmation perdue, rechargement, UTC, export et schéma. Les sauvegardes fictives v1 doivent rester identiques octet pour octet. Le dépôt est branché à la collection, au Daily et aux coffres bonus. Fidélité des injections et limites détaillées dans `docs/reward-repository-4b2.md`.
 
 Les tests couvrent les territoires français et américains (bonne réponse, anecdote et historique du pays parent, mauvaise réponse et distance), ainsi que douze tours d'entraînement avec un seul pays. Les autres parcours couvrent les modes, les défis et le partage, la langue, les gestes de carte et six largeurs d'affichage.
 
@@ -56,4 +56,8 @@ Les sélections synthétiques désignent explicitement leur forme SVG et utilise
 
 L'export autonome `GeoFact.html` et son script `export.py` sont absents de ce dépôt. La suite le signale explicitement et ne revendique pas de validation de cet export.
 
-Les interruptions entre les écritures Daily/collection, les écritures concurrentes entre onglets, l'ouverture interrompue d'un coffre et le passage à minuit nécessitent une conception dédiée des récompenses. Cette étape ne modifie pas ce mécanisme.
+`daily-storage.mjs` et `bonus-integration.mjs` vérifient les intégrations, les transactions concurrentes, les erreurs, les rechargements et minuit UTC. `legacy-import.mjs` vérifie la fidélité et l'idempotence de l'import minimal.
+
+`release-audit.test.mjs` vérifie le catalogue FR/EN, les métadonnées, les ressources versionnées et l'absence de motifs de secrets privés dans le code client. Ce contrôle ne vérifie pas les autorisations du serveur Supabase. `release-audit.mjs` reproduit les régressions de journal d'entraînement et cache ancien ; il parcourt les écrans en FR/EN sur huit dimensions, dont 320×568 et le paysage 568×320. L'absence de débordement ne remplace pas une inspection visuelle sur appareil réel.
+
+Le serveur de test sert les `.mjs` avec un MIME JavaScript. Les en-têtes et caches du véritable hébergement restent à vérifier. La croissance des reçus n'est pas limitée ; une éventuelle purge exige de préserver l'idempotence.
