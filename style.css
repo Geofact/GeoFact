@@ -1347,3 +1347,6 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 #practiceBonusMeter::-webkit-progress-bar { background: #dce5dc; border-radius: 3px; }
 #practiceBonusMeter::-webkit-progress-value { background: var(--forest, #3f7658); border-radius: 3px; }
 #practiceBonusMeter::-moz-progress-bar { background: var(--forest, #3f7658); border-radius: 3px; }
+
+.practice-input-recovery { flex-basis: 100%; min-width: 0; }
+.practice-input-recovery p { margin: 4px 0 8px; }

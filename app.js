@@ -398,6 +398,12 @@
     $('retryRewards').textContent = t('rewardRetry');
     $('retryRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
     $('next').disabled = nextBusy || (state.mode === 'practice' && practiceBlocked);
+    const practiceMessage = rewardsLoading ? 'practiceLoading' : rewardError || practiceError;
+    $('practiceInputRecovery').classList.toggle('hidden', !practiceMessage);
+    $('practiceInputStatus').textContent = practiceMessage ? t(practiceMessage) : '';
+    $('retryPracticeRewards').classList.toggle('hidden', !rewardError && !practiceError);
+    $('retryPracticeRewards').textContent = t('rewardRetry');
+    $('retryPracticeRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
     $('bonusRewardStatus').textContent = message ? t(message) : '';
     $('retryBonusRewards').classList.toggle('hidden', !rewardError && !practiceError);
     $('retryBonusRewards').textContent = t('rewardRetry');
@@ -549,7 +555,11 @@
   }
   function guess(iso) {
     if (state.screen !== 'playing' || state.answered || (!byISO.has(iso) && !overseas[iso])) return;
-    if (state.mode === 'practice' && (practiceBlocked || rewardsLoading)) return;
+    if (state.mode === 'practice' && (practiceBlocked || rewardsLoading)) {
+      renderRewardStatus();
+      $('practiceInputRecovery').scrollIntoView({block:'nearest',behavior:'auto'});
+      return;
+    }
     state.attempts++;
     if (iso !== state.current.iso && overseas[iso]?.parent !== state.current.iso) {
       state.streak = 0;
@@ -745,6 +755,7 @@
   }
   $('retryRewards').addEventListener('click', retryRewards);
   $('retryBonusRewards').addEventListener('click', retryRewards);
+  $('retryPracticeRewards').addEventListener('click', retryRewards);
   const bonusChestButton=$('openChest').cloneNode(true);bonusChestButton.id='openBonusChest';
   $('bonusChestStage').appendChild(bonusChestButton);
   for(const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards']) $(id).addEventListener('click',openBonusRewards);

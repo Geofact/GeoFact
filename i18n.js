@@ -11,6 +11,7 @@ globalThis.GeoFactTranslations = {
 
     resumeDailyChest: 'Ouvrir mon coffre Daily du {date}',
     rewardLoading: 'Chargement des sauvegardes…',
+    practiceLoading: 'Chargement des sauvegardes… Attends la fin du chargement pour répondre.',
     collectionUnavailable: 'Collection indisponible : tes sauvegardes ne sont pas remplacées.',
     rewardImportFailed: 'Impossible d’importer les sauvegardes. Elles sont conservées ; aucune collection vide ne les remplace.',
     rewardUnavailable: 'Sauvegarde des récompenses indisponible. Tes données existantes sont conservées.',
@@ -71,6 +72,7 @@ globalThis.GeoFactTranslations = {
 
     resumeDailyChest: 'Open my Daily chest from {date}',
     rewardLoading: 'Loading saved progress…',
+    practiceLoading: 'Loading saved progress… Wait for loading to finish before answering.',
     collectionUnavailable: 'Collection unavailable: your saves have not been replaced.',
     rewardImportFailed: 'Unable to import your saves. They are preserved; no empty collection replaces them.',
     rewardUnavailable: 'Reward storage is unavailable. Your existing data is preserved.',

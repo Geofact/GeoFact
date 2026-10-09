@@ -14,9 +14,17 @@ Les données Nigeria, sa géométrie, les faits FR/EN, l'identification lors d'u
 
 Les opérations IndexedDB de réponse ne concernent que l'entraînement ; le Daily écrit son résultat après le dernier tour. Une erreur d'écriture simulée en entraînement laisse l'anecdote visible, bloque explicitement le bouton suivant, affiche une erreur et permet une récupération. Ce scénario ne reproduit donc pas, à lui seul, la disparition de l'anecdote décrite.
 
-**Le bug Safari signalé n'est pas reproduit et sa cause réelle n'est pas identifiée.** La logique de validation, la résolution géographique et les transitions restent inchangées. Aucun correctif spéculatif de validation n'est introduit. WebKit a été tenté mais son exécutable est absent ; Chromium mobile ne valide pas Safari iOS, ses gestes de viewport ou ses politiques particulières de stockage.
+### Précision du joueur et reproduction du blocage silencieux
 
-Pour poursuivre : mode de jeu, version iOS, date du Daily éventuel, présence d'une coche et du vert vif, bouton suivant visible/activé, message de sauvegarde, comportement après changement de langue ou rechargement. Une courte vidéo et, si accessible, la première exception de la console Safari permettraient de différencier rendu, animation, sélection et stockage. Ne pas effacer les données du site pour diagnostiquer.
+Le joueur précise : entraînement, pays seulement vert clair, sans coche ni autre affichage. Ce vert correspond au survol, pas à une réponse validée.
+
+Deux états reproduisent exactement l'absence de validation : `rewardsLoading` pendant le chargement initial et `practiceBlocked` après une erreur de récupération. Dans ces états, `guess` retourne avant de compter la réponse. Les touches restent actives pour la carte, mais aucune anecdote ni coche ne peut apparaître. Le message global était placé après la carte, donc facilement hors écran. Les tests retiennent le chargement du module de dépôt et injectent des données de réponses en attente illisibles, avec toucher natif du Nigeria sur 320×568. Les mêmes états concernent tous les pays ; leur garde ne concerne que l'entraînement.
+
+Correction limitée : afficher le chargement ou l'erreur et l'action de récupération près de la consigne, au-dessus de la carte. Une touche ignorée ramène cette explication dans la fenêtre sans animation. La récupération utilise la fonction existante et ses protections ; les données illisibles ne sont ni supprimées ni remplacées. Après récupération réussie, l'explication disparaît et la réponse peut être validée normalement. Un échec d'écriture reste également récupérable depuis ce bouton local.
+
+**Le blocage silencieux est reproduit et corrigé dans l'interface ; le déclencheur exact sur l'iPhone reste inconnu.** Aucun problème propre au Nigeria n'est observé. WebKit a été tenté mais son exécutable est absent ; Chromium mobile ne valide pas Safari iOS ou ses politiques particulières de stockage. Un chargement qui ne se termine jamais ou des données de récupération réellement corrompues nécessitent encore un diagnostic, pas un effacement automatique.
+
+Pour identifier le déclencheur sur l'appareil : version iOS, délai entre lancement et début de l'entraînement, effet d'un rechargement et message désormais affiché près de la carte. Si disponible, première exception de la console Safari. Ne pas effacer les données du site pour diagnostiquer.
 
 ## Interface
 
@@ -36,4 +44,10 @@ Les anciennes clés, le schéma IndexedDB, les règles pures, probabilités, sco
 
 Une attente explicite de l'écran de partie corrige un ancien test Daily qui pouvait envoyer un événement synthétique alors que la carte était encore masquée. Ce défaut de harnais ne prouve pas un défaut de validation du jeu.
 
-**Validation finale : 71 tests Node et 2 043 assertions HTTP Chromium réussis**, sans exception JavaScript, ressource locale manquante ou requête externe imprévue. `git diff --check` est propre. Tous les profils sont fictifs et Supabase est intercepté avant navigation. Captures examinées sur 320 pixels, FR/EN et paysage 568×320. Appareil physique et Safari restent à vérifier.
+**Validation avant la précision : 71 tests Node et 2 043 assertions HTTP Chromium réussis**, sans exception JavaScript, ressource locale manquante ou requête externe imprévue. `git diff --check` est propre. Tous les profils sont fictifs et Supabase est intercepté avant navigation. Captures examinées sur 320 pixels, FR/EN et paysage 568×320. Appareil physique et Safari restent à vérifier.
+
+Les nouveaux tests couvrent en plus les deux gardes avant validation, les explications FR/EN visibles dans le viewport, la reprise après chargement et après réparation explicite des données fictives, et la récupération locale après erreur de quota. Nouvelle suite complète : **71 tests Node et 2 065 assertions HTTP Chromium réussis**, Supabase simulé, sans erreur JavaScript ni requête externe imprévue. Les tests de toucher attendent désormais la fin des pulses SVG avant la mesure des coordonnées et de la couleur permanente ; ils vérifient les coordonnées entières effectivement utilisées par le navigateur.
+
+Le joueur précise également qu’une nouvelle tentative d’entraînement a fonctionné. Cela reste compatible avec un incident temporaire, sans prouver quel état était actif sur Safari. Aucun effacement ou remplacement des données n’a été effectué.
+
+Après stabilisation du harnais des animations, le rejeu ciblé final passe également : **159 assertions**, zéro erreur JavaScript et zéro requête externe imprévue. La capture de récupération 320×568 a été examinée ; explication et action sont lisibles près de la carte.
