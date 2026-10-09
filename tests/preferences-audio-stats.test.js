@@ -90,3 +90,31 @@ test('a closed audio device is recreated on the next gesture',()=>{
  const sound=createSoundEffects({createContext:()=>++creates===1?first.audio:replacement.audio});
  sound.unlock();first.audio.state='closed';sound.unlock();assert.equal(creates,2);assert.equal(sound.answer(true),true);assert.ok(replacement.nodes.length>0);
 });
+
+test('an answer during asynchronous mobile resume is played once when ready',async()=>{
+ const f=fakeAudio();let finish,resumes=0;
+ f.audio.resume=()=>{resumes++;return new Promise(resolve=>{finish=()=>{f.audio.state='running';resolve();};});};
+ const s=createSoundEffects({storage:memory(),createContext:()=>f.audio});s.unlock();s.unlock();
+ assert.equal(resumes,1);assert.equal(s.answer(true),true);assert.equal(f.nodes.length,0);
+ finish();await Promise.resolve();assert.equal(f.nodes.length,2);
+ await Promise.resolve();assert.equal(f.nodes.length,2);
+});
+test('mute, failed resume and stale delayed sounds never produce late audio',async()=>{
+ for(const scenario of ['mute','stale','failure']){
+  const f=fakeAudio();let finish,time=0;
+  f.audio.resume=()=>new Promise((resolve,reject)=>{finish=()=>{if(scenario==='failure')reject(new Error('denied'));else{f.audio.state='running';resolve();}};});
+  const store=memory(),s=createSoundEffects({storage:store,createContext:()=>f.audio,now:()=>time});
+  s.unlock();s.answer(true);if(scenario==='mute')s.setEnabled(false);if(scenario==='stale')time=501;
+  finish();await Promise.resolve();await Promise.resolve();assert.equal(f.nodes.length,0,scenario);
+  if(scenario==='mute')assert.equal(createSoundEffects({storage:store}).isEnabled(),false);
+ }
+});
+
+test('correct-answer notification is higher, ascending and shorter than 120ms',()=>{
+ const f=fakeAudio();const stops=[];
+ const oscillator=f.audio.createOscillator;
+ f.audio.createOscillator=()=>{const n=oscillator();const stop=n.stop;n.stop=at=>{stops.push(at);stop();};return n;};
+ const s=createSoundEffects({createContext:()=>f.audio});s.unlock();s.answer(true);
+ assert.deepEqual(f.notes.filter(([value])=>value>1).map(([value])=>value),[880,1319]);
+ assert.ok(Math.max(...stops)-f.audio.currentTime<.120);
+});

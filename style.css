@@ -1527,3 +1527,20 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:35px!important;
 }
 .app:has(#home:not(.hidden)) #home .top-actions { flex-direction:row; }
 #home .how-link { min-width:44px; }
+
+/* Warm, quieter home artwork; keep the original logo file and animation. */
+#home::after { display:none; }
+#home .home-collection { background:#f5dfc4; border-color:#dcba94; }
+#home .hero-brand { width:180px!important; }
+#home .hero-orbit-copy { width:100%; height:100%; }
+#home .hero-orbit-copy text { font-size:35px!important; }
+#home .hero-orbit-copy .orbit-bottom { font-size:32px!important; }
+html[lang="en"] #home .hero-orbit-copy text { font-size:29px!important; }
+html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important; }
+@media(max-width:600px) {
+ #home .hero-brand { width:145px!important; }
+ #home .hero-orbit-copy text { font-size:37px!important; }
+ #home .hero-orbit-copy .orbit-bottom { font-size:35px!important; }
+ html[lang="en"] #home .hero-orbit-copy text { font-size:30px!important; }
+ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:33px!important; }
+}

@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import {currentSave,legacySave} from './save-fixtures.mjs';
+import {testMobileAudio} from './mobile-audio.mjs';
 import {testHomeRedesign} from './home-redesign.mjs';
 import {testHighlight} from './highlight.mjs';
 import {testBorders} from './borders.mjs';
@@ -309,6 +310,7 @@ try {
   await testBonusIntegration({newContext,url,tap,check,equal,telemetry,core});
   await testReleaseAudit({newContext,url,tap,check,equal});
   await testIphoneRegression({newContext,url,tap,core,check,equal});
+  await testMobileAudio({newContext,url,tap,check,equal});
   await testHomeRedesign({newContext,url,tap,check,equal});
   await testUpdateIntegration({newContext,url,tap,core,check,equal,telemetry});
   console.log('Persistent success highlight, all modes and reduced motion…');

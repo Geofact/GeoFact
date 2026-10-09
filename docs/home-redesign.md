@@ -45,3 +45,24 @@ Accueil français à 375 px : hauteur de capture complète réduite de 1 355 à 
 Le petit logo de l’en-tête est masqué à l’accueil. Les commandes existantes (son, langue FR/EN, Stats et Comment jouer) sont intégrées en haut à droite du bloc crème, sur une ligne avec des cibles tactiles de 44 px. Le grand logo et son animation restent conservés. Sur les autres écrans, le même header est remis à sa place habituelle ; aucun identifiant ou gestionnaire n’est dupliqué. La seule modification d’`app.js` concerne le parent du header et les libellés courts du sélecteur à l’accueil. Aucune logique de jeu, de sauvegarde ou de statistiques modifiée.
 
 Validation : 85 tests Node, 466 assertions ciblées d’accueil et 2 608 assertions de la suite HTTP complète réussis (Supabase simulé). La capture française à 375 px tient désormais dans la hauteur de 900 px du navigateur de test, y compris l’accès à la collection. Les captures couvrent aussi 320 et 390 px en FR/EN. Safari/iPhone réel reste à vérifier.
+
+## Finitions et audio mobile
+
+- Cercle décoratif en haut à droite du bloc crème retiré.
+- Bloc « Ma collection » réchauffé vers une teinte pêche, uniquement sur l’accueil.
+- Véritable SVG du logo et animation conservés ; taille réduite et chemins des textes autour aplanis et centrés en FR/EN.
+- Bonne réponse : deux notes ascendantes (880 puis 1319 Hz), effet limité à 115 ms, amplitude inchangée. Sons d’erreur et mélodies des coffres conservés.
+
+### Diagnostic audio
+
+Le propriétaire a confirmé une absence de son sur la version publiée, dans Safari. Il reste impossible de certifier sa cause exacte sans Safari/iPhone réel. Un défaut indépendant est néanmoins reproduit : si `AudioContext.resume()` reste en attente lorsqu’une réponse est validée, l’ancienne version abandonne le son (0 note créée), même après la reprise du contexte. Avec le correctif, la même simulation émet les 2 notes après reprise.
+
+La reprise est toujours demandée dans un geste utilisateur, avec `touchend` ajouté aux événements existants. Une seule reprise est engagée à la fois. Le dernier effet récent peut attendre cette reprise ; il est annulé en cas de mute, d’échec ou de délai supérieur à 500 ms. Aucun audio ne bloque la validation, la sauvegarde ou l’anecdote.
+
+Le son reste activé par défaut. La clé existante `gf-sound-v1` et les valeurs `on`/`off` sont conservées ; le mute n’est jamais réinitialisé. Les tests couvrent la reprise asynchrone, les sons périmés, les erreurs, le mute et le rechargement. Le scénario HTTP utilise une simulation `webkitAudioContext` ; il ne certifie ni les politiques audio ni la sortie physique d’un iPhone.
+
+L’aperçu WAV téléchargeable est synthétisé à partir des fréquences et enveloppes de la notification du code (115 ms d’effet, fichier de 150 ms avec une courte fin silencieuse). Ce n’est pas un enregistrement d’un iPhone.
+
+Validation ciblée : 88 tests Node et 475 assertions HTTP (audio mobile simulé + accueil FR/EN, ordinateur et 320/375/390 px) réussis. WebKit/Safari réel reste indisponible dans cet environnement. Aucun déploiement de cette version effectué.
+
+Validation complète finale : 88 tests Node et 2 617 assertions navigateur HTTP réussis (Chromium, Supabase simulé). Export portable non testé : les fichiers GeoFact.html/export.py sont absents. Safari/iPhone réel reste à confirmer.

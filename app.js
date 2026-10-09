@@ -44,7 +44,7 @@
   const sounds = GeoFactSound.createSoundEffects({storage:GeoFactPreferences.availableStorage(),
     createContext:()=>{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;return Audio?new Audio():null;}});
   // Resume inside the actual user gesture, before any asynchronous reward operation.
-  for(const event of ['pointerdown','pointerup','click'])document.addEventListener(event,()=>sounds.unlock(),{capture:true});
+  for(const event of ['pointerdown','pointerup','touchend','click'])document.addEventListener(event,()=>sounds.unlock(),{capture:true});
   document.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' ')sounds.unlock();},{capture:true});
   const seen = storage.read('wg-seen-facts', {});
   const validHistory = seen && typeof seen === 'object' && !Array.isArray(seen) ? seen : {};
