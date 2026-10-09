@@ -49,7 +49,10 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
     await p.selectOption('#lang',lang);await fit(lang+' home');
     await p.click('#howToPlay');await fit(lang+' help');equal(await p.locator('#closeHow').getAttribute('aria-label'),lang==='fr'?'Fermer':'Close','translated close label');await p.click('#closeHow');
     await p.click('#choosePractice');await p.click('#practiceCustom');await fit(lang+' picker');await p.locator('input[value="FRA"]').check();await p.click('#startCustomPractice');await p.locator('#playing').waitFor({state:'visible'});await fit(lang+' map');
-    await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});await fit(lang+' anecdote');await p.selectOption('#lang',lang==='fr'?'en':'fr');
+    await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});await fit(lang+' anecdote');
+    // Even a reduced animation needs a painted frame before reading its final fill.
+    await p.waitForFunction(()=>getComputedStyle(document.querySelector('#map [data-iso=FRA]')).fill==='rgb(74, 222, 128)');
+    await p.selectOption('#lang',lang==='fr'?'en':'fr');
     equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await p.click('#brand');
     await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await p.click('#brand');
    }

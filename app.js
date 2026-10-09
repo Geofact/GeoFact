@@ -42,11 +42,20 @@
   }
   let lang = GeoFactPreferences.language.get();
   const sounds = GeoFactSound.createSoundEffects({storage:GeoFactPreferences.availableStorage(),
+    createMusic:context=>GeoFactMusic.createAdventureMusic(context),
     createContext:()=>{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;return Audio?new Audio():null;},
     preparePlayback:()=>{const session=navigator.audioSession;if(session&&session.type!=='playback')session.type='playback';}});
   // Resume inside the actual user gesture, before any asynchronous reward operation.
-  for(const event of ['pointerdown','pointerup','touchend','click'])document.addEventListener(event,()=>sounds.unlock(),{capture:true});
+  for(const event of ['pointerdown','pointerup','touchend','click'])document.addEventListener(event,e=>{
+    // Touch activation is granted on release; an early resume can remain pending.
+    if(e.type==='pointerdown'&&e.pointerType!=='mouse')return;
+    sounds.unlock();
+  },{capture:true});
   document.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' ')sounds.unlock();},{capture:true});
+  sounds.setVisible(!document.hidden);
+  document.addEventListener('visibilitychange',()=>sounds.setVisible(!document.hidden));
+  window.addEventListener('pagehide',()=>sounds.setVisible(false));
+  window.addEventListener('pageshow',()=>sounds.setVisible(!document.hidden));
   const seen = storage.read('wg-seen-facts', {});
   const validHistory = seen && typeof seen === 'object' && !Array.isArray(seen) ? seen : {};
   const oldStats = storage.read('wg-stats', {});
@@ -423,6 +432,7 @@
     const header = document.querySelector('.top'), headerParent = state.screen === 'home' ? $('home') : document.querySelector('main.app');
     if (header.parentElement !== headerParent) headerParent.prepend(header);
     for (const option of $('lang').options) option.textContent = option.value.toUpperCase();
+    $('languageBadge').textContent = lang.toUpperCase();
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
     $('lang').value = lang;
@@ -433,6 +443,7 @@
     const arcText=$('heroArcText'), arcEnd=$('heroArcEnd'), arcCopy=document.querySelector('.hero-arc-copy'); if(arcText) arcText.textContent=t('homeTitleArc'); if(arcEnd) arcEnd.textContent=t('homeTitleEnd'); if(arcCopy) arcCopy.setAttribute('aria-label',t('homeTitle'));
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    for(const id of ['lang','openPublicStats','howToPlay'])$(id).title=$(id).getAttribute('aria-label');
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)); });
     for (const id of ['home', 'publicStats', 'collection', 'practiceSetup', 'difficulty', 'challengeIntro', 'playing', 'final']) $(id).classList.toggle('hidden', id !== state.screen);
     $('modeTitle').textContent = state.mode === 'practice' ? t('practice') : t('game');

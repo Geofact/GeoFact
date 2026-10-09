@@ -14,7 +14,8 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T11:59:59Z')});await p.clock.pauseAt(new Date('2026-10-09T12:00:00Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
    const before=await snapshot(p);
    const commandBoxes=await Promise.all(['#toggleSound','#lang','#openPublicStats','#howToPlay'].map(s=>p.locator(s).boundingBox()));
-   check(commandBoxes.every((b,i)=>i===0||b.y>=commandBoxes[i-1].y+commandBoxes[i-1].height-1),'four home controls stacked without overlap');
+   check(commandBoxes.every(b=>Math.abs(b.y-commandBoxes[0].y)<1&&b.width===44&&b.height===44),'four same-size controls in one row');
+   const row=await p.locator('.top-actions').boundingBox(),card=await p.locator('#home').boundingBox();check(Math.abs(row.x+row.width/2-card.x-card.width/2)<2,'controls centered over home');
    equal(await p.locator('#home > .top').count(),1,'one existing header integrated into home');
    check(await p.locator('#brand').isHidden(),'small duplicate home logo hidden');
    equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Jouer le Daily':'Play the Daily','available Daily action');

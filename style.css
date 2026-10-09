@@ -1545,20 +1545,7 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
  html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:33px!important; }
 }
 
-/* Shared warm presentation and a compact, vertical command rail. */
-.top .top-actions,
-.app:has(#home:not(.hidden)) #home .top-actions {
- display:flex; flex-direction:column; align-items:flex-end; flex-wrap:nowrap; gap:0;
-}
-.top .header-controls, #home .header-controls { display:contents; }
-.top #lang { width:66px; min-height:44px; padding:6px; font-size:12px; }
-.top .how-link { min-height:44px; max-width:100px; padding:4px; font-size:12px; color:#35493c; }
-.top .sub { display:none; }
-#home .top { position:absolute; top:12px; right:12px; width:94px; margin:0; z-index:3; }
-#home .home-hero.hero-orbit { margin:0 auto 0 0!important; width:calc(100% - 94px)!important; height:180px!important; }
-#home .home-intro-copy { margin-top:4px; }
-.app > .top { min-height:176px; margin-bottom:8px; }
-.app > .top .brand { margin-top:8px; }
+/* Shared warm presentation for secondary screens. */
 :is(#practiceSetup,#difficulty,#challengeIntro,#final,#collection,#publicStats) {
  color:#263d35; background:#fff8ec; border-color:#e1cfb5; box-shadow:0 8px 24px rgba(65,48,26,.06);
 }
@@ -1569,11 +1556,22 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 #practiceSetup .practice-path strong { color:#294553; }
 #collection .collection-tools { background:#f5dfc4; border-radius:14px; padding:12px; }
 #publicStats .public-stats-grid article { background:#faf0df; border-color:#dfc6a8; }
+/* One centered command row, keeping the original controls and 44px targets. */
+.top, #home .top, .app > .top { position:relative; inset:auto; width:100%; min-height:0; display:flex; flex-direction:column; align-items:center; gap:8px; padding:0; margin:0 0 10px; }
+.top .sub { display:none; }
+.top .top-actions, .app:has(#home:not(.hidden)) #home .top-actions { display:flex; flex-direction:row; justify-content:center; align-items:center; flex-wrap:nowrap; gap:10px; }
+.top .header-controls, #home .header-controls { display:contents; }
+.top .sound-toggle, .top .how-link, .top .language-control,
+.app:has(#home:not(.hidden)) #home .how-link { display:grid; place-items:center; width:44px; min-width:44px; height:44px; min-height:44px; margin:0; padding:0; border:1px solid #dfd1bb; border-radius:11px; background:#fffaf2; color:#294553; text-decoration:none; cursor:pointer; }
+.top svg { display:block; width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.top .language-control { position:relative; }
+.top .language-control #lang, #home .language-control #lang { position:absolute; inset:-1px; width:44px; height:44px; min-height:44px; padding:0; opacity:0; cursor:pointer; }
+#languageBadge { position:absolute; bottom:1px; right:2px; font-size:8px; font-weight:800; line-height:1.1; background:#fffaf2; border-radius:3px; padding:1px; }
+.language-control:focus-within { outline:3px solid rgba(15,61,145,.28); outline-offset:3px; }
+#home .home-hero.hero-orbit { width:min(360px,100%)!important; height:150px!important; margin:0 auto!important; }
+#home .home-intro-copy { margin-top:4px; }
 @media(max-width:600px) {
- #home .top { top:8px; right:8px; width:88px; }
- #home .home-hero.hero-orbit { width:calc(100% - 88px)!important; height:180px!important; }
- #home .hero-brand { width:130px!important; }
- #home .hero-spark, #home .hero-compass, #home .hero-route { display:none; }
+ #home .home-hero.hero-orbit { height:130px!important; }
+ #home .hero-brand { width:145px!important; }
  :is(#practiceSetup,#difficulty,#challengeIntro,#final) { margin-top:0; }
 }
-.app > .top { align-items:flex-start; }

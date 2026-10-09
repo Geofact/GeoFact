@@ -41,7 +41,8 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
    await practice(p);await repeat(p,9);await challenge(q);const before=await read(p);
    await Promise.all([tap('FRA','touch',p),tap('FRA','touch',q)]);await Promise.all([settled(p),settled(q)]);const s=await read(p);equal(Object.keys(s.bonus.chests).length,1,'two different eligible tabs cross shared threshold once');equal(s.bonus.progress,1,'distinct second round counts once');equal(s.collection,before.collection,'parallel awards uncredited');
    for(const page of [p,q]){await page.click('#openPracticeBonusRewards');await page.locator('#bonusChestStage').waitFor({state:'visible'});}
-   await Promise.all([p.click('#openBonusChest'),q.click('#openBonusChest')]);for(const page of [p,q])await page.locator('#bonusCardReveal').waitFor({state:'visible'});equal(count(await read(p)),count(before)+1,'mixed-mode tabs credit only once');
+   // Dispatch together: actionability retries can outlive the other tab's commit.
+   await Promise.all([p,q].map(page=>page.locator('#openBonusChest').evaluate(button=>button.click())));for(const page of [p,q])await page.locator('#bonusCardReveal').waitFor({state:'visible'});equal(count(await read(p)),count(before)+1,'mixed-mode tabs credit only once');
   }finally{await ctx.close();}
  }
  // A deterministic Web Audio device lets us inspect scheduling, mute, and Safari's prefixed API.

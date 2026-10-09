@@ -16,6 +16,8 @@ export async function testMobileAudio({newContext,url,tap,check,equal}) {
   const p=await ctx.newPage();await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
   equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'false','mobile sound defaults enabled');
   equal(await p.evaluate(()=>navigator.audioSession.type),'auto','no playback session before a gesture');
+  await p.dispatchEvent('#choosePractice','pointerdown',{pointerType:'touch'});
+  equal(await p.evaluate(()=>mobileAudio.device===undefined),true,'touch press does not request audio before release');
   await p.evaluate(()=>{GeoFactCore.shuffle=list=>list.includes('FRA')?['FRA']:list;});
   await p.click('#choosePractice');await p.click('#practiceByDifficulty');await p.click('[data-level=easy]');
   await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});
