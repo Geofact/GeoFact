@@ -1334,8 +1334,16 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 #bonusDialog h2{font-size:22px;margin:0}
 
 .practice-choice .mode-choice{width:100%}
-.practice-bonus-copy{font-size:13px;line-height:1.5;color:var(--muted);margin:8px 3px 0}
 .secondary-modes{align-items:start}
 
 /* Conditional collection-style actions must respect the hidden state. */
 .collection-link.hidden { display: none !important; }
+
+/* Compact bonus counters: no streak or explanatory paragraph on the home screen. */
+#homeBonusProgress { font-size: 13px; color: var(--muted); text-align: center; }
+.bonus-counters { display: grid; gap: 5px; flex: 1 1 210px; min-width: 0; font-size: 13px; line-height: 1.45; }
+#practiceBonusSaving:empty { display: none; }
+#practiceBonusMeter { appearance: none; -webkit-appearance: none; display: block; width: 100%; max-width: 280px; height: 4px; border: 0; border-radius: 3px; overflow: hidden; background: #dce5dc; accent-color: var(--forest, #3f7658); }
+#practiceBonusMeter::-webkit-progress-bar { background: #dce5dc; border-radius: 3px; }
+#practiceBonusMeter::-webkit-progress-value { background: var(--forest, #3f7658); border-radius: 3px; }
+#practiceBonusMeter::-moz-progress-bar { background: var(--forest, #3f7658); border-radius: 3px; }

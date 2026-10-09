@@ -1,11 +1,11 @@
 globalThis.GeoFactTranslations = {
   fr: {
     collectionCard: 'Carte de collection', performanceByCountry: 'Performance par pays', shareText: 'Texte à partager',
-    practiceBonusText: "Joue sans limite ! Trouve 10 pays d'affilée pour obtenir un coffre bonus. Jusqu'à 2 coffres supplémentaires par jour.",
+    bonusHomeQuota: "Coffres bonus : {count}/{limit} aujourd'hui", bonusPracticeQuota: 'Coffres bonus : {count}/{limit}', bonusPracticeStreak: "Pays trouvés d'affilée : {count}/{target}",
     bonusProgress: 'Coffre bonus ·', bonusQuota: '{count}/{limit} aujourd’hui', bonusPaused: '{count}/{limit} aujourd’hui · Reprise demain (UTC)',
     bonusAvailable: 'Coffres bonus disponibles ({count})', bonusChests: 'Coffres bonus', bonusEmpty: 'Aucun coffre bonus en attente.',
     bonusChestDate: 'Coffre bonus du {date}', bonusChestReady: 'Ton coffre bonus t’attend', bonusEarned: 'Coffre bonus enregistré ! Tu peux l’ouvrir maintenant.',
-    bonusSaving: 'Enregistrement…', bonusSaveFailed: 'Progression non confirmée : impossible de sauvegarder la réponse d’entraînement. Réessaie avant de quitter ; aucun coffre supplémentaire n’est confirmé.',
+    bonusPending: 'En attente de sauvegarde', bonusSaving: 'Enregistrement…', bonusSaveFailed: 'Progression non confirmée : impossible de sauvegarder la réponse d’entraînement. Réessaie avant de quitter ; aucun coffre supplémentaire n’est confirmé.',
     bonusRecoveryFailed: 'Impossible de lire les réponses en attente. La progression est suspendue, sans modifier ta collection. Réessaie après avoir vérifié les données de cet onglet.',
     bonusOpenFailed: 'Impossible de confirmer l’ouverture du coffre bonus. Réessaie : un coffre enregistré reste disponible, sans double crédit.',
 
@@ -61,11 +61,11 @@ globalThis.GeoFactTranslations = {
   },
   en: {
     collectionCard: 'Collection card', performanceByCountry: 'Performance by country', shareText: 'Text to share',
-    practiceBonusText: 'Play as much as you like! Find 10 countries in a row to earn a bonus chest. Earn up to 2 extra chests per day.',
+    bonusHomeQuota: 'Bonus chests: {count}/{limit} today', bonusPracticeQuota: 'Bonus chests: {count}/{limit}', bonusPracticeStreak: 'Countries found in a row: {count}/{target}',
     bonusProgress: 'Bonus chest ·', bonusQuota: '{count}/{limit} today', bonusPaused: '{count}/{limit} today · Resumes tomorrow (UTC)',
     bonusAvailable: 'Bonus chests available ({count})', bonusChests: 'Bonus chests', bonusEmpty: 'No bonus chests waiting to be opened.',
     bonusChestDate: 'Bonus chest from {date}', bonusChestReady: 'Your bonus chest is waiting', bonusEarned: 'Bonus chest saved! You can open it now.',
-    bonusSaving: 'Saving…', bonusSaveFailed: 'Progress not confirmed: unable to save your practice answer. Retry before leaving; no additional chest is confirmed.',
+    bonusPending: 'Awaiting save', bonusSaving: 'Saving…', bonusSaveFailed: 'Progress not confirmed: unable to save your practice answer. Retry before leaving; no additional chest is confirmed.',
     bonusRecoveryFailed: 'Unable to read pending answers. Progress is paused and your collection is unchanged. Check this tab’s data, then retry.',
     bonusOpenFailed: 'Unable to confirm the bonus chest opening. Retry: a saved chest remains available, without duplicate credit.',
 

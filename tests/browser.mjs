@@ -9,6 +9,7 @@ import {testBorders} from './borders.mjs';
 import {testRepository} from './repository.mjs';
 import {testLegacyImport} from './legacy-import.mjs';
 import {testDailyStorage} from './daily-storage.mjs';
+import {testIphoneRegression} from './iphone-regression.mjs';
 import {testReleaseAudit} from './release-audit.mjs';
 import {testBonusIntegration} from './bonus-integration.mjs';
 import { createRequire } from 'node:module';
@@ -241,6 +242,7 @@ try {
   const {ctx:dailyContext,p:dailyPage}=await savedContext(currentSave);
   await dailyPage.emulateMedia({reducedMotion:'reduce'});
   await dailyPage.click('#chooseDaily');
+  await dailyPage.locator('#playing').waitFor({state:'visible'});
   const dailySeries=await dailyPage.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries));
   for(const iso of dailySeries) { await tap(iso,'touch',dailyPage);await dailyPage.locator('#result').waitFor({state:'visible'});await dailyPage.click('#next'); }
   await dailyPage.locator('#final').waitFor({state:'visible'});
@@ -304,6 +306,7 @@ try {
   await testDailyStorage({newContext,url,tap,check,equal,telemetry});
   await testBonusIntegration({newContext,url,tap,check,equal,telemetry,core});
   await testReleaseAudit({newContext,url,tap,check,equal});
+  await testIphoneRegression({newContext,url,tap,core,check,equal});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');

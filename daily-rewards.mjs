@@ -1,5 +1,5 @@
 // Daily-only rules. Credit still happens at completion, as in the existing game.
-import {bonusUTCDate,BONUS_RARITY_WEIGHTS} from './bonus-rules.mjs?v=20261009-audit1';
+import {bonusUTCDate,BONUS_RARITY_WEIGHTS} from './bonus-rules.mjs?v=20261009-fix1';
 const dayKey=day=>typeof day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(day)&&Number.isFinite(Date.parse(day+'T00:00:00Z'))&&bonusUTCDate(Date.parse(day+'T00:00:00Z'))===day;
 export function rollDailyRarity(score,draw) {
  if(!Number.isSafeInteger(score)||score<0||score>100||!Number.isFinite(draw)||draw<0||draw>=1)throw new TypeError('Invalid Daily draw');

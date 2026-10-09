@@ -34,18 +34,19 @@ export async function testBonusIntegration({newContext,url,tap,check,equal,telem
  console.log('  Practice bonus: thresholds, cap, reload, delayed opening, concurrency and errors');
  {
   const {ctx,p}=await setup();try {
-   const b=await snapshot(p);const exact="Joue sans limite ! Trouve 10 pays d'affilée pour obtenir un coffre bonus. Jusqu'à 2 coffres supplémentaires par jour.";
-   equal(await p.locator('[data-i18n="practiceBonusText"]').textContent(),exact,'exact French copy');
-   await p.selectOption('#lang','en');equal(await p.locator('[data-i18n="practiceBonusText"]').textContent(),'Play as much as you like! Find 10 countries in a row to earn a bonus chest. Earn up to 2 extra chests per day.','English copy');await p.selectOption('#lang','fr');
+   const b=await snapshot(p);
+   equal(await p.locator('[data-i18n="practiceBonusText"]').count(),0,'explanatory paragraph removed');
+   equal(await p.locator('#homeBonusProgress').textContent(),"Coffres bonus : 0/2 aujourd'hui",'French home quota only');
+   await p.selectOption('#lang','en');equal(await p.locator('#homeBonusProgress').textContent(),'Bonus chests: 0/2 today','English home quota');await p.selectOption('#lang','fr');
    await practice(p);await repeat(p,9);let s=await snapshot(p);equal(s.bonus.progress,9,'nine correct = 9');equal(chests(s).length,0,'nine no chest');check((await p.locator('#practiceBonusProgress').textContent()).includes('9/10'),'discreet 9/10');
    await answer(p,false);s=await snapshot(p);equal(s.bonus.progress,0,'tenth resets');equal(chests(s).length,1,'tenth chest');equal(s.collection,b.collection,'attribution does not credit');equal(s.bonus.grantsByDay['2026-10-09'],1,'first quota');check((await p.locator('#practiceChestNotice').textContent()).includes('enregistré'),'only confirmed notice');
    await sealed(p);equal(await p.locator('#map [data-iso=FRA]').evaluate(el=>getComputedStyle(el).fill),'rgb(74, 222, 128)','found country remains green with bonus dialog');await p.click('#closeBonusRewards');await p.click('#next');
    await answer(p);s=await snapshot(p);equal(s.bonus.progress,1,'eleventh = 1');equal(chests(s).length,1,'eleventh no new chest');
    await tap('BEL','touch',p);await p.waitForFunction(()=>!sessionStorage.getItem('gf-pending-practice-v1'));equal((await snapshot(p)).bonus.progress,0,'wrong immediately resets');check((await p.locator('#distanceReaction').textContent()).includes('pays voisin'),'border feedback retained');
    await answer(p);await repeat(p,6);equal((await snapshot(p)).bonus.progress,7,'partial progress');
-   await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal((await snapshot(p)).bonus.progress,7,'partial progress across reload');check((await p.locator('#homeBonusProgress').textContent()).includes('7/10'),'home persistent progress');
+   await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal((await snapshot(p)).bonus.progress,7,'partial progress across reload');equal(await p.locator('#homeBonusProgress').textContent(),"Coffres bonus : 1/2 aujourd'hui",'home quota excludes persistent streak');
    await practice(p);await repeat(p,3);s=await snapshot(p);equal(s.bonus.grantsByDay['2026-10-09'],2,'second quota');equal(chests(s).length,2,'two chests');
-   await repeat(p,11);s=await snapshot(p);equal(s.bonus.progress,0,'cap suspends progress');equal(chests(s).length,2,'third blocked');check((await p.locator('#practiceBonusProgress').textContent()).includes('Reprise demain'),'paused text');
+   await repeat(p,11);s=await snapshot(p);equal(s.bonus.progress,0,'cap suspends progress');equal(chests(s).length,2,'third blocked');equal(await p.locator('#practiceBonusQuota').textContent(),'Coffres bonus : 2/2','paused quota');
    await p.clock.setFixedTime(new Date('2026-10-10T00:01:00Z'));await answer(p);s=await snapshot(p);equal(s.bonus.progress,1,'resumes tomorrow');equal(s.bonus.grantsByDay['2026-10-09'],2,'previous quota retained');
    const fixed=chests(s).map(c=>c.card);await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(chests(await snapshot(p)).map(c=>c.card),fixed,'sealed fixed cards after midnight/reload');
    await p.click('#openBonusRewards');await p.locator('#bonusChestStage').waitFor({state:'visible'});const beforeOpen=await snapshot(p),events=telemetry.filter(e=>e.body?.p_event_type==='chest_opened').length;
