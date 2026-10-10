@@ -19,9 +19,9 @@
   const roots=[48,45,41,43,48,45,41,43,45,48,41,43,48,41,43,48];
   const score=[];
   for(let bar=0;bar<16;bar++){
-    for(const [beat,midi,duration] of phrases[bar])score.push({at:(bar*4+beat)*BEAT,midi,duration:duration*BEAT,voice:'lead',level:.0045});
-    for(const beat of [0,2])score.push({at:(bar*4+beat)*BEAT,midi:roots[bar],duration:1.3*BEAT,voice:'bass',level:.005});
-    if(bar%4===3)score.push({at:(bar*4+3)*BEAT,midi:31,duration:.08,voice:'pulse',level:.003});
+    for(const [beat,midi,duration] of phrases[bar])score.push({at:(bar*4+beat)*BEAT,midi,duration:duration*BEAT,voice:'lead',level:.009});
+    for(const beat of [0,2])score.push({at:(bar*4+beat)*BEAT,midi:roots[bar],duration:1.3*BEAT,voice:'bass',level:.010});
+    if(bar%4===3)score.push({at:(bar*4+3)*BEAT,midi:31,duration:.08,voice:'pulse',level:.006});
   }
   score.sort((a,b)=>a.at-b.at);for(const note of score)Object.freeze(note);Object.freeze(score);
   const frequency=midi=>440*Math.pow(2,(midi-69)/12);
