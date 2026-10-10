@@ -27,7 +27,10 @@
   const frequency=midi=>440*Math.pow(2,(midi-69)/12);
   function createAdventureMusic(context,{schedule=setInterval,cancel=clearInterval}={}){
     if(!context?.createPeriodicWave)return null;
-    const wave=context.createPeriodicWave(new Float32Array(6),new Float32Array([0,1,0,.15,0,.04]),{disableNormalization:true});
+    // Give the lead more midrange presence on small speakers while retaining
+    // its previous RMS energy. No device sniffing, extra voice or gain increase.
+    const leadScale=Math.sqrt((1+.15**2+.04**2)/(1+.35**2+.10**2));
+    const wave=context.createPeriodicWave(new Float32Array(6),new Float32Array([0,leadScale,0,.35*leadScale,0,.10*leadScale]),{disableNormalization:true});
     const nodes=new Set();let timer=null,position=0,epoch=0,index=0,cycle=0,running=false,disposed=false;
     const phase=time=>((time%LENGTH)+LENGTH)%LENGTH;
     function seek(time){cycle=Math.floor(time/LENGTH);const offset=phase(time);index=score.findIndex(n=>n.at>=offset-.000001);if(index<0){index=0;cycle++;}}

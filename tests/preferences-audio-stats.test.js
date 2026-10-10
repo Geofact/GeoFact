@@ -157,6 +157,17 @@ test('original music has a 40-second form, gentle register and sparse percussion
  assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>musicModule.frequency(n.midi)<=524));
  assert.notDeepEqual(musicModule.score.filter(n=>n.voice==='lead'&&n.at<20).map(n=>n.midi),musicModule.score.filter(n=>n.voice==='lead'&&n.at>=20).map(n=>n.midi));
 });
+test('music lead has more speaker-friendly harmonics at unchanged RMS energy',()=>{
+ const f=musicDevice();let harmonics;
+ f.audio.createPeriodicWave=(real,imaginary,options)=>{harmonics=[...imaginary];assert.ok([...real].every(n=>n===0));assert.equal(options.disableNormalization,true);return {};};
+ const music=musicModule.createAdventureMusic(f.audio,f.options);
+ const energy=harmonics.reduce((sum,value)=>sum+value*value,0);
+ assert.ok(Math.abs(energy-(1+.15**2+.04**2))<1e-6,'same theoretical RMS as the previous lead');
+ assert.ok(Math.abs(harmonics[3]/harmonics[1]-.35)<1e-6);
+ assert.ok(Math.abs(harmonics[5]/harmonics[1]-.10)<1e-6);
+ assert.ok(harmonics[3]**2+harmonics[5]**2>.15**2+.04**2,'stronger midrange partials');
+ music.start();music.stop();assert.equal(f.timers.size,0);
+});
 test('music uses one scheduler, pauses at its position and never catches up with a burst',()=>{
  const f=musicDevice(),m=musicModule.createAdventureMusic(f.audio,f.options);m.start();m.start();assert.equal(f.timers.size,1);assert.equal(f.nodes.length,2);
  f.advance(2);assert.ok(f.nodes.length<=5,'only imminent notes are scheduled after a stalled clock');
