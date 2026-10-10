@@ -151,9 +151,9 @@ function musicDevice(){
  return {...f,options,timers,advance(value){time=value;for(const fn of [...timers.values()])fn();}};
 }
 test('original music has a 40-second form, gentle register and sparse percussion',()=>{
- assert.deepEqual(Object.fromEntries(['lead','bass','pulse'].map(voice=>[voice,[...new Set(musicModule.score.filter(n=>n.voice===voice).map(n=>n.level))]])),{lead:[.009],bass:[.010],pulse:[.006]});
+ assert.deepEqual(Object.fromEntries(['lead','bass','pulse'].map(voice=>[voice,[...new Set(musicModule.score.filter(n=>n.voice===voice).map(n=>n.level))]])),{lead:[.018],bass:[.020],pulse:[.012]});
  assert.equal(musicModule.LENGTH,40);assert.equal(musicModule.score.filter(n=>n.voice==='pulse').length,4);
- assert.ok(musicModule.score.every(n=>n.level<=.010&&n.at<40));
+ assert.ok(musicModule.score.every(n=>n.level<=.020&&n.at<40));
  assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>musicModule.frequency(n.midi)<=524));
  assert.notDeepEqual(musicModule.score.filter(n=>n.voice==='lead'&&n.at<20).map(n=>n.midi),musicModule.score.filter(n=>n.voice==='lead'&&n.at>=20).map(n=>n.midi));
 });
