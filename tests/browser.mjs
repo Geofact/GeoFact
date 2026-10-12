@@ -1,3 +1,4 @@
+import {testCollectionAlbum} from './collection-album.mjs';
 import {testResultModal} from './result-modal.mjs';
 import {clickOutsideResult,clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
@@ -225,8 +226,9 @@ try {
     const {ctx,p}=await savedContext(seed);
     equal(await snapshot(p),seed,label+' load preserves every stored byte and key');
     await p.click('#openCollection');
-    check((await p.locator('#collectionCount').textContent()).includes(label==='current'?'3 / 780':'1 / 780'),label+' collection rendered');
+    check((await p.locator('#collectionCount').textContent()).includes(label==='current'?'2/195':'1/195'),label+' collection rendered');
     if(label==='current') {
+      await p.click('#collectionAll');
       await p.locator('#collectionGrid .collection-card').filter({has:p.locator('h3', {hasText:'France'})}).click();
       check((await p.locator('#collectionDetail').textContent()).includes('×3'),'duplicate copies rendered in rarity detail');
     }
@@ -311,6 +313,7 @@ try {
   await testRepository({newContext,url,check,equal});
   await testLegacyImport({newContext,url,check,equal});
   await testDailyStorage({newContext,url,tap,check,equal,telemetry});
+  await testCollectionAlbum({newContext,url,check,equal});
   await testBonusIntegration({newContext,url,tap,check,equal,telemetry,core});
   await testReleaseAudit({newContext,url,tap,check,equal});
   await testIphoneRegression({newContext,url,tap,core,check,equal});

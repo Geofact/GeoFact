@@ -1608,3 +1608,47 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 /* Reuse the Next button beside the map when the result is closed. */
 .result-map-actions { position:sticky; bottom:max(8px,env(safe-area-inset-bottom)); z-index:3; display:flex; gap:8px; width:fit-content; max-width:100%; margin-top:12px; padding:8px; border:1px solid #dfd1bb; border-radius:16px; background:#fff8eb; box-shadow:0 4px 16px rgba(23,59,87,.12); }
 .result-map-actions button { flex:1 1 auto; min-width:0; margin:0; padding:12px; white-space:normal; line-height:1.25; }
+
+/* Continent album: scoped to collection and existing reward reveals. */
+#collection .album-navigation{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin:18px 0 8px}
+#collection .album-navigation button{min-height:44px;padding:8px 0;color:#78482f;text-underline-offset:4px}
+#collection .album-region-title{margin:14px 0 10px;color:#244d43;font-size:clamp(22px,3vw,30px)}
+#collection .collection-tools{align-items:center;gap:16px;margin:0 0 20px}
+#collection .collection-count{margin:0;color:#3c5046;font-size:15px;line-height:1.5}
+#collection[data-view="continents"] .collection-tools{padding:0;background:transparent}
+#collection .album-continents{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#collection .album-continent{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0;min-height:174px;text-align:left;border:1px solid #d9bea0;border-radius:18px;padding:20px;background:linear-gradient(145deg,#fff8e9,#f5e6ce);color:#263e35;box-shadow:0 5px 14px #7156370b;cursor:pointer;font:inherit}
+#collection .album-continent:hover{border-color:#9b7757;background:#fff6e5}
+#collection .album-continent:focus-visible{outline:3px solid #2e6b55;outline-offset:3px}
+#collection .album-continent-title{position:relative;max-width:calc(100% - 30px);font-size:18px;font-weight:800;line-height:1.25}
+#collection .album-continent-count{font-size:26px;font-weight:750;color:#294e40;line-height:1}
+#collection .album-continent-status{font-size:13px;color:#775038;line-height:1.4;padding-right:18px}
+#collection .album-continent-arrow{position:absolute;right:18px;bottom:18px;color:#9a593e;font-size:19px}
+#collection .album-stamp{position:absolute;right:14px;top:14px;width:32px;height:32px;color:#7d9c78}
+#collection .album-stamp svg{display:block;width:100%;height:100%}
+#collection progress,.reward-summary progress{display:block;appearance:none;border:0;border-radius:20px;overflow:hidden;background:#e4d4bb;height:6px;width:100%}
+#collection progress::-webkit-progress-bar,.reward-summary progress::-webkit-progress-bar{background:#e4d4bb;border-radius:20px}
+#collection progress::-webkit-progress-value,.reward-summary progress::-webkit-progress-value{background:#497559;border-radius:20px}
+#collection progress::-moz-progress-bar,.reward-summary progress::-moz-progress-bar{background:#497559;border-radius:20px}
+#collection #collectionRegionProgress{margin-top:9px;min-width:140px}
+#collection .flag-card.locked{border:1px dashed #bba58b;background:#f7efdf;box-shadow:none}
+#collection .flag-card.locked h3{color:#514837}
+#collection .flag-card.locked p{color:#6b5c49;margin-top:8px;margin-bottom:0;font-size:12px}
+#collection .flag-card.locked .card-flag{color:#a98161}
+#collection .collection-card:focus-visible{outline:3px solid #2e6b55;outline-offset:3px}
+.reward-summary{margin:18px 0 0;text-align:center;color:#2c473c}
+.reward-summary>.reward-kind{margin:0 0 8px;font-size:20px;line-height:1.3;color:#28523e}
+.reward-summary>p{font-size:14px;line-height:1.5;color:#4f4d3d;margin:8px 0}
+.reward-summary .reward-copies{color:#79533e;font-weight:650}
+.reward-summary .reward-continent{color:#2f4d40;font-weight:650}
+.reward-summary .reward-advance{font-size:13px;color:#63704e}
+.reward-summary .reward-complete{color:#316441;font-weight:700}
+.reward-summary .reveal-collection{width:100%;margin-top:12px;white-space:normal;line-height:1.4;min-height:44px;color:#58412e;background:#f2dfc3;border-color:#cbae86}
+@media(max-width:700px){#collection .album-continents{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+@media(max-width:420px){#collection .album-continent{padding:16px 13px;min-height:163px;gap:12px}#collection .album-continent-title{font-size:17px;max-width:100%;min-height:43px}#collection .album-stamp{display:none}#collection .album-continent-count{font-size:24px}#collection .album-continent-status{font-size:12px}#collection .collection-tools{flex-wrap:wrap}#collection .sort-control{margin-left:0}#collection .rarity-variants{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#collection .album-continent-arrow svg{display:block;width:18px;height:18px}
+#collection .flag-card p{font-size:12px;line-height:1.5;color:#62594d}
+#collection .flag-card .rarity{font-size:10px;opacity:1;color:#675640}
+#collection .locked-variant{opacity:1}
+.reward-summary>.flag-card{margin-top:14px;margin-bottom:14px}
+@media(min-width:760px){#collection .collection-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}

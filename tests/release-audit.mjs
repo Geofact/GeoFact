@@ -56,7 +56,7 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
     await p.waitForFunction(()=>getComputedStyle(document.querySelector('#map [data-iso=FRA]')).fill==='rgb(74, 222, 128)');
     await setLanguage(p,lang==='fr'?'en':'fr');
     equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await clickOutsideResult(p,'#brand');
-    await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await clickOutsideResult(p,'#brand');
+    await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});await p.click('#collectionAll');for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await clickOutsideResult(p,'#brand');
    }
    await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'viewport:'+n,roundId:'viewport-round:'+n,mode:'practice',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.4},['FRA']);}finally{r.close();}});
    await p.click('#openCollection');await clickOutsideResult(p,'#brand');await clickOutsideResult(p,'#openBonusRewards');await p.locator('#bonusChestStage').waitFor({state:'visible'});await fit('bonus dialog');

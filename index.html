@@ -23,9 +23,9 @@
   <link rel="icon" href="assets/geofact-icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <script src="i18n.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
+  <script src="i18n.js?v=20261009-update1&amp;home=20261012-album1"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261012-next1">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;album=20261012-1&amp;home=20261012-next1">
 </head>
 <body>
   <main class="app">
@@ -78,7 +78,8 @@
     <section id="collection" class="card collection-screen hidden">
       <div class="collection-head"><div><span class="home-kicker" data-i18n="collectionKicker">Album d’exploration</span><h1 data-i18n="collection">Collection</h1></div><button class="text-button" data-home data-i18n="back">Retour</button></div>
       <button id="collectionBonusRewards" class="secondary hidden" type="button"></button>
-      <div class="collection-tools"><p id="collectionCount" class="collection-count"></p><label class="sort-control"><span data-i18n="sortBy">Trier</span><select id="collectionSort"><option value="date" data-i18n="sortDate" selected>Date d’obtention</option><option value="alpha" data-i18n="sortAlpha">A–Z</option><option value="rarity" data-i18n="sortRarity">Rareté</option><option value="continent" data-i18n="sortContinent">Continent</option></select></label></div><div id="collectionDetail" class="collection-detail hidden"></div><div id="collectionGrid" class="collection-grid"></div>
+      <nav class="album-navigation" aria-label="Navigation de la collection" data-i18n-aria="albumNavigation"><button id="collectionBack" class="text-button hidden" type="button" data-i18n="albumBack">← Les continents</button><button id="collectionAll" class="text-button" type="button" data-i18n="albumAll">Tous les drapeaux</button></nav><h2 id="collectionRegionTitle" class="album-region-title hidden" tabindex="-1"></h2>
+      <div class="collection-tools"><div><p id="collectionCount" class="collection-count"></p><progress id="collectionRegionProgress" class="hidden" max="195" value="0"></progress></div><label id="collectionSortControl" class="sort-control"><span data-i18n="sortBy">Trier</span><select id="collectionSort"><option value="date" data-i18n="sortDate" selected>Date d’obtention</option><option value="alpha" data-i18n="sortAlpha">A–Z</option><option value="rarity" data-i18n="sortRarity">Rareté</option><option value="continent" data-i18n="sortContinent">Continent</option></select></label></div><div id="collectionContinents" class="album-continents"></div><div id="collectionDetail" class="collection-detail hidden"></div><div id="collectionGrid" class="collection-grid"></div>
     </section>
     <section id="practiceSetup" class="card start practice-setup hidden">
       <span class="home-kicker" data-i18n="practice">Entraînement</span>
@@ -163,6 +164,7 @@
   <script src="daily-periods.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
   <script src="core.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
   <script src="map.js?v=20261009-update1"></script>
-  <script src="app.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
+  <script src="collection-album.js?v=20261009-update1&amp;home=20261012-album1"></script>
+  <script src="app.js?v=20261009-update1&amp;home=20261012-album1"></script>
 </body>
 </html>

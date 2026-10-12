@@ -96,7 +96,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
    await p.locator('#partialLanguage').filter({hasText:'Play without limits'}).waitFor();await p.evaluate(()=>document.getElementById('partialLanguage').appendChild(document.createTextNode('Joue sans limite')));
    await p.waitForFunction(()=>document.getElementById('partialLanguage').textContent==='Play without limits, earn bonus chests');equal(await p.locator('#partialLanguage').textContent(),'Play without limits, earn bonus chests','partial parser-like text is translated without duplication');await p.locator('#partialLanguage').evaluate(e=>e.remove());
    release();await p.locator('#chooseDaily:enabled').waitFor();await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});
-   const card=p.locator('#collectionGrid .collection-card').first();await card.click();await p.locator('#collectionDetail .zoomable-card').first().click();await p.locator('#cardModal').waitFor({state:'visible'});
+   await p.click('#collectionAll');const card=p.locator('#collectionGrid .collection-card').first();await card.click();await p.locator('#collectionDetail .zoomable-card').first().click();await p.locator('#cardModal').waitFor({state:'visible'});
    const iso=await p.locator('#cardModal').getAttribute('data-iso');
    // This retained rerender test intentionally changes language behind the modal overlay.
    await p.locator('#lang').dispatchEvent('click');equal(await p.locator('#lang').getAttribute('value'),'fr','open modal language changes');
@@ -138,7 +138,7 @@ export async function testUpdateIntegration({newContext,url,tap,check,equal,tele
    await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'navigate:'+n,roundId:'navigate-round:'+n,mode:'game',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.03},['FRA']);}finally{r.close();}window.dispatchEvent(new Event('focus'));});
    await clickOutsideResult(p,'#openBonusRewards');await p.click('#openBonusChest');await p.locator('#openBonusChest.opening').waitFor({state:'visible'});await p.click('#bonusViewCollection');await p.locator('#collection').waitFor({state:'visible'});
    equal(await p.locator('#collectionGrid .collection-card').count(),0,'navigating during animation never credits early');
-   await p.locator('#collectionGrid .collection-card').waitFor({state:'visible'});equal(count(await read(p)),1,'commit refreshes collection after navigation');
+   await p.locator('#collectionCount').filter({hasText:'1/195'}).waitFor();await p.click('#collectionAll');await p.locator('#collectionGrid .collection-card').waitFor({state:'visible'});equal(count(await read(p)),1,'commit refreshes collection after navigation');
    await clickOutsideResult(p,'#brand');await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});equal(count(await read(p)),1,'reconsultation never duplicates animated credit');
   }finally{await ctx.close();}
  }

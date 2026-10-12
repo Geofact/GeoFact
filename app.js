@@ -1,6 +1,8 @@
 (function () {
   'use strict';
   const countries = GeoFactCountries, facts = GeoFactFacts, core = GeoFactCore, flagCards = GeoFactFlagCards;
+  const album = GeoFactAlbum.createAlbum(countries,Object.keys(flagCards));
+  let collectionView = null;
   const byISO = new Map(countries.map(c => [c.iso, c]));
   const $ = id => document.getElementById(id);
   const storage = {
@@ -95,7 +97,7 @@
   async function initializeRewards() {
     rewardsLoading = true; rewardError = null; render();
     try {
-      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-update1&home=20261012-daily12h'), import('./daily-rewards.mjs?v=20261009-update1&home=20261012-daily12h'), import('./bonus-rules.mjs?v=20261009-update1')]);
+      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-update1&home=20261012-album1'), import('./daily-rewards.mjs?v=20261009-update1&home=20261012-daily12h'), import('./bonus-rules.mjs?v=20261009-update1')]);
       const [repositoryModule,,rules] = await rewardModules; bonusRules = rules;
       rewardsRepository?.close(); rewardsRepository = await repositoryModule.openRewardRepository();
       let snapshot = await rewardsRepository.read();
@@ -191,9 +193,10 @@
   }
   let selectedBonus = null;
   function revealBonusCard(chest) {
-    justUnlockedCard = false;
-    const card = cardElement(chest.card.iso,chest.card.rarity,true);
-    $('bonusCardReveal').replaceChildren(card);$('bonusCardReveal').classList.remove('hidden');$('bonusChestStage').classList.add('hidden');
+    const card = cardElement(chest.card.iso,chest.card.rarity);
+    $('bonusCardReveal').dataset.rarity=chest.card.rarity;
+    const summary=rewardSummary(chest.card,chest.discovery);summary.insertBefore(card,summary.querySelector('.reward-continent'));
+    $('bonusCardReveal').replaceChildren(summary);$('bonusCardReveal').classList.remove('hidden');$('bonusChestStage').classList.add('hidden');
   }
   async function openBonusRewards() {
     await refreshRewards();
@@ -375,7 +378,7 @@
     const c = byISO.get(iso), data = flagCards[iso], article = document.createElement('article');
     article.className = `flag-card ${rarity}`;
     const copies = cardCopies(iso, rarity);
-    article.innerHTML = `${copies > 1 ? `<span class="copy-count" aria-label="${copies} copies">×${copies}</span>` : ''}<span class="rarity">${rarityLabel(rarity)}</span><div class="card-flag" aria-hidden="true">${cardFlag(iso)}</div><h3></h3><p></p>`;
+    article.innerHTML = `${copies > 1 ? `<span class="copy-count" aria-label="${t(copies===1?'albumCopyOne':'albumCopies',{count:format(copies)})}">×${copies}</span>` : ''}<span class="rarity">${rarityLabel(rarity)}</span><div class="card-flag" aria-hidden="true">${cardFlag(iso)}</div><h3></h3><p></p>`;
     article.querySelector('h3').textContent = c.name[lang];
     article.querySelector('p').textContent = data[lang];
     if (detailed) { const note = document.createElement('div'); note.className = 'new-card-note'; note.textContent = justUnlockedCard ? t('newCard') : t('collectionSaved'); article.appendChild(note); }
@@ -414,7 +417,7 @@
     detail.replaceChildren();
     const head = document.createElement('div'); head.className = 'collection-detail-head';
     const title = document.createElement('div'); title.innerHTML = `<span>${cardFlag(iso)}</span><div><small>${t('collectionVariants')}</small><h2></h2></div>`; title.querySelector('h2').textContent = c.name[lang];
-    const close = document.createElement('button'); close.className='text-button'; close.textContent=t('closeDetails'); close.addEventListener('click',()=>detail.classList.add('hidden'));
+    const close = document.createElement('button'); close.className='text-button'; close.textContent=t('closeDetails'); close.addEventListener('click',()=>{detail.classList.add('hidden');$('collectionGrid').querySelector(`[data-country="${iso}"]`)?.focus({preventScroll:true});});
     head.append(title, close); detail.appendChild(head);
     const variants=document.createElement('div'); variants.className='rarity-variants';
     for (const rarity of rarities) {
@@ -423,36 +426,78 @@
     }
     detail.appendChild(variants); detail.classList.remove('hidden'); detail.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'nearest'});
   }
+  function continentLabel(region) { return t('continent'+region[0].toUpperCase()+region.slice(1)); }
+  function albumCount(progress) { return t(progress.owned===1?'albumCountryOne':'albumCountries',{count:format(progress.owned),total:format(progress.total)}); }
+  function setCollectionView(view) {
+    collectionView=view; $('collectionDetail').classList.add('hidden');renderCollection();
+    const focus=view===null?$('collectionAll'):$('collectionRegionTitle');focus.focus({preventScroll:true});
+  }
   function renderCollection() {
-    const grid = $('collectionGrid'); if (!grid) return; grid.replaceChildren();
-    if (collection === null) { $('collectionCount').textContent = t(rewardsLoading ? 'rewardLoading' : 'collectionUnavailable'); return; }
-    const unlocked = Object.keys(collection).filter(iso => flagCards[iso] && ownedRarities(iso).length);
-    const cardCount = unlocked.reduce((sum, iso) => sum + ownedRarities(iso).length, 0);
-    $('collectionCount').textContent = t('collectionCount', { count: format(cardCount), total: format(countries.length * rarities.length) });
-    const mode = $('collectionSort')?.value || 'alpha';
-    const continentOrder = ['africa', 'americas', 'asia', 'europe', 'oceania'];
-    const order = Object.keys(flagCards).sort((a,b) => {
-      if (mode === 'rarity') return (rarityRank[bestRarity(b)] ?? -1) - (rarityRank[bestRarity(a)] ?? -1) || byISO.get(a).name[lang].localeCompare(byISO.get(b).name[lang], lang);
-      if (mode === 'date') { const ad=Math.max(0,...ownedRarities(a).map(r=>acquiredAt(a,r))), bd=Math.max(0,...ownedRarities(b).map(r=>acquiredAt(b,r))); return bd-ad || byISO.get(a).name[lang].localeCompare(byISO.get(b).name[lang], lang); }
-      if (mode === 'continent') return continentOrder.indexOf(byISO.get(a).continent) - continentOrder.indexOf(byISO.get(b).continent) || byISO.get(a).name[lang].localeCompare(byISO.get(b).name[lang], lang);
-      return byISO.get(a).name[lang].localeCompare(byISO.get(b).name[lang], lang);
-    });
-    let currentContinent = '';
-    for (const iso of order) {
-      if (mode === 'continent' && byISO.get(iso).continent !== currentContinent) {
-        currentContinent = byISO.get(iso).continent;
-        const heading = document.createElement('h2'); heading.className = 'continent-heading'; heading.textContent = t('continent' + currentContinent[0].toUpperCase() + currentContinent.slice(1)); grid.appendChild(heading);
+    const grid=$('collectionGrid'),continents=$('collectionContinents');if(!grid)return;
+    grid.replaceChildren();continents.replaceChildren();
+    const overview=collectionView===null;
+    $('collection').dataset.view=overview?'continents':collectionView;
+    continents.classList.toggle('hidden',!overview);grid.classList.toggle('hidden',overview);
+    $('collectionBack').classList.toggle('hidden',overview);
+    $('collectionAll').classList.toggle('hidden',collectionView==='all');
+    $('collectionSortControl').classList.toggle('hidden',overview);
+    $('collectionRegionTitle').classList.toggle('hidden',overview);
+    $('collectionRegionTitle').textContent=collectionView==='all'?t('albumAll'):overview?'':continentLabel(collectionView);
+    if(collection===null){$('collectionCount').textContent=t(rewardsLoading?'rewardLoading':'collectionUnavailable');$('collectionRegionProgress').classList.add('hidden');return;}
+    const progress=album.progress(collection,collectionView||'all');
+    $('collectionCount').textContent=albumCount(progress);
+    const meter=$('collectionRegionProgress');meter.classList.toggle('hidden',overview);meter.max=progress.total;meter.value=progress.owned;meter.setAttribute('aria-label',albumCount(progress));
+    if(overview) {
+      for(const region of album.regions) {
+        const p=album.progress(collection,region),button=document.createElement('button');button.type='button';button.className='album-continent';button.dataset.continent=region;
+        button.setAttribute('aria-label',t('albumExplore',{continent:continentLabel(region),progress:albumCount(p)}));
+        const heading=document.createElement('span');heading.className='album-continent-title';heading.textContent=continentLabel(region);
+        const stamp=document.createElement('span');stamp.className='album-stamp';stamp.setAttribute('aria-hidden','true');stamp.innerHTML='<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="20" cy="20" r="15"/><path d="M5 20h30M20 5c-11 8-11 22 0 30M20 5c11 8 11 22 0 30M9 10c7 5 15 5 22 0M9 30c7-5 15-5 22 0"/></svg>' ;
+        const count=document.createElement('span');count.className='album-continent-count';count.textContent=`${format(p.owned)}/${format(p.total)}`;
+        const bar=document.createElement('progress');bar.max=p.total;bar.value=p.owned;bar.setAttribute('aria-label',albumCount(p));
+        const status=document.createElement('span');status.className='album-continent-status';status.textContent=t(p.complete?'albumComplete':p.owned===0?'albumEmpty':'albumExploreCards');
+        const arrow=document.createElement('span');arrow.className='album-continent-arrow';arrow.setAttribute('aria-hidden','true');arrow.innerHTML='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16 16 4M5 4h11v11"/></svg>';
+        button.append(stamp,heading,count,bar,status,arrow);button.addEventListener('click',()=>setCollectionView(region));continents.appendChild(button);
       }
-      const best = bestRarity(iso);
-      if (best) { const el=cardElement(iso, best); el.classList.add('collection-card'); el.tabIndex=0; el.setAttribute('role','button'); const open=()=>renderCollectionDetail(iso); el.addEventListener('click',open); el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}}); grid.appendChild(el); }
-      else { const locked=document.createElement('article'); locked.className='flag-card locked'; locked.innerHTML='<div class="card-flag" aria-hidden="true">?</div><p></p>'; locked.querySelector('p').textContent=t('lockedCard'); grid.appendChild(locked); }
+      return;
+    }
+    const mode=$('collectionSort').value,pool=collectionView==='all'?album.catalog:album.groups[collectionView];
+    const order=pool.map(c=>c.iso).sort((a,b)=>{
+      const alpha=()=>byISO.get(a).name[lang].localeCompare(byISO.get(b).name[lang],lang);
+      if(mode==='rarity')return (rarityRank[bestRarity(b)]??-1)-(rarityRank[bestRarity(a)]??-1)||alpha();
+      if(mode==='date'){const ad=Math.max(0,...ownedRarities(a).map(r=>acquiredAt(a,r))),bd=Math.max(0,...ownedRarities(b).map(r=>acquiredAt(b,r)));return bd-ad||alpha();}
+      if(mode==='continent')return album.regions.indexOf(album.regionOf(a))-album.regions.indexOf(album.regionOf(b))||alpha();
+      return alpha();
+    });
+    let currentContinent='';
+    for(const iso of order) {
+      const region=album.regionOf(iso);
+      if(mode==='continent'&&collectionView==='all'&&region!==currentContinent){currentContinent=region;const heading=document.createElement('h2');heading.className='continent-heading';heading.textContent=continentLabel(region);grid.appendChild(heading);}
+      const best=bestRarity(iso);
+      if(best){const el=cardElement(iso,best);el.classList.add('collection-card');el.dataset.country=iso;el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',t('albumInspectCard',{country:byISO.get(iso).name[lang],rarity:rarityLabel(best)}));const open=()=>renderCollectionDetail(iso);el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});grid.appendChild(el);}
+      else {const locked=document.createElement('article');locked.className='flag-card locked';locked.dataset.country=iso;locked.innerHTML='<div class="card-flag" aria-hidden="true">?</div><h3></h3><p></p>';locked.querySelector('h3').textContent=byISO.get(iso).name[lang];locked.querySelector('p').textContent=t('lockedCard');grid.appendChild(locked);}
     }
   }
+  function rewardSummary(card,discovery) {
+    const summary=document.createElement('div');summary.className='reward-summary';
+    const kind=discovery?.version===1?discovery.kind:null;
+    summary.dataset.kind=kind||'historical';
+    const heading=document.createElement('h3');heading.className='reward-kind';heading.textContent=t(kind==='country'?'rewardNewCountry':kind==='rarity'?'rewardNewRarity':kind==='copy'?'rewardExtraCopy':'collectionSaved');summary.appendChild(heading);
+    if(kind==='copy'){const count=cardCopies(card.iso,card.rarity),copies=document.createElement('p');copies.className='reward-copies';copies.textContent=t(count===1?'albumCopyOne':'albumCopies',{count:format(count)});summary.appendChild(copies);}
+    const region=album.regionOf(card.iso),progress=album.progress(collection,region);
+    const label=document.createElement('p');label.className='reward-continent';label.textContent=`${continentLabel(region)} · ${albumCount(progress)}`;summary.appendChild(label);
+    const meter=document.createElement('progress');meter.max=progress.total;meter.value=progress.owned;meter.setAttribute('aria-label',label.textContent);summary.appendChild(meter);
+    if(kind==='country'){const advance=document.createElement('p');advance.className='reward-advance';advance.textContent=t('rewardAdvance',{before:format(discovery.before),after:format(discovery.after)});summary.appendChild(advance);
+      if(discovery.before<discovery.total&&discovery.after===discovery.total){const completed=document.createElement('p');completed.className='reward-complete';completed.textContent=t('rewardContinentComplete',{continent:continentLabel(region)});summary.appendChild(completed);}}
+    const button=document.createElement('button');button.type='button';button.className='secondary reveal-collection';button.dataset.rewardContinent=region;button.textContent=t('rewardViewContinent',{continent:continentLabel(region)});button.addEventListener('click',()=>viewCollection(region));summary.appendChild(button);
+    return summary;
+  }
   function revealDailyCard(result) {
-    if (!result.card) return;
-    justUnlockedCard = !!result.card.upgraded;
-    const reveal = $('cardReveal'); reveal.dataset.rarity = result.card.rarity; const revealedCard=cardElement(result.card.iso, result.card.rarity, true); revealedCard.classList.add('zoomable-card'); revealedCard.tabIndex=0; revealedCard.setAttribute('role','button'); revealedCard.addEventListener('click',()=>openCardModal(result.card.iso,result.card.rarity)); reveal.replaceChildren(revealedCard); const collectionButton=document.createElement('button'); collectionButton.className='secondary reveal-collection'; collectionButton.textContent=t('openCollectionNow'); collectionButton.addEventListener('click',()=>{ state=blankState(); state.screen='collection'; render(); }); reveal.appendChild(collectionButton); reveal.classList.remove('hidden');
-    $('dailyChest').classList.add('hidden');
+    if(!result.card)return;
+    const reveal=$('cardReveal');reveal.dataset.rarity=result.card.rarity;
+    const card=cardElement(result.card.iso,result.card.rarity);card.classList.add('zoomable-card');card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',t('albumInspectCard',{country:byISO.get(result.card.iso).name[lang],rarity:rarityLabel(result.card.rarity)}));
+    const open=()=>openCardModal(result.card.iso,result.card.rarity);card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+    const summary=rewardSummary(result.card,result.discovery);summary.insertBefore(card,summary.querySelector('.reward-continent'));reveal.replaceChildren(summary);reveal.classList.remove('hidden');$('dailyChest').classList.add('hidden');
   }
   function renderRewardStatus() {
     $('chooseDaily').disabled = rewardsLoading;
@@ -791,7 +836,10 @@
   $('clearPractice')?.addEventListener('click',()=>{ customPracticeSelection.clear(); renderPracticePicker(); });
   $('startCustomPractice')?.addEventListener('click',()=>{ if(customPracticeSelection.size) start('practice','custom',null,[...customPracticeSelection]); });
   document.querySelectorAll('[data-level]').forEach(button => button.addEventListener('click', () => start(state.mode, button.dataset.level)));
-  async function viewCollection() {
+  async function viewCollection(region=null) {
+    if(typeof region!=='string'||!album.regions.includes(region))region=null;
+    closeResult({restoreFocus:false});closeCardModal();
+    collectionView=region;$('collectionDetail').classList.add('hidden');
     if ($('bonusDialog').open) $('bonusDialog').close();
     await refreshRewards(); state = blankState(); state.screen = 'collection'; render();
     $('collection').querySelector('h1').setAttribute('tabindex','-1');
@@ -863,6 +911,8 @@
       reveal:outcome=>revealBonusCard(outcome.chest),errorKey:'bonusOpenFailed'});
   });
   $('collectionSort')?.addEventListener('change', renderCollection);
+  $('collectionAll').addEventListener('click',()=>setCollectionView('all'));
+  $('collectionBack').addEventListener('click',()=>setCollectionView(null));
   $('closeCardModal')?.addEventListener('click', closeCardModal);
   $('cardModal')?.addEventListener('click', e => { if (e.target === $('cardModal')) closeCardModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('cardModal')?.classList.contains('hidden')) closeCardModal(); if (!$('howModal')?.classList.contains('hidden')) closeHow(); } });
