@@ -73,3 +73,8 @@ Bouton original déplacé dans les actions près de la carte, sans duplication. 
 Composition originale du commit `37d7fa3`, branche `audio/adventure-hook`, non déployée dans le jeu. Boucle de 17,78 secondes à 108 BPM, motif récurrent varié, basse mobile et percussion rare. Musique ×2 par rapport au volume actuel ; effets inchangés.
 
 [Écouter ou télécharger l’aperçu WAV](adventure-hook-preview.wav). L’aperçu contient deux boucles (35,56 secondes), rendues avec le code Web Audio natif, sans normalisation, afin de juger le volume prévu et le raccord. Crête 0,07105, RMS 0,00744, aucun écrêtage numérique.
+
+
+## Thème fredonnable — deuxième proposition
+
+[Écouter la nouvelle version WAV](singable-adventure-preview.wav). Thème original de deux mesures, repris avec réponse et cadence, rythme régulier et notes tenues (« mi sol la sol / mi ré do »). Une boucle fait 17,78 s ; le fichier contient deux répétitions, 35,56 s. Rendu natif sans normalisation, gains de musique ×2 conservés, effets inchangés. Crête 0,06955, RMS 0,02103, aucun écrêtage numérique. Commit `34e719f`, non déployé dans le jeu.
