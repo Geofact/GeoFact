@@ -82,3 +82,7 @@ Composition originale du commit `37d7fa3`, branche `audio/adventure-hook`, non d
 ### Original expedition theme preview
 
 `expedition-theme-preview.wav`: two cycles of the original GeoFact expedition theme (90 BPM, 21.33 seconds per loop), rendered by the actual Web Audio engine, mono 44.1 kHz PCM16, without normalization. Softer harmonics and breathing phrases; requested doubled music gain preserved, game effects unchanged. 97 Node tests and 592 focused HTTP assertions passed. This review artifact does not deploy the game.
+
+### Shorter-note heroic theme preview
+
+`heroic-theme-preview.wav`: original eight-bar adventure theme, 96 BPM, 20-second loop played twice. Rising motif and dotted answers; melodic notes are no longer than 0.563 seconds. Actual Web Audio render, mono 44.1 kHz PCM16 without normalization (peak 0.06918, RMS 0.01571). Soft timbre, music gains and game effects preserved. Review audio only; the game is not deployed.
