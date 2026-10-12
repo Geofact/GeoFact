@@ -1,3 +1,4 @@
+import {closeResultForMap,clickOutsideResult,clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 // Behavioural checks use computed SVG colours, not only the presence of a class.
 export async function testHighlight({newContext, url, core, tap, check, equal}) {
@@ -50,14 +51,14 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
     const saved = await snapshot(p), score = await p.locator('#totalScore').textContent();
     const originalLanguage = await p.locator('#lang').getAttribute('value');
     const view = await p.locator('#map').getAttribute('viewBox');
-    await p.click('#zoomIn');
+    await clickOutsideResult(p,'#zoomIn');
     check(await p.locator('#map').getAttribute('viewBox') !== view, label + ': zoom works');
     await expectGreen(p, iso, label + ' after zoom');
     const moved = await gestures(p);
     check(moved.afterPan !== moved.beforePan, label + ': touch pan works');
     check(moved.afterPinch !== moved.afterPan, label + ': pinch works');
     await expectGreen(p, iso, label + ' after pan/pinch');
-    await p.click('#resetMap');
+    await clickOutsideResult(p,'#resetMap');
     equal(await p.locator('#map').getAttribute('viewBox'), '0 0 1200 600', label + ': recentre works');
     await expectGreen(p, iso, label + ' after recentre');
     equal(await snapshot(p), saved, label + ': map gestures do not write saves');
@@ -104,12 +105,12 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
         if (mode === 'practice') equal((await shapes(p, iso)).length, 2, `${label}: microstate geometry and marker`);
         await interact(p, iso, `${label} ${mode}`);
         check(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${label} ${mode}: no overflow`);
-        await p.click('#next');
+        await clickResultAction(p,'#next');
         await expectCleared(p, iso, baseline, `${label} ${mode} next round`);
         // Leaving the party also clears an answer, including through the mobile home button.
         const nextISO = await currentISO(p);
         await tap(nextISO, 'touch', p);
-        await p.click('#playing [data-home]');
+        await clickOutsideResult(p,'#playing [data-home]');
         equal(await p.locator('#map .country-found, #map .country-correct').count(), 0, `${label} ${mode}: exit clears highlight`);
       }
     } finally { await ctx.close(); }
@@ -141,7 +142,7 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
         check(await p.locator('#map [data-iso="FRA"]').evaluate(el => el.matches(':hover')), 'France truly hovered');
         await expectGreen(p, parent, 'France on hover');
       }
-      await p.click('#next'); await expectCleared(p, parent, baseline, region + ' next round');
+      await clickResultAction(p,'#next'); await expectCleared(p, parent, baseline, region + ' next round');
     }
     // Starting another round during a pulse must not leave old animation classes,
     // and an old timer must not remove a later answer on that same country.
@@ -153,9 +154,10 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
     await expectCleared(p, 'TUV', baseline, 'next during animation');
     await tap('TUV', 'touch', p); await p.waitForTimeout(950);
     await expectGreen(p, 'TUV', 'same country answered again');
+    await closeResultForMap(p);
     await p.locator('#map .microstate-marker[data-iso="TUV"]').hover();
     await expectGreen(p, 'TUV', 'microstate marker on hover');
-    await p.click('#brand'); await expectCleared(p, 'TUV', baseline, 'brand exits party');
+    await clickOutsideResult(p,'#brand'); await expectCleared(p, 'TUV', baseline, 'brand exits party');
     await openChallenge(p, 'FRA'); await tap('FRA', 'mouse', p);
     await p.locator('#playing [data-home]').evaluate(button => button.click());
     await p.waitForTimeout(950);

@@ -23,9 +23,9 @@
   <link rel="icon" href="assets/geofact-icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <script src="i18n.js?v=20261009-update1&amp;home=20261012-zoom1"></script>
+  <script src="i18n.js?v=20261009-update1&amp;home=20261012-result1"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261012-zoom1">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;home=20261012-result1">
 </head>
 <body>
   <main class="app">
@@ -122,13 +122,19 @@
         <div class="map-hint" id="mapHint"></div>
       </div>
       <div class="distance-feedback hidden" id="distanceRow" role="status"><span id="distanceReaction"></span><strong id="distance"></strong><span id="penalty"></span></div>
-      <section id="result" class="card result hidden" aria-live="polite">
-        <h2 data-i18n="resultTitle">Bien joué !</h2>
+      <button id="reopenResult" class="secondary result-reopen hidden" type="button" data-i18n="reopenResult">Revoir le résultat</button>
+      <dialog id="resultDialog" class="result-dialog" aria-labelledby="resultTitle resultCountry">
+        <button id="closeResult" class="result-close" type="button" data-i18n-aria="closeResult" aria-label="Fermer le résultat">×</button>
+      <section id="result" class="card result hidden">
+        <div class="result-content" tabindex="0" role="region" aria-labelledby="resultTitle">
+        <h2 id="resultTitle" tabindex="-1" data-i18n="resultTitle">Bien joué !</h2>
         <div class="flagline"><span id="resultFlag" aria-hidden="true"></span><b id="resultCountry"></b></div>
         <p class="capital" id="capital"></p><div class="fact-reward"><span class="fact-label" data-i18n="didYouKnow">Le savais-tu ?</span><p class="fact" id="fact"></p></div>
         <p id="roundEarned" class="earned"></p><p id="perfectFeedback" class="perfect-feedback hidden" role="status"></p>
+        </div>
         <div class="actions"><button id="shareFact" class="secondary" data-i18n="shareFact">Partager ce fact</button><button id="next" class="primary" data-i18n="next">Pays suivant</button></div>
       </section>
+      </dialog>
     </section>
     <div id="cardModal" class="card-modal hidden" role="dialog" aria-modal="true" aria-label="Carte de collection" data-i18n-aria="collectionCard"><button id="closeCardModal" class="card-modal-close" type="button" aria-label="Fermer" data-i18n-aria="close">×</button><div id="cardModalContent" class="card-modal-content"></div></div>
     <section id="final" class="card final hidden">
@@ -156,6 +162,6 @@
   <script src="public-statistics.js?v=20261009-update1"></script>
   <script src="core.js?v=20261009-update1"></script>
   <script src="map.js?v=20261009-update1"></script>
-  <script src="app.js?v=20261009-update1&amp;home=20261010-language2"></script>
+  <script src="app.js?v=20261009-update1&amp;home=20261012-result1"></script>
 </body>
 </html>

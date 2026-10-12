@@ -198,6 +198,7 @@
   async function openBonusRewards() {
     await refreshRewards();
     selectedBonus = Object.values(bonusSnapshot?.chests||{}).find(c=>c.openedAt===null)?.id||null;
+    closeResult({restoreFocus:false});
     if (!$('bonusDialog').open) $('bonusDialog').showModal();renderBonusRewards();
   }
   function cardCopies(iso, rarity) { const n = collection?.[iso]?.counts?.[rarity]; return Number.isSafeInteger(n) && n > 0 ? n : (ownedRarities(iso).includes(rarity) ? 1 : 0); }
@@ -220,6 +221,56 @@
   const format = n => n.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB');
   const flag = c => [...c.a2].map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
   const map = GeoFactMap($('map'), guess);
+  let resultFocus = null, resultScroll = null, copyResultState = null;
+  const toastHome = {parent:$('toast').parentNode,next:$('toast').nextSibling};
+  function closeResult({restoreFocus = true} = {}) {
+    const dialog = $('resultDialog');
+    if (!dialog.open) return;
+    dialog.close();
+    if($('toast').parentNode !== toastHome.parent)toastHome.parent.insertBefore($('toast'),toastHome.next);
+    if (resultScroll) {
+      const {x,y,styles,scrollBehavior} = resultScroll;
+      Object.assign(document.body.style, styles);
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo({left:x,top:y,behavior:'auto'});
+      document.documentElement.style.scrollBehavior = scrollBehavior;
+      resultScroll = null;
+    }
+    $('reopenResult').classList.toggle('hidden',state.screen !== 'playing' || !state.answered);
+    if (restoreFocus) {
+      const target = resultFocus?.isConnected && resultFocus !== document.body && resultFocus.getClientRects().length ? resultFocus : $('reopenResult');
+      target.focus({preventScroll:true});
+    }
+    resultFocus = null;
+  }
+  function openResult() {
+    const dialog = $('resultDialog');
+    if (dialog.open || state.screen !== 'playing' || !state.answered || document.querySelector('dialog[open]') || !$('howModal').classList.contains('hidden') || !$('cardModal').classList.contains('hidden')) return;
+    resultFocus = document.activeElement;
+    const styles = Object.fromEntries(['position','top','left','right','width','paddingRight'].map(key=>[key,document.body.style[key]]));
+    const x = window.scrollX, y = window.scrollY, gap = window.innerWidth-document.documentElement.clientWidth;
+    resultScroll = {x,y,styles,scrollBehavior:document.documentElement.style.scrollBehavior};
+    const padding = parseFloat(getComputedStyle(document.body).paddingRight)||0;
+    Object.assign(document.body.style,{position:'fixed',top:`-${y}px`,left:`-${x}px`,right:'0',width:'auto',paddingRight:`${padding+gap}px`});
+    $('reopenResult').classList.add('hidden');
+    dialog.showModal();
+    $('result').querySelector('.result-content').scrollTop = 0;
+    $('resultTitle').focus({preventScroll:true});
+  }
+  $('closeResult').addEventListener('click',()=>closeResult());
+  $('reopenResult').addEventListener('click',openResult);
+  $('resultDialog').addEventListener('cancel',event=>{event.preventDefault();closeResult();});
+  $('resultDialog').addEventListener('keydown',event=>{
+    if(event.key !== 'Tab')return;
+    const controls = [...$('resultDialog').querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),textarea:not(:disabled),[tabindex="0"]')].filter(el=>el.getClientRects().length);
+    const first=controls[0], last=controls.at(-1);
+    if(event.shiftKey && (document.activeElement===first || document.activeElement===$('resultTitle'))) {event.preventDefault();last?.focus();}
+    else if(!event.shiftKey && (document.activeElement===last || document.activeElement===$('resultTitle'))) {event.preventDefault();first?.focus();}
+  });
+  $('copyDialog').addEventListener('close',()=>{
+    const previous=copyResultState;copyResultState=null;
+    if(previous===state && state.screen==='playing' && state.answered){openResult();$('shareFact').focus({preventScroll:true});}
+  });
   const autoScrollGameplay = () => matchMedia('(pointer: coarse), (max-width: 699px)').matches || matchMedia('(pointer: fine) and (min-width: 700px)').matches;
   function scrollToElement(element, block = 'start') {
     if (!autoScrollGameplay() || !element) return;
@@ -233,9 +284,7 @@
     check.className = 'correct-check'; check.textContent = '✓'; check.setAttribute('aria-hidden', 'true');
     wrap.appendChild(check);
     setTimeout(() => check.remove(), 850);
-    $('result').classList.remove('result-reveal');
-    requestAnimationFrame(() => $('result').classList.add('result-reveal'));
-    setTimeout(() => scrollToElement($('result'), 'start'), 430);
+    openResult();
   }
   const boundaries = new Map();
   const territoryShapes = new Map();
@@ -342,6 +391,7 @@
     card.addEventListener('pointermove',update); card.addEventListener('pointerup',reset); card.addEventListener('pointercancel',reset); card.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch') reset();});
   }
   function openCardModal(iso, rarity) {
+    closeResult({restoreFocus:false});
     const modal = $('cardModal'), content = $('cardModalContent');
     if (!modal || !content || !flagCards[iso] || !ownedRarities(iso).includes(rarity)) return;
     modal.dataset.iso=iso;modal.dataset.rarity=rarity;
@@ -422,6 +472,8 @@
     $('retryBonusRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
   }
   function render() {
+    if(state.screen !== 'playing' || !state.answered) closeResult({restoreFocus:false});
+    $('reopenResult').classList.toggle('hidden',state.screen !== 'playing' || !state.answered || $('resultDialog').open);
     // Move the same controls: their handlers and saved preferences remain unchanged.
     const header = document.querySelector('.top'), headerParent = state.screen === 'home' ? $('home') : document.querySelector('main.app');
     if (header.parentElement !== headerParent) headerParent.prepend(header);
@@ -627,6 +679,7 @@
   }
   async function next() {
     if (!state.answered || nextBusy || (!!state.bonusMode && practiceBlocked)) return;
+    closeResult({restoreFocus:false});
     const gameState = state;
     if ((state.mode === 'game' || state.mode === 'daily') && state.index === 4) {
       nextBusy = true; $('next').disabled = true;
@@ -682,10 +735,12 @@
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(text);
+      if($('resultDialog').open)$('result').appendChild($('toast'));
       $('toast').textContent = t('copied'); $('toast').classList.remove('hidden');
       clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.add('hidden'), 2200);
     } catch {
-      $('copyText').value = text; $('copyDialog').showModal(); $('copyText').focus(); $('copyText').select();
+      if($('resultDialog').open){copyResultState=state;closeResult({restoreFocus:false});}
+      $('copyText').value = text; if(!$('copyDialog').open)$('copyDialog').showModal(); $('copyText').focus(); $('copyText').select();
     }
   }
   const customPracticeSelection = new Set();
@@ -740,7 +795,7 @@
     $('collection').querySelector('h1').focus({preventScroll:true});
   }
   for (const id of ['openCollection','viewBonusCollection','bonusViewCollection']) $(id).addEventListener('click',viewCollection);
-  const openHow=()=>{ $('howModal')?.classList.remove('hidden'); document.body.classList.add('modal-open'); };
+  const openHow=()=>{ closeResult({restoreFocus:false}); $('howModal')?.classList.remove('hidden'); document.body.classList.add('modal-open'); };
   const closeHow=()=>{ $('howModal')?.classList.add('hidden'); document.body.classList.remove('modal-open'); };
   $('howToPlay')?.addEventListener('click',openHow); $('closeHow')?.addEventListener('click',closeHow); $('howModal')?.addEventListener('click',e=>{if(e.target===$('howModal')) closeHow();});
   async function animateChest({button,box,rarity,commit,reveal,isCurrent,errorKey,afterCommit}) {

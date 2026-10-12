@@ -1,3 +1,4 @@
+import {clickOutsideResult,clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 import {currentSave,legacySave} from './save-fixtures.mjs';
 export async function testDailyStorage({newContext,url,tap,check,equal,telemetry}) {
@@ -11,7 +12,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
   const p=await ctx.newPage();await p.clock.install({time:new Date(time)});await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();return {ctx,p};
  }
  async function launch(p) {await p.click('#chooseDaily');await p.locator('#playing').waitFor({state:'visible'});return p.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries));}
- async function solve(p,series,lastNext=true) {for(let i=0;i<5;i++){await tap(series[i],'touch',p);await p.locator('#result').waitFor({state:'visible'});if(i<4||lastNext)await p.click('#next');}if(lastNext)await p.locator('#final').waitFor({state:'visible'});}
+ async function solve(p,series,lastNext=true) {for(let i=0;i<5;i++){await tap(series[i],'touch',p);await p.locator('#result').waitFor({state:'visible'});if(i<4||lastNext)await clickResultAction(p,'#next');}if(lastNext)await p.locator('#final').waitFor({state:'visible'});}
  function coherent(s,day,label) {
   const r=s.daily.days[day],chest=s.dailyChests['daily:'+day];check(!!r&&!!chest,label+' result and chest committed');
   equal(chest.card,r.card,label+' fixed card matches chest');equal(chest.revealed,!!r.cardOpened,label+' revelation consistent');
@@ -45,7 +46,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
    await q.clock.install({time:new Date('2026-10-08T12:00:00Z')});await q.goto(url);await q.locator('#chooseDaily:enabled').waitFor();
    const before=await snapshot(p),series=await launch(p);await launch(q);await solve(p,series,false);await solve(q,series,false);
    const eventsBefore=telemetry.filter(e=>e.body?.p_event_type==='daily_completed').length;
-   await Promise.all([p.click('#next'),q.click('#next')]);for(const page of [p,q])await page.locator('#dailyChest').waitFor({state:'visible'});
+   await Promise.all([clickResultAction(p,'#next'),clickResultAction(q,'#next')]);for(const page of [p,q])await page.locator('#dailyChest').waitFor({state:'visible'});
    const earned=await snapshot(p);coherent(earned,'2026-10-08','two completions');equal(copies(earned),copies(before)+1,'two tabs only one copy');
    equal(telemetry.filter(e=>e.body?.p_event_type==='daily_completed').length-eventsBefore,1,'only winning completion sends event');
    const openedBefore=telemetry.filter(e=>e.body?.p_event_type==='chest_opened').length;
@@ -60,7 +61,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
    const s=await snapshot(p);coherent(s,'2026-10-08','midnight');equal(s.daily.days['2026-10-09'],undefined,'no tomorrow result from yesterday series');
    await p.reload();await p.locator('#chooseDaily:enabled').waitFor();await p.locator('#resumeDailyChest').waitFor({state:'visible'});await p.click('#resumeDailyChest');await p.locator('#dailyChest').waitFor({state:'visible'});
    await p.click('#openChest');await p.locator('#cardReveal').waitFor({state:'visible'});equal((await snapshot(p)).daily.days['2026-10-08'].cardOpened,true,'yesterday chest recovered and revealed');
-   await p.click('#brand');const tomorrow=await launch(p);equal(tomorrow,await p.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries)),'next UTC Daily still playable');
+   await clickOutsideResult(p,'#brand');const tomorrow=await launch(p);equal(tomorrow,await p.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries)),'next UTC Daily still playable');
   }finally{await ctx.close();}
  }
  {
@@ -69,7 +70,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
    await p.evaluate(()=>{window.originalTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Quota exceeded','QuotaExceededError');return originalTransaction.call(this,stores,mode,...rest);};});
    await solve(p,series);await p.locator('#rewardStatus').filter({hasText:'Récompense non confirmée'}).waitFor();check(await p.locator('#dailyChest').isHidden(),'failed save never offers a reward');equal(await snapshot(p),before,'failed write preserves canonical data');
    await setLanguage(p,'en');check((await p.locator('#rewardStatus').textContent()).includes('Reward not confirmed'),'failure translated English');
-   await p.evaluate(()=>IDBDatabase.prototype.transaction=originalTransaction);await p.click('#retryRewards');await p.locator('#dailyChest').waitFor({state:'visible'});
+   await p.evaluate(()=>IDBDatabase.prototype.transaction=originalTransaction);await clickOutsideResult(p,'#retryRewards');await p.locator('#dailyChest').waitFor({state:'visible'});
    const earned=await snapshot(p);equal(copies(earned),copies(before)+1,'retry credits once');
    await p.evaluate(()=>{IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Quota exceeded','QuotaExceededError');return originalTransaction.call(this,stores,mode,...rest);};});
    await p.click('#openChest');await p.locator('#rewardStatus').filter({hasText:'Unable to save the chest reveal'}).waitFor();check(await p.locator('#cardReveal').isHidden(),'failed revelation not confirmed');equal(await snapshot(p),earned,'failed reveal preserves chest and cards');
@@ -83,7 +84,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
   const {ctx,p}=await setup(seed,{init});try {
    await p.click('#openCollection');await p.locator('#collectionCount').filter({hasText:'Collection indisponible'}).waitFor();equal(await local(p),seed,label+' originals remain intact');check(await p.locator('#retryRewards').isVisible(),label+' visible retry');
    if(label==='malformed') {const s=await snapshot(p);equal(s.dailyActive,undefined,'failed import never activates empty state');equal(s.legacyImport,undefined,'failed import no marker');}
-   await p.click('#brand');await p.click('#chooseGame');await p.click('[data-level="easy"]');await p.locator('#playing').waitFor({state:'visible'});check(await p.locator('#playing').isVisible(),label+' classic still works');
+   await clickOutsideResult(p,'#brand');await p.click('#chooseGame');await p.click('[data-level="easy"]');await p.locator('#playing').waitFor({state:'visible'});check(await p.locator('#playing').isVisible(),label+' classic still works');
   }finally{await ctx.close();}
  }
  {

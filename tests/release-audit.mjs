@@ -1,3 +1,4 @@
+import {clickOutsideResult,clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 import {currentSave} from './save-fixtures.mjs';
 export async function testReleaseAudit({newContext,url,tap,check,equal}) {
@@ -11,8 +12,8 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
   const p=await ctx.newPage();try{
    await p.clock.install({time:new Date('2026-10-09T12:00:00Z')});await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();const before=await read(p);
    await p.click('#chooseDaily');await p.locator('#playing').waitFor({state:'visible'});if(failure==='malformed')await p.evaluate(()=>{window.auditTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Full','QuotaExceededError');return auditTransaction.call(this,stores,mode,...rest);};});const series=await p.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries));
-   for(const iso of series){equal(await p.evaluate(()=>GeoFactCountries.find(c=>c.name[document.documentElement.lang]===document.getElementById('countryName').textContent).iso),iso,'expected Daily country');await tap(iso,'touch',p);await p.locator('#result').waitFor({state:'visible'});await p.click('#next');}
-   if(failure==='malformed'){await p.locator('#rewardStatus').filter({hasText:'Récompense non confirmée'}).waitFor();equal((await read(p)).collection,before.collection,'failed Daily leaves collection unchanged');await p.evaluate(()=>IDBDatabase.prototype.transaction=window.auditTransaction);await p.click('#retryRewards');}
+   for(const iso of series){equal(await p.evaluate(()=>GeoFactCountries.find(c=>c.name[document.documentElement.lang]===document.getElementById('countryName').textContent).iso),iso,'expected Daily country');await tap(iso,'touch',p);await p.locator('#result').waitFor({state:'visible'});await clickResultAction(p,'#next');}
+   if(failure==='malformed'){await p.locator('#rewardStatus').filter({hasText:'Récompense non confirmée'}).waitFor();equal((await read(p)).collection,before.collection,'failed Daily leaves collection unchanged');await p.evaluate(()=>IDBDatabase.prototype.transaction=window.auditTransaction);await clickOutsideResult(p,'#retryRewards');}
    await p.locator('#dailyChest').waitFor({state:'visible'});const saved=await read(p);
    check(!!saved.daily.days['2026-10-09'].card,failure+' practice journal does not block Daily commit');
    equal(Object.keys(saved.credits).length,Object.keys(before.credits).length+1,'one Daily credit');
@@ -48,17 +49,17 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
    await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();check(await p.locator('#openBonusRewards').isHidden(),'no empty chest action');
    for(const lang of ['fr','en']){
     await setLanguage(p,lang);await fit(lang+' home');
-    await p.click('#howToPlay');await fit(lang+' help');equal(await p.locator('#closeHow').getAttribute('aria-label'),lang==='fr'?'Fermer':'Close','translated close label');await p.click('#closeHow');
+    await clickOutsideResult(p,'#howToPlay');await fit(lang+' help');equal(await p.locator('#closeHow').getAttribute('aria-label'),lang==='fr'?'Fermer':'Close','translated close label');await p.click('#closeHow');
     await p.click('#choosePractice');await p.click('#practiceCustom');await fit(lang+' picker');await p.locator('input[value="FRA"]').check();await p.click('#startCustomPractice');await p.locator('#playing').waitFor({state:'visible'});await fit(lang+' map');
     await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});await fit(lang+' anecdote');
     // Even a reduced animation needs a painted frame before reading its final fill.
     await p.waitForFunction(()=>getComputedStyle(document.querySelector('#map [data-iso=FRA]')).fill==='rgb(74, 222, 128)');
     await setLanguage(p,lang==='fr'?'en':'fr');
-    equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await p.click('#brand');
-    await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await p.click('#brand');
+    equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await clickOutsideResult(p,'#brand');
+    await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await clickOutsideResult(p,'#brand');
    }
    await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'viewport:'+n,roundId:'viewport-round:'+n,mode:'practice',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.4},['FRA']);}finally{r.close();}});
-   await p.click('#openCollection');await p.click('#brand');await p.click('#openBonusRewards');await p.locator('#bonusChestStage').waitFor({state:'visible'});await fit('bonus dialog');
+   await p.click('#openCollection');await clickOutsideResult(p,'#brand');await clickOutsideResult(p,'#openBonusRewards');await p.locator('#bonusChestStage').waitFor({state:'visible'});await fit('bonus dialog');
    check(await p.locator('#bonusDialog').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'bonus modal fits width');await p.click('#openBonusChest');await p.locator('#bonusCardReveal').waitFor({state:'visible'});await fit('bonus reveal');await p.click('#closeBonusRewards');check(await p.locator('#openBonusRewards').isHidden(),'chest action hidden after last opening');
   }finally{await ctx.close();}
  }

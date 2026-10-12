@@ -1,3 +1,4 @@
+import {clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 // The border label must not influence the existing distance-based penalty.
 export async function testBorders({newContext,url,core,tap,check,equal}) {
@@ -82,7 +83,7 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
       const fills=await p.locator('#map [data-iso="FRA"], #map [data-iso="FRA-GF"]').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).fill));
       equal(fills,fills.map(()=>'rgb(74, 222, 128)'),label+': correct parent and territory stay green after neighbour feedback');
       equal(await p.locator('#totalScore').textContent(),`${pointsAfterBrazil} / 100`,label+': earned challenge score unchanged');
-      await p.click('#next');equal(await p.locator('#map .country-found').count(),0,label+': green clears next round');
+      await clickResultAction(p,'#next');equal(await p.locator('#map .country-found').count(),0,label+': green clears next round');
 
       // Country-level adjacency applies equally to region aliases and tiny markers.
       const cases=[
@@ -118,7 +119,7 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
       equal(await snapshot(daily),dailyBefore,label+': Daily wrong answer preserves saves');
       await tap('IDN',input,daily);await daily.waitForTimeout(950);
       equal(await daily.locator('#map [data-iso="IDN"]').evaluate(el=>getComputedStyle(el).fill),'rgb(74, 222, 128)',label+': Daily still green');
-      await daily.click('#next');equal(await daily.locator('#map .country-found').count(),0,label+': Daily next clears green');
+      await clickResultAction(daily,'#next');equal(await daily.locator('#map .country-found').count(),0,label+': Daily next clears green');
     } finally {await ctx.close();}
   }
 }

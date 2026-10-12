@@ -1,3 +1,5 @@
+import {testResultModal} from './result-modal.mjs';
+import {clickOutsideResult,clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -86,7 +88,7 @@ async function gesture(steps){
 }
 const series=['FRA','JPN','USA','GBR','NOR'];
 async function challenge(score=94,base=url){await page.goto(base+'?challenge='+core.encodeChallenge('easy',series,score));await visible('challengeIntro');await page.click('#acceptChallenge');}
-async function finishPerfect(){for(const iso of series){await tap(iso);await visible('result');await page.click('#next');}}
+async function finishPerfect(){for(const iso of series){await tap(iso);await visible('result');await clickResultAction(page,'#next');}}
 try {
   console.log('HTTP gameplay, interactions and sharing…');
   await page.goto(url);
@@ -94,7 +96,7 @@ try {
   for(const mode of ['chooseGame','choosePractice']) for(const level of ['easy','medium','hard']){
     await page.click('#'+mode); if(mode==='choosePractice') await page.click('#practiceByDifficulty'); await page.click(`[data-level="${level}"]`); await visible('playing'); check((await countryName()).length>0,'round has a country');
     const selected=await page.evaluate(name=>GeoFactCountries.find(c=>c.name.fr===name).difficulty,await countryName());equal(selected,level,'selected difficulty');
-    await page.click('#brand');await visible('home');
+    await clickOutsideResult(page,'#brand');await visible('home');
   }
   await challenge();
   equal(await countryName(),'France','challenge order');
@@ -106,7 +108,7 @@ try {
   await gesture([['pointerdown',1,200,300],['pointerdown',2,400,300],['pointermove',1,150,300],['pointermove',2,450,300],['pointerup',2,450,300],['pointerup',1,150,300]]);
   await visible('result',false); await visible('distanceRow',false);
   check(+(await page.locator('#map').getAttribute('viewBox')).split(' ')[2]<1200,'pinch zooms');
-  await page.click('#resetMap');
+  await clickOutsideResult(page,'#resetMap');
   equal(await page.locator('#map').getAttribute('viewBox'),'0 0 1200 600','reset map');
   await page.evaluate(()=>document.querySelector('.ocean').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,pointerType:'mouse',clientX:100,clientY:200})));
   await page.evaluate(()=>document.querySelector('.ocean').dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,pointerType:'mouse',clientX:100,clientY:200})));
@@ -124,21 +126,21 @@ try {
   await setLanguage(page,'fr');const factFR=await page.locator('#fact').textContent();check(factFR!==factEN,'fact translated');
   equal(await page.evaluate(()=>localStorage.getItem('wg-seen-facts')),frenchBefore,'language preserves fact selection');
   await setLanguage(page,'en');equal(await page.locator('#fact').textContent(),factEN,'same fact when switching back');
-  await page.click('#shareFact');
+  await clickResultAction(page,'#shareFact');
   const share=await page.evaluate(()=>window.shared[0]);equal(share.title,'GeoFact');check(share.text.includes(factEN),'shares current fact');check(!share.text.includes(share.url),'native URL only in URL field');equal(share.url,url);
-  await page.click('#zoomIn');const zoomed=await page.locator('#map').getAttribute('viewBox');
+  await clickOutsideResult(page,'#zoomIn');const zoomed=await page.locator('#map').getAttribute('viewBox');
   await page.mouse.move(600,450);await page.mouse.down();await page.mouse.move(650,480,{steps:5});await page.mouse.up();
   check(await page.locator('#map').getAttribute('viewBox')!==zoomed,'pan works after answering');equal(await page.locator('#totalScore').textContent(),'19 / 100','no extra guesses after success');
-  await page.click('#next');
+  await clickResultAction(page,'#next');
   for(const iso of series.slice(1)){
     equal(await countryName(),await page.evaluate(iso=>GeoFactCountries.find(c=>c.iso===iso).name.en,iso),'challenge next country');
-    await tap(iso);await page.click('#next');
+    await tap(iso);await clickResultAction(page,'#next');
   }
   await visible('final');equal(await page.locator('#map .country-found, #map .country-correct').count(),0,'finishing a game clears the answer');equal(await page.locator('#finalScore').textContent(),'99 / 100');check((await page.locator('#versus').textContent()).includes('+5'),'challenge win margin');
   await page.click('#challengeFriend');const challengeShare=await page.evaluate(()=>window.shared.at(-1));
   const sharedURL=new URL(challengeShare.url);equal([...sharedURL.searchParams.keys()],['challenge'],'single challenge parameter');
   equal(core.parseChallenge(sharedURL.searchParams.get('challenge'),await page.evaluate(()=>GeoFactCountries)),{v:4,d:'easy',c:series,s:94,r:99},'shared series and both scores');
-  await page.click('#brand');await visible('home');equal(page.url(),url,'home cleans challenge URL');equal(await page.evaluate(()=>localStorage.getItem('wg-best')),'999','legacy best key preserved');
+  await clickOutsideResult(page,'#brand');await visible('home');equal(page.url(),url,'home cleans challenge URL');equal(await page.evaluate(()=>localStorage.getItem('wg-best')),'999','legacy best key preserved');
   check(JSON.parse(await page.evaluate(()=>localStorage.getItem('wg-stats'))).solved===5,'stats only count successes');
   await page.reload();equal(await page.locator('html').getAttribute('lang'),'en','language remembered');
   await challenge(100);await finishPerfect();check((await page.locator('#versus').textContent()).includes('tie'),'challenge tie');
@@ -148,7 +150,7 @@ try {
   await visible('roundLabel',false);await visible('totalScore',false);await visible('roundPoints',false);
   for(let i=0;i<7;i++){
     const target=await page.evaluate(name=>GeoFactCountries.find(c=>c.name[document.documentElement.lang]===name).iso,await countryName());
-    await tap(target,'touch');await visible('result');await visible('roundEarned',false);await page.click('#next');await visible('playing');
+    await tap(target,'touch');await visible('result');await visible('roundEarned',false);await clickResultAction(page,'#next');await visible('playing');
   }
   // Exercise the rendered CTM and selection priority at different zoom levels.
   const hitboxResults=await page.evaluate(async()=>{
@@ -171,11 +173,11 @@ try {
   // A blocked native share falls back; an intentional cancellation does not.
   const target=await page.evaluate(name=>GeoFactCountries.find(c=>c.name.en===name).iso,await countryName());await tap(target);
   await page.evaluate(()=>{window.copied=[];Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new Error('Unavailable')}});Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.copied.push(text)}});});
-  await page.click('#shareFact');const copied=await page.evaluate(()=>window.copied[0]);equal(copied.split(url).length-1,1,'clipboard URL once');
-  await page.evaluate(()=>Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('Cancelled','AbortError')}}));await page.click('#shareFact');equal(await page.evaluate(()=>window.copied.length),1,'share cancellation ignored');
-  await page.evaluate(()=>{Object.defineProperty(navigator,'share',{configurable:true,value:undefined});Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined});});await page.click('#shareFact');await visible('copyDialog');check((await page.locator('#copyText').inputValue()).includes(url),'manual copy fallback');await page.click('#closeCopy');
+  await clickResultAction(page,'#shareFact');const copied=await page.evaluate(()=>window.copied[0]);equal(copied.split(url).length-1,1,'clipboard URL once');
+  await page.evaluate(()=>Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('Cancelled','AbortError')}}));await clickResultAction(page,'#shareFact');equal(await page.evaluate(()=>window.copied.length),1,'share cancellation ignored');
+  await page.evaluate(()=>{Object.defineProperty(navigator,'share',{configurable:true,value:undefined});Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined});});await clickResultAction(page,'#shareFact');await visible('copyDialog');check((await page.locator('#copyText').inputValue()).includes(url),'manual copy fallback');await page.click('#closeCopy');
   for(const width of [320,375,390,430,768,1280]){
-    await page.setViewportSize({width,height:844});await page.click('#brand');
+    await page.setViewportSize({width,height:844});await clickOutsideResult(page,'#brand');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'home no overflow '+width);
     await page.click('#chooseGame');await page.click('[data-level="easy"]');check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'game no overflow '+width);
     const target=await page.evaluate(name=>GeoFactCountries.find(c=>c.name.en===name).iso,await countryName());await tap(target);check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'result no overflow '+width);
@@ -197,7 +199,7 @@ try {
     const history=await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-seen-facts')));
     check(!!history[parent] && !(region in history),region+' parent history key');
     equal(await page.locator('#fact').textContent(),await page.evaluate(({parent,index})=>GeoFactFacts[parent][index][document.documentElement.lang],{parent,index:history[parent].last}),region+' parent fact');
-    await page.click('#next');await visible('playing');await visible('result',false);
+    await clickResultAction(page,'#next');await visible('playing');await visible('result',false);
     await page.goto(url+'?challenge='+core.encodeChallenge('easy',['JPN','FRA','USA','GBR','NOR'],100));
     await page.click('#acceptChallenge');await tap(region);await visible('distanceRow');await visible('result',false);
     check(/km$/.test(await page.locator('#distance').textContent()),region+' wrong distance');
@@ -207,7 +209,7 @@ try {
   await page.locator('#practiceCountryList input[value="FRA"]').check();await page.click('#startCustomPractice');
   for(let round=0;round<12;round++) {
     equal(await countryName(),'France','single-country round '+round);
-    await tap('FRA');await visible('result');await page.click('#next');await visible('playing');await visible('result',false);
+    await tap('FRA');await visible('result');await clickResultAction(page,'#next');await visible('playing');await visible('result',false);
   }
 
   console.log('Existing saves, Daily rewards and storage failures…');
@@ -249,7 +251,7 @@ try {
   await dailyPage.click('#chooseDaily');
   await dailyPage.locator('#playing').waitFor({state:'visible'});
   const dailySeries=await dailyPage.evaluate(()=>GeoFactCore.dailySeries(GeoFactCountries));
-  for(const iso of dailySeries) { await tap(iso,'touch',dailyPage);await dailyPage.locator('#result').waitFor({state:'visible'});await dailyPage.click('#next'); }
+  for(const iso of dailySeries) { await tap(iso,'touch',dailyPage);await dailyPage.locator('#result').waitFor({state:'visible'});await clickResultAction(dailyPage,'#next'); }
   await dailyPage.locator('#final').waitFor({state:'visible'});
   equal(await dailyPage.locator('#map .country-found, #map .country-correct').count(),0,'finishing Daily clears the answer');
   const earned=await snapshot(dailyPage),earnedState=await rewardSnapshot(dailyPage),daily=earnedState.daily;
@@ -292,13 +294,13 @@ try {
   const {ctx:malformedContext,p:malformedPage}=await savedContext(malformed);
   equal(await snapshot(malformedPage),malformed,'malformed save preserved on load');await malformedContext.close();
   const failing=await newContext({locale:'en-GB'},{failSupabase:true});const failingPage=await failing.newPage();
-  await failingPage.goto(url);await failingPage.click('#openPublicStats');await failingPage.locator('#statsStatus').filter({hasText:'unavailable'}).waitFor();
+  await failingPage.goto(url);await clickOutsideResult(failingPage,'#openPublicStats');await failingPage.locator('#statsStatus').filter({hasText:'unavailable'}).waitFor();
   await failingPage.goto(url+'?challenge='+core.encodeChallenge('easy',series,100));await failingPage.click('#acceptChallenge');await tap('FRA','mouse',failingPage);
   check(await failingPage.locator('#result').isVisible(),'Supabase outage does not prevent a correct answer');await failing.close();
   await restricted.goto(url+'?challenge='+core.encodeChallenge('easy',series,100));await restricted.click('#acceptChallenge');await tap('FRA','touch',restricted);
   check(await restricted.locator('#result').isVisible(),'storage disabled still allows answers');
 
-  await page.goto(url);await page.click('#openPublicStats');await page.locator('#statVisitors').filter({hasText:'12'}).waitFor();
+  await page.goto(url);await clickOutsideResult(page,'#openPublicStats');await page.locator('#statVisitors').filter({hasText:'12'}).waitFor();
   equal(await page.locator('#statChests').textContent(),'4','mock public stats rendered');
   await Promise.all([page.waitForResponse(r=>r.url().endsWith('/geofact_stats') && r.request().postDataJSON().period_days===0),page.selectOption('#statsPeriod','0')]);
   check(telemetry.some(e=>e.rpc==='geofact_stats' && e.method==='POST' && e.body.period_days===30),'stats period contract');
@@ -316,6 +318,7 @@ try {
   await testMobileAudio({newContext,url,tap,check,equal});
   await testHomeRedesign({newContext,url,tap,check,equal});
   await testUpdateIntegration({newContext,url,tap,core,check,equal,telemetry});
+  await testResultModal({newContext,url,core,tap,check,equal});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');

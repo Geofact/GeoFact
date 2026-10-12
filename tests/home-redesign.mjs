@@ -1,3 +1,4 @@
+import {clickOutsideResult} from './result-controls.mjs';
 // Home-only visual and navigation regressions; all contexts use the HTTP/mock harness.
 import {mkdir} from 'node:fs/promises';
 import {currentSave} from './save-fixtures.mjs';
@@ -40,18 +41,18 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    }
    if(captures)await p.screenshot({path:`${captures}/home-${width}-${lang}.png`,fullPage:true});
    await p.clock.runFor(2000);equal(await p.locator('#dailyCountdown').textContent(),'11:59:58','countdown ticks from actual UTC clock');
-   await p.click('#howToPlay');check(await p.locator('#howModal').isVisible(),'help accessible');await p.click('#closeHow');
-   await p.click('#openPublicStats');check(await p.locator('#publicStats').isVisible(),'stats accessible');await p.click('#brand');
-   await p.click('#choosePractice');await p.clock.runFor(500);check(await p.locator('#practiceSetup').isVisible(),'practice handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'practice layout fits');if(captures)await p.screenshot({path:`${captures}/practice-${width}-${lang}.png`,fullPage:true});await p.click('#brand');
-   await p.click('#chooseGame');await p.clock.runFor(500);check(await p.locator('#difficulty').isVisible(),'challenge handler retained');await p.click('#brand');
-   await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});equal(await p.locator('main.app > .top').count(),1,'normal header restored on other screens');check(await p.locator('#collection').isVisible(),'collection handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'collection layout fits');if(captures)await p.screenshot({path:`${captures}/collection-${width}-${lang}.png`,fullPage:true});await p.click('#brand');
+   await clickOutsideResult(p,'#howToPlay');check(await p.locator('#howModal').isVisible(),'help accessible');await p.click('#closeHow');
+   await clickOutsideResult(p,'#openPublicStats');check(await p.locator('#publicStats').isVisible(),'stats accessible');await clickOutsideResult(p,'#brand');
+   await p.click('#choosePractice');await p.clock.runFor(500);check(await p.locator('#practiceSetup').isVisible(),'practice handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'practice layout fits');if(captures)await p.screenshot({path:`${captures}/practice-${width}-${lang}.png`,fullPage:true});await clickOutsideResult(p,'#brand');
+   await p.click('#chooseGame');await p.clock.runFor(500);check(await p.locator('#difficulty').isVisible(),'challenge handler retained');await clickOutsideResult(p,'#brand');
+   await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});equal(await p.locator('main.app > .top').count(),1,'normal header restored on other screens');check(await p.locator('#collection').isVisible(),'collection handler retained');check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'collection layout fits');if(captures)await p.screenshot({path:`${captures}/collection-${width}-${lang}.png`,fullPage:true});await clickOutsideResult(p,'#brand');
    equal(await snapshot(p),before,'home consultations never alter rewards');
    for(const [key,value] of Object.entries(seed))equal(await p.evaluate(key=>localStorage.getItem(key),key),value,'original save retained '+key);
    if(width<=600) {const b=await p.locator('#lang').boundingBox();await p.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);} else await p.click('#lang');
    equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','one touch toggles language');
    check((await p.locator('#lang').getAttribute('aria-label')).endsWith(lang==='fr'?'FR':'EN'),'accessible label announces next language');
    await p.locator('#lang').focus();await p.keyboard.press('Enter');equal(await p.locator('#lang').getAttribute('value'),lang,'Enter toggles back');await p.keyboard.press('Space');equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','Space toggles language');equal(await p.locator('[data-i18n=homeDailyTitle]').textContent(),lang==='fr'?'Your daily exploration':'L’exploration quotidienne','instant language change');
-   await p.click('#toggleSound');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','language saved');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','sound preference saved');
+   await clickOutsideResult(p,'#toggleSound');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','language saved');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','sound preference saved');
   } finally {await ctx.close();}
  }
  // Completed/revealed and past sealed chests are real committed fixtures, never UI placeholders.
@@ -61,7 +62,7 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
   try {const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-09T23:59:57Z')});await p.clock.pauseAt(new Date('2026-10-09T23:59:58Z'));await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();const before=await snapshot(p);
    equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Voir mon résultat':'View my result','completed Daily action');equal(await p.locator('#dailyCompleted,#dailyHomeScore,#dailyHomeErrors,#dailyHomeTiles').count(),0,'completed Daily summary omitted from home');check(await p.locator('.daily-home-streak').isVisible(),'completed Daily keeps visible streak');
    if(captures)await p.screenshot({path:`${captures}/daily-${opened?'opened':'sealed'}-${lang}.png`,fullPage:true});
-   await p.click('#chooseDaily');await p.locator('#final').waitFor({state:'visible'});check(await p.locator(opened?'#cardReveal':'#dailyChest').isVisible(),'correct real chest state');equal(await p.locator('#finalScore').textContent(),`${daily.days['2026-10-09'].score} / 100`,'full Daily score remains in result');check(await p.locator('#dailyFinalErrors').isVisible(),'errors remain in result');equal(await p.locator('#dailyFinalTiles .daily-mark').count(),5,'country marks remain in result');await p.click('#brand');
+   await p.click('#chooseDaily');await p.locator('#final').waitFor({state:'visible'});check(await p.locator(opened?'#cardReveal':'#dailyChest').isVisible(),'correct real chest state');equal(await p.locator('#finalScore').textContent(),`${daily.days['2026-10-09'].score} / 100`,'full Daily score remains in result');check(await p.locator('#dailyFinalErrors').isVisible(),'errors remain in result');equal(await p.locator('#dailyFinalTiles .daily-mark').count(),5,'country marks remain in result');await clickOutsideResult(p,'#brand');
    await p.clock.runFor(3000);equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Jouer le Daily':'Play the Daily','next UTC day available');check(await p.locator('#resumeDailyChest').isVisible()===!opened,'past sealed chest preserved');equal(await snapshot(p),before,'UTC rollover never credits or resets');
   }finally{await ctx.close();}
  }

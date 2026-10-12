@@ -1,3 +1,4 @@
+import {clickOutsideResult} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 // Native Chromium Web Audio, with visibility/device suspension simulated explicitly.
 export async function testMusicIntegration({newContext,url,check,equal}){
@@ -23,7 +24,7 @@ export async function testMusicIntegration({newContext,url,check,equal}){
   const practice=await p.locator('#choosePractice').boundingBox();await p.touchscreen.tap(practice.x+practice.width/2,practice.y+practice.height/2);await p.waitForFunction(()=>musicProbe.timers.size===1);
   equal(await p.evaluate(()=>musicProbe.created),1,'music and effects share one context');
   check(await p.evaluate(()=>musicProbe.started.some(n=>n.type==='custom')),'native soft 8-bit voice plays');
-  await p.click('#practiceByDifficulty');await setLanguage(p,'en');await p.click('#howToPlay');await p.click('#closeHow');
+  await p.click('#practiceByDifficulty');await setLanguage(p,'en');await clickOutsideResult(p,'#howToPlay');await p.click('#closeHow');
   equal(await p.evaluate(()=>musicProbe.timers.size),1,'screen changes and repeated gestures never stack music');
   await p.evaluate(()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));});
   equal(await p.evaluate(()=>musicProbe.timers.size),0,'background stops scheduler');
@@ -34,13 +35,13 @@ export async function testMusicIntegration({newContext,url,check,equal}){
   await p.evaluate(()=>window.dispatchEvent(new Event('pageshow')));equal(await p.evaluate(()=>musicProbe.timers.size),1,'page cache return resumes once');
   await p.evaluate(async()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));await musicProbe.device.suspend();musicProbe.hidden=false;document.dispatchEvent(new Event('visibilitychange'));});
   equal(await p.evaluate(()=>musicProbe.timers.size),0,'suspended foreground waits for interaction');
-  await p.click('#howToPlay');await p.waitForFunction(()=>musicProbe.timers.size===1);await p.click('#closeHow');
-  await p.click('#toggleSound');equal(await p.evaluate(()=>musicProbe.timers.size),0,'same mute stops music immediately');
+  await clickOutsideResult(p,'#howToPlay');await p.waitForFunction(()=>musicProbe.timers.size===1);await p.click('#closeHow');
+  await clickOutsideResult(p,'#toggleSound');equal(await p.evaluate(()=>musicProbe.timers.size),0,'same mute stops music immediately');
   equal(await p.evaluate(()=>localStorage.getItem('gf-sound-v1')),'off','original mute preference retained');
-  for(let i=0;i<3;i++){await p.click('#toggleSound');await p.waitForFunction(()=>musicProbe.timers.size===1);await p.click('#toggleSound');equal(await p.evaluate(()=>musicProbe.timers.size),0,'repeat enable/mute leaves no scheduler');}
+  for(let i=0;i<3;i++){await clickOutsideResult(p,'#toggleSound');await p.waitForFunction(()=>musicProbe.timers.size===1);await clickOutsideResult(p,'#toggleSound');equal(await p.evaluate(()=>musicProbe.timers.size),0,'repeat enable/mute leaves no scheduler');}
   await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.evaluate(()=>musicProbe.created),0,'muted reload creates no device');
   await p.click('#choosePractice');equal(await p.evaluate(()=>musicProbe.created),0,'muted interactions never start music');
-  await p.click('#toggleSound');await p.waitForFunction(()=>musicProbe.timers.size===1);
+  await clickOutsideResult(p,'#toggleSound');await p.waitForFunction(()=>musicProbe.timers.size===1);
   equal(await p.evaluate(()=>musicProbe.created),1,'explicit enable after reload creates one device');
  }finally{await ctx.close();}
 }
