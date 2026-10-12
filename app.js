@@ -222,11 +222,13 @@
   const flag = c => [...c.a2].map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
   const map = GeoFactMap($('map'), guess);
   let resultFocus = null, resultScroll = null, copyResultState = null;
+  const nextHome = {parent:$('next').parentNode,next:$('next').nextSibling};
   const toastHome = {parent:$('toast').parentNode,next:$('toast').nextSibling};
   function closeResult({restoreFocus = true} = {}) {
     const dialog = $('resultDialog');
     if (!dialog.open) return;
     dialog.close();
+    $('closedResultActions').appendChild($('next'));
     if($('toast').parentNode !== toastHome.parent)toastHome.parent.insertBefore($('toast'),toastHome.next);
     if (resultScroll) {
       const {x,y,styles,scrollBehavior} = resultScroll;
@@ -236,7 +238,7 @@
       document.documentElement.style.scrollBehavior = scrollBehavior;
       resultScroll = null;
     }
-    $('reopenResult').classList.toggle('hidden',state.screen !== 'playing' || !state.answered);
+    $('closedResultActions').classList.toggle('hidden',state.screen !== 'playing' || !state.answered);
     if (restoreFocus) {
       const target = resultFocus?.isConnected && resultFocus !== document.body && resultFocus.getClientRects().length ? resultFocus : $('reopenResult');
       target.focus({preventScroll:true});
@@ -252,7 +254,8 @@
     resultScroll = {x,y,styles,scrollBehavior:document.documentElement.style.scrollBehavior};
     const padding = parseFloat(getComputedStyle(document.body).paddingRight)||0;
     Object.assign(document.body.style,{position:'fixed',top:`-${y}px`,left:`-${x}px`,right:'0',width:'auto',paddingRight:`${padding+gap}px`});
-    $('reopenResult').classList.add('hidden');
+    $('closedResultActions').classList.add('hidden');
+    nextHome.parent.insertBefore($('next'),nextHome.next);
     dialog.showModal();
     $('result').querySelector('.result-content').scrollTop = 0;
     $('resultTitle').focus({preventScroll:true});
@@ -473,7 +476,7 @@
   }
   function render() {
     if(state.screen !== 'playing' || !state.answered) closeResult({restoreFocus:false});
-    $('reopenResult').classList.toggle('hidden',state.screen !== 'playing' || !state.answered || $('resultDialog').open);
+    $('closedResultActions').classList.toggle('hidden',state.screen !== 'playing' || !state.answered || $('resultDialog').open);
     // Move the same controls: their handlers and saved preferences remain unchanged.
     const header = document.querySelector('.top'), headerParent = state.screen === 'home' ? $('home') : document.querySelector('main.app');
     if (header.parentElement !== headerParent) headerParent.prepend(header);
