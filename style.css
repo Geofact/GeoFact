@@ -1575,3 +1575,7 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
  #home .hero-brand { width:145px!important; }
  :is(#practiceSetup,#difficulty,#challengeIntro,#final) { margin-top:0; }
 }
+
+/* Shared playing screen: readable guidance outside the map and its controls. */
+#playing .map-zoom-hint { display:flex; align-items:center; gap:8px; margin:8px 2px 10px; color:#3e5b57; font-size:15px; font-weight:500; line-height:1.45; }
+#playing .map-zoom-hint svg { flex:0 0 18px; width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
