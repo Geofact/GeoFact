@@ -6,6 +6,6 @@ export async function clickOutsideResult(page, selector) {
  await closeResultForMap(page);await page.click(selector);
 }
 export async function clickResultAction(page, selector) {
- if(!await page.locator('#resultDialog[open]').count() && await page.locator('#reopenResult').isVisible())await page.click('#reopenResult');
+ if(!await page.locator(selector).isVisible() && await page.locator('#reopenResult').isVisible())await page.click('#reopenResult');
  await page.click(selector);
 }

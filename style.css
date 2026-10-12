@@ -1604,3 +1604,7 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 }
 
 .result-dialog .toast { position:static; flex:0 0 auto; align-self:flex-start; transform:none; margin-top:10px; padding:8px 12px; font-size:14px; }
+
+/* Reuse the Next button beside the map when the result is closed. */
+.result-map-actions { position:sticky; bottom:max(8px,env(safe-area-inset-bottom)); z-index:3; display:flex; gap:8px; width:fit-content; max-width:100%; margin-top:12px; padding:8px; border:1px solid #dfd1bb; border-radius:16px; background:#fff8eb; box-shadow:0 4px 16px rgba(23,59,87,.12); }
+.result-map-actions button { flex:1 1 auto; min-width:0; margin:0; padding:12px; white-space:normal; line-height:1.25; }
