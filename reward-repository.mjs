@@ -3,6 +3,10 @@ import {createBonusState,applyBonusAnswer,openBonusChest,bonusProgress,bonusUTCD
 import {completeDailyReward} from './daily-rewards.mjs?v=20261009-update1&home=20261012-daily12h';
 import {readLegacyRewardValues,prepareLegacyRewards,sameLegacyValues} from './legacy-rewards.mjs?v=20261009-update1';
 
+import './data/countries.js?v=20261009-update1';
+import './collection-album.js?v=20261009-update1&home=20261012-album1';
+const rewardAlbum=globalThis.GeoFactAlbum.createAlbum(globalThis.GeoFactCountries);
+
 export const REWARD_DB_VERSION=1;
 export const REWARD_STATE_VERSION=1;
 export const REWARD_DB_NAME='geofact-rewards';
@@ -128,6 +132,11 @@ export function openRewardRepository({name=REWARD_DB_NAME,indexedDB=globalThis.i
             if(transition.credit) {
               const credit=transition.credit;
               if(own(record.credits,credit.id)) throw new RewardStorageError('CORRUPT_STATE','Credit exists for a sealed chest');
+              const discovery=rewardAlbum.acquisition(record.collection,credit);
+              if(discovery) {
+                transition.chest={...transition.chest,discovery};
+                transition.state.chests[transition.chest.id]=transition.chest;
+              }
               const previous=own(record.collection,credit.iso)?record.collection[credit.iso]:null;
               const counts={...(previous?.counts||{})},owned=previous?.rarities||[];
               counts[credit.rarity]=(counts[credit.rarity]||0)+1;
@@ -203,12 +212,15 @@ export function openRewardRepository({name=REWARD_DB_NAME,indexedDB=globalThis.i
             try {transition=completeDailyReward(record.collection,record.daily,command);}
             catch(cause){throw failure(cause,'INVALID_COMMAND');}
             if(transition.status==='already-completed')return {status:transition.status,result:transition.result};
-            const id='daily:'+command.day,card=transition.result.card;
-            tx.objectStore('chests').add({id,type:'daily',earnedDay:command.day,card,revealed:false,revealedAt:null,earnedAt:command.at});
+            const discovery=rewardAlbum.acquisition(record.collection,command.card);
+            const result=discovery?{...transition.result,discovery}:transition.result;
+            const nextDaily={...transition.daily,days:{...transition.daily.days,[command.day]:result}};
+            const id='daily:'+command.day,card=result.card;
+            tx.objectStore('chests').add({id,type:'daily',earnedDay:command.day,card,revealed:false,revealedAt:null,earnedAt:command.at,...(discovery?{discovery}:{})});
             tx.objectStore('sessions').add({id:'daily-complete:'+command.day,kind:'daily-complete',day:command.day});
-            tx.objectStore('state').put({...record,revision:record.revision+1,collection:transition.collection,daily:transition.daily,
+            tx.objectStore('state').put({...record,revision:record.revision+1,collection:transition.collection,daily:nextDaily,
               credits:{...record.credits,['credit:'+id]:{id:'credit:'+id,chestId:id,iso:card.iso,rarity:card.rarity,acquiredAt:command.at}}});
-            return {status:transition.status,result:transition.result};
+            return {status:transition.status,result};
           });
         },
         revealDaily:({day,at})=>transact('readwrite',async({tx,read})=>{
