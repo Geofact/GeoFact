@@ -69,3 +69,9 @@ Validation : 96 tests Node et 592 assertions navigateur HTTP ciblées réussis (
 Le premier aperçu court est remplacé par un thème de deux mesures au rythme régulier (« mi sol la sol / mi ré do »), repris à l’identique, avec réponse mélodique et cadence finale. Huit mesures, 108 BPM, 17,78 secondes, 26 notes de mélodie. La nouvelle enveloppe de la voix principale maintient 80 % du niveau jusqu’à la courte relâche finale ; elle évite la retombée exponentielle immédiate qui produisait des sons ponctuels. Basse, percussion rare, forme d’onde pour petits haut-parleurs et gains doublés sont conservés. Les effets du jeu restent inchangés.
 
 97 tests Node et 592 assertions HTTP ciblées passent. Rendu natif de deux boucles sans normalisation : 35,56 s, crête 0,06955, RMS 0,02103, aucune saturation numérique. Le niveau moyen augmente avec les notes tenues ; les gains et le maximum prévu restent ceux du volume ×2 demandé. Pas de publication du jeu avant validation du nouvel aperçu.
+
+## Révision : thème d’expédition plus posé
+
+Composition originale en huit mesures à 90 BPM (21,33 s), phrases ascendantes, notes longues et respirations, motif repris avec une réponse différente. Aucune mélodie de film réutilisée. Harmoniques 3/5 adoucies à 0,22/0,04 avec énergie de forme d’onde compensée ; attaque de 25 ms, tenue à 70 %, relâche de 160 ms. Gains musique ×2 par rapport à la version publiée conservés ; effets et cycle de vie audio inchangés.
+
+Validation : 97 tests Node natifs et 592 assertions HTTP ciblées réussis, Supabase simulé. Rendu Web Audio natif de deux boucles sans normalisation : 42,67 s, 44,1 kHz, crête 0,06932, RMS 0,01769 ; aucune saturation numérique. Pas de nouvelle suite complète des modes pour cette seule révision musicale. Safari/iPhone et Android physiques non disponibles. Aperçu uniquement : aucun déploiement du jeu.
