@@ -4,24 +4,24 @@
   else root.GeoFactMusic=api;
 })(globalThis,function(){
   'use strict';
-  // Original 16-bar adventure theme: 96 BPM, 40 seconds, no samples or downloads.
-  const BEAT=60/96, LENGTH=64*BEAT;
+  // Original eight-bar adventure hook: 108 BPM, ~17.8 seconds, no samples.
+  const BEAT=60/108, LENGTH=32*BEAT;
   const phrases=[
-    [[0,60,1],[1.5,64,.5],[2,67,1]],[[0,69,1],[1.5,67,.5],[2.5,64,1]],
-    [[0,65,1.5],[2,64,.5],[3,62,.7]],[[0,67,1],[2,62,1]],
-    [[0,64,1],[1,67,.6],[2.5,72,.8]],[[0,71,.8],[1.5,69,1],[3,67,.7]],
-    [[0,65,1],[2,69,1]],[[0,67,1.5],[2.5,64,1]],
-    [[0,69,1.5],[2,72,1]],[[0,67,1],[1.5,64,.7],[3,60,.7]],
-    [[0,65,1],[1.5,69,.5],[2.5,67,1]],[[0,64,1.5],[2.5,62,1]],
-    [[0,60,1],[1.5,64,.5],[2.5,67,1]],[[0,69,1],[2,65,1]],
-    [[0,62,.7],[1,64,.7],[2,67,1]],[[0,64,1.4],[2.5,60,1]]
+    [[0,64,.45],[.75,67,.45],[1.5,69,.45],[2.25,67,.45],[3,72,.75]],
+    [[0,71,.65],[.75,67,.45],[1.5,64,.45],[2.25,62,.45],[3,64,.75]],
+    [[0,64,.45],[.75,67,.45],[1.5,72,.65],[2.5,69,.45],[3.25,67,.55]],
+    [[0,65,.65],[1,69,.45],[1.75,67,.45],[2.5,65,.45],[3.25,62,.55]],
+    [[0,64,.45],[.75,67,.45],[1.5,69,.45],[2.25,67,.45],[3,72,.75]],
+    [[0,69,.65],[1,72,.45],[1.75,71,.45],[2.5,69,.45],[3.25,67,.55]],
+    [[0,65,.45],[.75,64,.45],[1.5,62,.65],[2.5,64,.45],[3.25,65,.55]],
+    [[0,67,.65],[1,62,.45],[1.75,67,.45],[2.5,71,.45],[3.25,62,.55]]
   ];
-  const roots=[48,45,41,43,48,45,41,43,45,48,41,43,48,41,43,48];
+  const roots=[48,43,45,41,48,45,41,43];
   const score=[];
-  for(let bar=0;bar<16;bar++){
-    for(const [beat,midi,duration] of phrases[bar])score.push({at:(bar*4+beat)*BEAT,midi,duration:duration*BEAT,voice:'lead',level:.018});
-    for(const beat of [0,2])score.push({at:(bar*4+beat)*BEAT,midi:roots[bar],duration:1.3*BEAT,voice:'bass',level:.020});
-    if(bar%4===3)score.push({at:(bar*4+3)*BEAT,midi:31,duration:.08,voice:'pulse',level:.012});
+  for(let bar=0;bar<phrases.length;bar++){
+    for(const [beat,midi,duration] of phrases[bar])score.push({at:(bar*4+beat)*BEAT,midi,duration:duration*BEAT,voice:'lead',level:.036});
+    for(const beat of [0,2])score.push({at:(bar*4+beat)*BEAT,midi:roots[bar]+(beat===2?7:0),duration:1.3*BEAT,voice:'bass',level:.040});
+    if(bar%4===3)score.push({at:(bar*4+3)*BEAT,midi:31,duration:.08,voice:'pulse',level:.024});
   }
   score.sort((a,b)=>a.at-b.at);for(const note of score)Object.freeze(note);Object.freeze(score);
   const frequency=midi=>440*Math.pow(2,(midi-69)/12);

@@ -55,3 +55,10 @@ Validation de publication de l’ensemble final : 95 tests Node et 2 737 asserti
 Branche `fix/music-speaker-presence` : harmoniques 3 et 5 de la mélodie renforcées (rapports 0,35 et 0,10, précédemment 0,15 et 0,04). Les coefficients sont compensés pour conserver l’énergie RMS théorique précédente. Gains, notes, basse, percussion, ordonnanceur et effets restent identiques. Aucun traitement particulier par système ou navigateur : le rendu est commun à tous les appareils et doit être comparé sur Android, iPhone et ordinateur.
 
 Validation : 96 tests Node et 592 assertions HTTP ciblées réussis (Chromium, Supabase simulé), incluant musique native, mute, reprises, mobile et accueil FR/EN. Rendu Web Audio natif de 40 secondes : crête 0,03482, RMS 0,00367, aucune saturation numérique. Aucun Android physique ou Safari/iPhone réel disponible : l’amélioration perceptive signalée reste à confirmer, sans diagnostic matériel établi. Correctif non publié.
+
+
+## Nouveau motif d’aventure, revue audio
+
+Branche `audio/adventure-hook` : composition originale en huit mesures à 108 BPM, durée 17,78 s. Motif récurrent avec seconde moitié variée, basse alternant fondamentale/quinte et deux pulses discrets par boucle. Le registre mélodique reste entre ré4 et do5 ; la forme d’onde enrichie dans les médiums est conservée. Gains de musique doublés par rapport à la version publiée : lead 0,036, basse 0,040, pulse 0,024. Effets, moteur de lecture, mute, préférences, interruptions et reprises inchangés.
+
+Validation : 96 tests Node et 592 assertions navigateur HTTP ciblées réussis (Chromium, Supabase simulé). Les tests vérifient motif, variation, jonction de boucle, ordonnanceur unique, mute, suspension/reprise, mobile et accueil FR/EN. Rendu Web Audio natif de deux boucles, sans normalisation : 35,56 s, 44,1 kHz, crête 0,07105, RMS 0,00744 ; aucune saturation numérique. Aucun appareil Android/iPhone physique ni WebKit disponible. Suite complète de jeu non relancée pour cette modification de partition et de gains. Aucun déploiement du jeu avant validation audio.
