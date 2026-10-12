@@ -1,3 +1,4 @@
+import {clickOutsideResult,clickResultAction} from './result-controls.mjs';
 // Simulated delayed Safari audio resume. This does not certify physical iPhone output.
 export async function testMobileAudio({newContext,url,tap,check,equal}) {
  const ctx=await newContext({viewport:{width:375,height:812},locale:'fr-FR',hasTouch:true,isMobile:true,reducedMotion:'reduce'});
@@ -28,10 +29,10 @@ export async function testMobileAudio({newContext,url,tap,check,equal}) {
   equal(await p.evaluate(()=>mobileAudio.notes.length),0,'no sound before device resumes');
   await p.evaluate(()=>mobileAudio.finish());await p.waitForFunction(()=>mobileAudio.notes.length===4);
   equal(await p.evaluate(()=>mobileAudio.notes),[784,988,1175,1568],'first validated answer is heard after delayed resume');
-  await p.click('#next');await p.evaluate(()=>{mobileAudio.notes=[];mobileAudio.device.state='interrupted';});
+  await clickResultAction(p,'#next');await p.evaluate(()=>{mobileAudio.notes=[];mobileAudio.device.state='interrupted';});
   await p.dispatchEvent('#map','touchend');equal(await p.evaluate(()=>mobileAudio.resumes),2,'touchend alone resumes an interrupted device');
   await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});
-  await p.click('#toggleSound');await p.evaluate(()=>mobileAudio.finish());
+  await clickOutsideResult(p,'#toggleSound');await p.evaluate(()=>mobileAudio.finish());
   equal(await p.evaluate(()=>mobileAudio.notes.length),0,'muting cancels delayed effects');
   await p.reload();await p.locator('#chooseDaily:enabled').waitFor();
   equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','mobile mute survives reload');

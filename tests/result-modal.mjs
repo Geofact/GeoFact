@@ -1,0 +1,46 @@
+// Behavioural checks for the reused result card, native focus and preserved map.
+export async function testResultModal({newContext,url,core,tap,check,equal}) {
+ console.log('Result modal: all modes, FR/EN, focus, scroll, sharing and final transitions…');
+ const captures=process.env.RESULT_CAPTURE_DIR;
+ if(captures)await (await import('node:fs/promises')).mkdir(captures,{recursive:true});
+ const current=p=>p.evaluate(()=>GeoFactCountries.find(c=>c.name[document.documentElement.lang]===document.getElementById('countryName').textContent).iso);
+ for(const width of [320,375,390,1280])for(const mode of ['classic','practice','daily','challenge']) {
+  const ctx=await newContext({viewport:{width,height:width===1280?900:812},hasTouch:width<600,isMobile:width<600,locale:'fr-FR',reducedMotion:width===390?'reduce':'no-preference'});
+  try {
+   const p=await ctx.newPage();
+   if(mode==='challenge'){await p.goto(url+'?challenge='+core.encodeChallenge('easy',['FRA','JPN','USA','GBR','NOR'],100));await p.click('#acceptChallenge');}
+   else {await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();if(mode==='daily')await p.click('#chooseDaily');else{await p.click(mode==='practice'?'#choosePractice':'#chooseGame');if(mode==='practice')await p.click('#practiceByDifficulty');await p.click('[data-level=easy]');}}
+   await p.locator('#playing').waitFor({state:'visible'});await p.click('#zoomIn');await p.locator('#map').scrollIntoViewIfNeeded();await p.locator('#zoomIn').focus();
+   await p.locator('#map').evaluate(svg=>{const ocean=svg.querySelector('.ocean'),r=svg.getBoundingClientRect(),x=r.left+r.width/3,y=r.top+r.height/2;for(const [type,dx,dy] of [['pointerdown',0,0],['pointermove',28,18],['pointerup',28,18]])ocean.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:17,pointerType:'touch',clientX:x+dx,clientY:y+dy,button:0}));});
+   const before=await p.evaluate(()=>({view:document.getElementById('map').getAttribute('viewBox'),y:scrollY,top:document.getElementById('map').getBoundingClientRect().top}));
+   await tap(await current(p),'touch',p);await p.locator('#resultDialog[open]').waitFor();
+   equal(await p.locator('#result').count(),1,'one reused result card');equal(await p.locator('#resultDialog #result').count(),1,'card inside dialog');
+   equal(await p.evaluate(()=>document.activeElement.id),'resultTitle','focus enters result heading');
+   equal(await p.locator('#map').getAttribute('viewBox'),before.view,'opening preserves zoom');check(Math.abs(await p.locator('#map').evaluate(e=>e.getBoundingClientRect().top)-before.top)<2,'no background position jump');
+   const contents=await p.locator('#result').textContent();const score=await p.locator('#totalScore').textContent();check(contents.includes(await p.locator('#countryName').textContent()),'country preserved');check((await p.locator('#fact').textContent()).length>10,'anecdote preserved');
+   if(width===390)equal(await p.locator('#resultDialog').evaluate(e=>getComputedStyle(e).animationName),'none','reduced motion respected');
+   await p.keyboard.press('Tab');equal(await p.evaluate(()=>document.activeElement.id),'closeResult','Tab enters first action');await p.keyboard.press('Shift+Tab');equal(await p.evaluate(()=>document.activeElement.id),'next','backward Tab wraps');await p.keyboard.press('Tab');equal(await p.evaluate(()=>document.activeElement.id),'closeResult','forward Tab wraps');
+   await p.mouse.wheel(0,500);equal(await p.locator('#map').getAttribute('viewBox'),before.view,'wheel behind dialog cannot zoom map');
+   await p.keyboard.press('Escape');check(!await p.locator('#resultDialog').evaluate(e=>e.open),'Escape closes');equal(await p.evaluate(()=>document.activeElement.id),'zoomIn','focus restored');equal(await p.evaluate(()=>scrollY),before.y,'scroll restored');equal(await p.locator('#map').getAttribute('viewBox'),before.view,'closing preserves zoom');check(await p.locator('#map .country-found').count()>0,'found country stays green');
+   await p.click('#reopenResult');equal(await p.locator('#result').textContent(),contents,'reopening preserves all content');equal(await p.locator('#totalScore').textContent(),score,'close/reopen never alters score');
+   for(const lang of ['fr','en']){
+    await p.click('#closeResult');if(await p.locator('#lang').getAttribute('value')!==lang)await p.click('#lang');equal(await p.locator('#reopenResult').textContent(),lang==='fr'?'Revoir le résultat':'View result again','reopen translated immediately');await p.click('#reopenResult');equal(await p.locator('#closeResult').getAttribute('aria-label'),lang==='fr'?'Fermer le résultat':'Close result','close translated immediately');
+    const box=await p.locator('#resultDialog').boundingBox();check(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=(width===1280?900:812)+1,'dialog fits viewport');
+    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');
+    if(captures)await p.screenshot({path:`${captures}/result-${mode}-${width}-${lang}.png`,animations:'disabled'});
+   }
+   await p.evaluate(()=>{window.resultShares=[];Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>resultShares.push(payload)});});await p.click('#shareFact');equal(await p.evaluate(()=>resultShares.length),1,'one native share');check(await p.locator('#resultDialog').evaluate(e=>e.open),'native share leaves result intact');
+   await p.evaluate(()=>{Object.defineProperty(navigator,'share',{configurable:true,value:undefined});Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>resultShares.push(text)}});});await p.click('#shareFact');equal(await p.evaluate(()=>resultShares.length),2,'clipboard share preserved');check(await p.locator('#resultDialog #toast').isVisible(),'clipboard confirmation visible in top layer');
+   await p.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined}));await p.click('#shareFact');await p.locator('#copyDialog[open]').waitFor();equal(await p.locator('dialog[open]').count(),1,'manual copy replaces rather than overlaps result');check(!await p.locator('#resultDialog').evaluate(e=>e.open),'result suspended during manual copy');
+   await p.keyboard.press('Escape');await p.locator('#resultDialog[open]').waitFor();equal(await p.locator('dialog[open]').count(),1,'copy closes and restores one result');equal(await p.evaluate(()=>document.activeElement.id),'shareFact','share focus restored after copy');
+   await p.click('#next');check(!await p.locator('#resultDialog').evaluate(e=>e.open),'next closes result');check(await p.locator('#reopenResult').isHidden(),'no stale result access on next round');
+   if(mode!=='practice'){
+    for(let n=1;n<5;n++){await tap(await current(p),'touch',p);await p.locator('#resultDialog[open]').waitFor();await p.click('#next');}
+    await p.locator('#final').waitFor({state:'visible'});equal(await p.locator('dialog[open]').count(),0,'final transition leaves no result modal');if(mode==='daily')check(await p.locator('#dailyChest').isVisible(),'Daily chest preserved');
+   }
+  }finally{await ctx.close();}
+ }
+ // Small landscape viewport: long anecdotes scroll inside while actions stay usable.
+ const ctx=await newContext({viewport:{width:568,height:320},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+ try{const p=await ctx.newPage();await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();await p.click('#chooseGame');await p.click('[data-level=easy]');await tap(await current(p),'touch',p);await p.locator('#resultDialog[open]').waitFor();await p.locator('#fact').evaluate(e=>e.textContent=e.textContent.repeat(12));check(await p.locator('.result-content').evaluate(e=>e.scrollHeight>e.clientHeight),'long text scrolls inside card');await p.locator('#next').scrollIntoViewIfNeeded();const close=await p.locator('#closeResult').boundingBox();check(close.y>=0&&close.y+close.height<=320,'close remains visible during internal scrolling');const b=await p.locator('#next').boundingBox();check(b.y>=0&&b.y+b.height<=320,'actions remain accessible on short viewport');await p.locator('.result-content').evaluate(e=>e.scrollTop=e.scrollHeight);await p.click('#closeResult');await p.click('#reopenResult');equal(await p.locator('.result-content').evaluate(e=>e.scrollTop),0,'reopening exposes the focused heading at the top');if(captures)await p.screenshot({path:`${captures}/result-landscape-long.png`,animations:'disabled'});await p.click('#closeResult');await p.click('#howToPlay');equal(await p.locator('dialog[open]').count(),0,'help does not overlap result');await p.click('#closeHow');await p.click('#reopenResult');await p.click('#next');check(!await p.locator('#resultDialog').evaluate(e=>e.open),'landscape next works');await tap(await current(p),'touch',p);await p.locator('#resultDialog[open]').waitFor();equal(await p.locator('.result-content').evaluate(e=>e.scrollTop),0,'new country starts at the top after a long anecdote');}finally{await ctx.close();}
+}

@@ -1,3 +1,4 @@
+import {clickOutsideResult,clickResultAction} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
 import {currentSave} from './save-fixtures.mjs';
 export async function testIphoneRegression({newContext,url,tap,core,check,equal}) {
@@ -44,7 +45,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
     check(await p.locator('#retryPracticeRewards').isEnabled(),'inline recovery action available');
     // Test-only repair by the owner of the original data; the app never discards it.
     await p.evaluate(()=>sessionStorage.setItem('gf-pending-practice-v1','[]'));
-    await p.click('#retryPracticeRewards');await p.locator('#practiceInputRecovery').waitFor({state:'hidden'});
+    await clickOutsideResult(p,'#retryPracticeRewards');await p.locator('#practiceInputRecovery').waitFor({state:'hidden'});
     await nativeNigeria(p);await p.locator('#result').waitFor({state:'visible'});await settled(p);
    }
    check(await p.locator('#practiceInputRecovery').isHidden(),condition+' recovery clears pause explanation');
@@ -74,7 +75,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
    equal(await p.locator('#fact').textContent(),fact,'extra taps preserve anecdote');equal(await p.locator('#totalScore').textContent(),score,'extra taps do not score');equal(await p.locator('#map .country-found').count(),1,'only Nigeria validated green');
    await setLanguage(p,'en');check((await p.locator('#fact').textContent()).trim().length>10,'Nigeria anecdote translates');
    if(mode==='practice')await settled(p);
-   await p.click('#next');await p.locator('#result').waitFor({state:'hidden'});equal(await p.locator('#map .country-found').count(),0,'next round clears success');
+   await clickResultAction(p,'#next');await p.locator('#result').waitFor({state:'hidden'});equal(await p.locator('#map .country-found').count(),0,'next round clears success');
    const iso=await p.evaluate(()=>GeoFactCountries.find(c=>c.name.en===document.getElementById('countryName').textContent).iso);await tap(iso,'touch',p);await p.locator('#result').waitFor({state:'visible'});check((await p.locator('#fact').textContent()).trim().length>10,'following round progresses');
    equal(await p.evaluate(()=>localStorage.getItem('gf-collection-v1')),currentSave['gf-collection-v1'],'legacy collection unchanged');equal(await p.evaluate(()=>localStorage.getItem('gf-daily-v1')),currentSave['gf-daily-v1'],'legacy Daily unchanged');
   }finally{await ctx.close();}
@@ -82,7 +83,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
  {
   const ctx=await newContext({locale:'fr-FR',viewport:{width:320,height:568},isMobile:true,hasTouch:true,reducedMotion:'reduce',storageState:profile});const p=await ctx.newPage();try{
    await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#homeBonusProgress').textContent(),"Coffres bonus obtenus : 0/2 aujourd'hui",'home quota only');equal(await p.locator('.practice-bonus-copy').count(),0,'paragraph completely removed');check((await p.locator('#choosePractice').textContent()).includes('Joue à ton rythme, sans limite.'),'practice subtitle kept');
-   await practice(p);check(await p.locator('#streak').isHidden(),'session streak replaced by persisted bonus streak');await tap('NGA','touch',p);await settled(p);await p.click('#next');
+   await practice(p);check(await p.locator('#streak').isHidden(),'session streak replaced by persisted bonus streak');await tap('NGA','touch',p);await settled(p);await clickResultAction(p,'#next');
    // A native transaction holds the write queue; the UI must still update synchronously.
    await p.evaluate(async()=>{const db=await new Promise((ok,bad)=>{const q=indexedDB.open('geofact-rewards');q.onsuccess=()=>ok(q.result);q.onerror=()=>bad(q.error);});const tx=db.transaction(['state','chests','sessions'],'readwrite'),start=performance.now();const pump=()=>{const q=tx.objectStore('sessions').get('hold');q.onsuccess=()=>{if(performance.now()-start<700)pump();};};pump();tx.oncomplete=()=>db.close();});
    await tap('NGA','touch',p);equal(await p.locator('#practiceBonusProgress').textContent(),"Pays trouvés d'affilée : 2/10",'streak updates before write confirmation');equal(await p.locator('#practiceBonusQuota').textContent(),'Coffres bonus : 0/2','quota remains committed');equal(await p.locator('#practiceBonusMeter').getAttribute('aria-label'),"Pays trouvés d'affilée : 2/10",'accessible meter');await settled(p);
@@ -91,7 +92,7 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
    const q=await ctx.newPage();await q.goto(url);await q.locator('#chooseDaily:enabled').waitFor();await practice(q);await tap('NGA','touch',q);await settled(q);await p.waitForFunction(()=>document.getElementById('practiceBonusProgress').textContent.endsWith('3/10'));equal(await p.locator('#practiceBonusQuota').textContent(),'Bonus chests: 0/2','two tabs same quota');await q.close();
    const before=await read(p);await p.evaluate(()=>{window.iphoneOriginalTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...rest){if(mode==='readwrite')throw new DOMException('Full','QuotaExceededError');return iphoneOriginalTransaction.call(this,stores,mode,...rest);};});
    await tap('NGA','touch',p);await p.locator('#result').waitFor({state:'visible'});await p.locator('#rewardStatus').filter({hasText:'Progress not confirmed'}).waitFor();check((await p.locator('#fact').textContent()).trim().length>10,'storage failure does not hide anecdote');check(await p.locator('#next').isDisabled(),'storage failure explicitly blocks practice continuation');equal(await read(p),before,'failed answer leaves durable state unchanged');
-   await p.evaluate(()=>IDBDatabase.prototype.transaction=iphoneOriginalTransaction);await p.click('#retryPracticeRewards');await settled(p);check(await p.locator('#next').isEnabled(),'inline storage recovery resumes progression');await p.click('#next');await p.locator('#result').waitFor({state:'hidden'});
+   await p.evaluate(()=>IDBDatabase.prototype.transaction=iphoneOriginalTransaction);await clickOutsideResult(p,'#retryPracticeRewards');await settled(p);check(await p.locator('#next').isEnabled(),'inline storage recovery resumes progression');await clickResultAction(p,'#next');await p.locator('#result').waitFor({state:'hidden'});
    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'320px counters no overflow');
   }finally{await ctx.close();}
  }

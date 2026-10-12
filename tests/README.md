@@ -77,3 +77,9 @@ Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt f
 ### Accueil
 
 `tests/home-redesign.mjs` est intégré à la suite HTTP : FR/EN, 1280/320/375/390 px, contrastes de base, cibles tactiles, logo/animation existants, états Daily, minuit UTC, accès et sauvegardes. `HOME_CAPTURE_DIR=/chemin/local` active les captures PNG ; chaque contexte utilise des données fictives et les routes Supabase simulées de la suite.
+
+### Résultat en fenêtre
+
+`tests/result-modal.mjs` est intégré à la suite HTTP : carte de résultat unique, ouverture/fermeture/réouverture, FR/EN, focus et Tab/Échap, position de page et zoom/déplacement de carte conservés, trois parcours de partage sans superposition, pays suivant et fin de partie/Daily. Les dimensions 320/375/390/1280 px et 568×320 avec longue anecdote couvrent le défilement intérieur et l’accès aux actions. `RESULT_CAPTURE_DIR=/chemin/local` active les captures, animations terminées pour montrer le rendu final.
+
+`tests/result-controls.mjs` permet aux tests historiques d’utiliser explicitement la croix avant d’inspecter la carte et de rouvrir le résultat avant une action. Aucun contournement du focus ou de la modalité n’est ajouté au jeu.
