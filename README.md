@@ -66,3 +66,10 @@ Bouton original déplacé dans les actions près de la carte, sans duplication. 
 
 - [Mobile FR](next-access-375-fr.png) · [EN](next-access-375-en.png)
 - [Ordinateur FR](next-access-1280-fr.png) · [EN](next-access-1280-en.png)
+
+
+## Nouveau thème d’aventure — aperçu audio
+
+Composition originale du commit `37d7fa3`, branche `audio/adventure-hook`, non déployée dans le jeu. Boucle de 17,78 secondes à 108 BPM, motif récurrent varié, basse mobile et percussion rare. Musique ×2 par rapport au volume actuel ; effets inchangés.
+
+[Écouter ou télécharger l’aperçu WAV](adventure-hook-preview.wav). L’aperçu contient deux boucles (35,56 secondes), rendues avec le code Web Audio natif, sans normalisation, afin de juger le volume prévu et le raccord. Crête 0,07105, RMS 0,00744, aucun écrêtage numérique.
