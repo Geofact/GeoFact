@@ -43,3 +43,24 @@ test('invalid completion and draws are rejected without mutation',()=>{
  const {collection,daily}=seed();for(const c of [command({score:101}),command({tiles:[]}),command({day:'2026-02-30'}),command({card:{iso:'FRA',rarity:'alien'}})])assert.throws(()=>completeDailyReward(collection,daily,c));
  for(const n of [-1,1,NaN])assert.throws(()=>rollDailyRarity(100,n));
 });
+
+test('two half-day rewards preserve history and daily streak and credit once per period',()=>{
+ const {collection,daily}=seed();
+ const am=command({day:'2026-10-13',number:7,at:Date.parse('2026-10-13T12:01:00Z')});
+ const first=completeDailyReward(collection,daily,am);
+ const pm={...am,day:'2026-10-13~12',number:8,at:Date.parse('2026-10-14T00:01:00Z')};
+ const second=completeDailyReward(first.collection,first.daily,pm);
+ assert.equal(second.collection.FRA.counts.classic,collection.FRA.counts.classic+2);
+ assert.equal(second.daily.played,daily.played+2);assert.equal(second.daily.streak,first.daily.streak);
+ assert.equal(second.daily.lastDate,'2026-10-13');assert.deepEqual(second.daily.days['2026-10-07'],daily.days['2026-10-07']);
+ const repeat=completeDailyReward(second.collection,second.daily,pm);assert.equal(repeat.status,'already-completed');assert.strictEqual(repeat.collection,second.collection);
+ assert.throws(()=>completeDailyReward(collection,daily,{...pm,at:Date.parse('2026-10-13T11:59:59Z')}));
+ const next=completeDailyReward(second.collection,second.daily,{...am,day:'2026-10-14',number:9,at:Date.parse('2026-10-14T01:00:00Z')});
+ assert.equal(next.daily.streak,second.daily.streak+1);
+});
+
+test('late afternoon Daily fills a calendar streak without moving its newest day backwards',()=>{
+ const first=completeDailyReward({}, {days:{},played:0,streak:0,bestStreak:0},command({day:'2026-10-14',number:9,at:Date.parse('2026-10-14T00:01:00Z')}));
+ const late=completeDailyReward(first.collection,first.daily,command({day:'2026-10-13~12',number:8,at:Date.parse('2026-10-14T00:02:00Z')}));
+ assert.equal(late.daily.lastDate,'2026-10-14');assert.equal(late.daily.streak,2);assert.equal(late.daily.bestStreak,2);
+});

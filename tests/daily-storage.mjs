@@ -19,6 +19,34 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
   check(s.collection[r.card.iso].counts[r.card.rarity]>=1,label+' card credited');
   equal(s.bonus.chests,{},label+' no practice bonus');equal(s.bonus.progress,0,label+' practice unchanged');equal(s.bonus.grantsByDay,{},label+' bonus quotas unchanged');
  }
+ for(const width of [320,1280]) {
+  const ctx=await newContext({viewport:{width,height:800},reducedMotion:'reduce'});try {
+   const p=await ctx.newPage();await p.clock.install({time:new Date('2026-10-13T11:59:57Z')});await p.clock.pauseAt(new Date('2026-10-13T11:59:58Z'));
+   await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#dailyNumber').textContent(),'#7','morning number');equal(await p.locator('#dailyCountdown').textContent(),'00:00:02','noon countdown');
+   await p.clock.runFor(3000);equal(await p.locator('#dailyNumber').textContent(),'#8','home automatically changes at noon');equal(await p.locator('#dailyCountdown').textContent(),'11:59:59','countdown resets to twelve hours');
+   await setLanguage(p,'en');check((await p.locator('[data-i18n="homeDailyDescription"]').textContent()).includes('every 12 hours'),'English 12h description');
+   await setLanguage(p,'fr');check((await p.locator('[data-i18n="homeDailyDescription"]').textContent()).includes('toutes les 12 heures'),'French 12h description');
+   check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'12h home has no overflow');equal(Object.keys((await snapshot(p)).daily.days).length,0,'clock and language changes never grant rewards');
+  }finally{await ctx.close();}
+ }
+ for(const [startTime,nextTime,oldKey,newKey] of [
+  ['2026-10-13T11:59:50Z','2026-10-13T12:01:00Z','2026-10-13','2026-10-13~12'],
+  ['2026-10-13T23:59:50Z','2026-10-14T00:01:00Z','2026-10-13~12','2026-10-14']
+ ]) {
+  const {ctx,p}=await setup(currentSave,{},startTime);try {
+   const before=await snapshot(p),series=await launch(p);
+   await p.clock.setFixedTime(new Date(nextTime));await solve(p,series);
+   const earned=await snapshot(p);coherent(earned,oldKey,'12h boundary');equal(earned.daily.days[newKey],undefined,'completion remains attached to launch period');
+   await p.reload();await p.locator('#chooseDaily:enabled').waitFor();await p.locator('#resumeDailyChest').waitFor({state:'visible'});
+   await p.click('#resumeDailyChest');await p.locator('#dailyChest').waitFor({state:'visible'});await p.click('#openChest');await p.locator('#cardReveal').waitFor({state:'visible'});
+   equal((await snapshot(p)).collection,earned.collection,'old-period chest opens without second credit');
+   await clickOutsideResult(p,'#brand');const nextSeries=await launch(p);check(JSON.stringify(nextSeries)!==JSON.stringify(series),'new period has a different challenge');
+   const q=await ctx.newPage();await q.clock.install({time:new Date(nextTime)});await q.goto(url);await q.locator('#chooseDaily:enabled').waitFor();equal(await launch(q),nextSeries,'both tabs share new period');
+   await Promise.all([solve(p,nextSeries),solve(q,nextSeries)]);const after=await snapshot(q);coherent(after,newKey,'concurrent 12h completion');equal(copies(after),copies(before)+2,'exactly one credit for each period');
+   equal(after.daily.days['2026-10-07'],before.daily.days['2026-10-07'],'historical result untouched');equal(await local(p).then(v=>v['gf-daily-v1']),currentSave['gf-daily-v1'],'legacy save untouched');
+   equal(await p.evaluate(()=>GeoFactCore.dailyKey()),await q.evaluate(()=>GeoFactCore.dailyKey()),'tabs agree on current period');
+  }finally{await ctx.close();}
+ }
  console.log('  Connected Daily: migration, reload, concurrent tabs, errors and UTC');
  for(const [label,seed] of [['current',currentSave],['legacy',legacySave]]) {
   const {ctx,p}=await setup(seed);try {
