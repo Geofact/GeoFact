@@ -150,12 +150,26 @@ function musicDevice(){
  const options={schedule(fn){timers.set(++id,fn);return id;},cancel:id=>timers.delete(id)};
  return {...f,options,timers,advance(value){time=value;for(const fn of [...timers.values()])fn();}};
 }
-test('original music has a 40-second form, gentle register and sparse percussion',()=>{
- assert.deepEqual(Object.fromEntries(['lead','bass','pulse'].map(voice=>[voice,[...new Set(musicModule.score.filter(n=>n.voice===voice).map(n=>n.level))]])),{lead:[.018],bass:[.020],pulse:[.012]});
- assert.equal(musicModule.LENGTH,40);assert.equal(musicModule.score.filter(n=>n.voice==='pulse').length,4);
- assert.ok(musicModule.score.every(n=>n.level<=.020&&n.at<40));
+test('original adventure hook is shorter, recurring, varied and uses sparse percussion',()=>{
+ assert.deepEqual(Object.fromEntries(['lead','bass','pulse'].map(voice=>[voice,[...new Set(musicModule.score.filter(n=>n.voice===voice).map(n=>n.level))]])),{lead:[.036],bass:[.040],pulse:[.024]});
+ assert.ok(musicModule.LENGTH>=20&&musicModule.LENGTH<21);assert.equal(musicModule.score.filter(n=>n.voice==='pulse').length,2);
+ assert.ok(musicModule.score.every(n=>n.level<=.040&&n.at<musicModule.LENGTH));
  assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>musicModule.frequency(n.midi)<=524));
- assert.notDeepEqual(musicModule.score.filter(n=>n.voice==='lead'&&n.at<20).map(n=>n.midi),musicModule.score.filter(n=>n.voice==='lead'&&n.at>=20).map(n=>n.midi));
+ const melody=musicModule.score.filter(n=>n.voice==='lead');
+ assert.ok(melody.every(n=>n.duration<=.6),'no prolonged melody notes');
+ assert.ok(melody.some(n=>n.duration<.3),'short pickups give the theme momentum');
+ assert.deepEqual(melody.filter(n=>n.at<4*musicModule.BEAT).map(n=>n.midi),melody.filter(n=>n.at>=16*musicModule.BEAT&&n.at<20*musicModule.BEAT).map(n=>n.midi),'recognizable hook returns');
+ assert.notDeepEqual(musicModule.score.filter(n=>n.voice==='lead'&&n.at<musicModule.LENGTH/2).map(n=>n.midi),musicModule.score.filter(n=>n.voice==='lead'&&n.at>=musicModule.LENGTH/2).map(n=>n.midi));
+});
+test('melody holds its notes and uses a regular beat for a singable phrase',()=>{
+ const f=musicDevice(),ramps=[];const createGain=f.audio.createGain;
+ f.audio.createGain=()=>{const gain=createGain(),events=[];ramps.push(events);gain.gain.linearRampToValueAtTime=(value,at)=>events.push({value,at});return gain;};
+ const m=musicModule.createAdventureMusic(f.audio,f.options);m.start();
+ assert.equal(ramps[0].length,2,'lead has an attack and a sustained level before release');
+ assert.ok(ramps[0][1].at-ramps[0][0].at>.35,'first melody note stays audible beyond a short ping');
+ assert.ok(ramps[0][1].value>=ramps[0][0].value*.69,'melody retains its level until release');
+ assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>Math.abs(2*n.at/musicModule.BEAT-Math.round(2*n.at/musicModule.BEAT))<1e-6),'melody follows a regular half-beat grid');
+ m.dispose();assert.equal(f.timers.size,0);
 });
 test('music lead has more speaker-friendly harmonics at unchanged RMS energy',()=>{
  const f=musicDevice();let harmonics;
@@ -163,8 +177,8 @@ test('music lead has more speaker-friendly harmonics at unchanged RMS energy',()
  const music=musicModule.createAdventureMusic(f.audio,f.options);
  const energy=harmonics.reduce((sum,value)=>sum+value*value,0);
  assert.ok(Math.abs(energy-(1+.15**2+.04**2))<1e-6,'same theoretical RMS as the previous lead');
- assert.ok(Math.abs(harmonics[3]/harmonics[1]-.35)<1e-6);
- assert.ok(Math.abs(harmonics[5]/harmonics[1]-.10)<1e-6);
+ assert.ok(Math.abs(harmonics[3]/harmonics[1]-.22)<1e-6);
+ assert.ok(Math.abs(harmonics[5]/harmonics[1]-.04)<1e-6);
  assert.ok(harmonics[3]**2+harmonics[5]**2>.15**2+.04**2,'stronger midrange partials');
  music.start();music.stop();assert.equal(f.timers.size,0);
 });
@@ -193,8 +207,8 @@ test('failed or unavailable music cannot prevent effects or leak timers',()=>{
  const a=fakeAudio(),s=createSoundEffects({createContext:()=>a.audio,createMusic(){throw new Error('unsupported');}});s.unlock();assert.equal(s.answer(true),true);
 });
 
-test('the 40-second music seam schedules the next phrase once without restarting the timer',()=>{
- const f=musicDevice(),m=musicModule.createAdventureMusic(f.audio,f.options);m.start();f.advance(39.9);
- const seam=f.nodes.filter(n=>n.at>39.9);assert.equal(seam.length,2);assert.ok(seam.every(n=>Math.abs(n.at-40.03)<.001));
- const before=f.nodes.length;f.advance(40);m.start();assert.equal(f.nodes.length,before);assert.equal(f.timers.size,1);m.dispose();
+test('the shorter music seam schedules the next phrase once without restarting the timer',()=>{
+ const f=musicDevice(),m=musicModule.createAdventureMusic(f.audio,f.options);m.start();f.advance(musicModule.LENGTH-.1);
+ const seam=f.nodes.filter(n=>n.at>musicModule.LENGTH-.1);assert.equal(seam.length,2);assert.ok(seam.every(n=>Math.abs(n.at-(musicModule.LENGTH+.03))<.001));
+ const before=f.nodes.length;f.advance(musicModule.LENGTH);m.start();assert.equal(f.nodes.length,before);assert.equal(f.timers.size,1);m.dispose();
 });

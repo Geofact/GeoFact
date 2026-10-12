@@ -55,3 +55,29 @@ Validation de publication de l’ensemble final : 95 tests Node et 2 737 asserti
 Branche `fix/music-speaker-presence` : harmoniques 3 et 5 de la mélodie renforcées (rapports 0,35 et 0,10, précédemment 0,15 et 0,04). Les coefficients sont compensés pour conserver l’énergie RMS théorique précédente. Gains, notes, basse, percussion, ordonnanceur et effets restent identiques. Aucun traitement particulier par système ou navigateur : le rendu est commun à tous les appareils et doit être comparé sur Android, iPhone et ordinateur.
 
 Validation : 96 tests Node et 592 assertions HTTP ciblées réussis (Chromium, Supabase simulé), incluant musique native, mute, reprises, mobile et accueil FR/EN. Rendu Web Audio natif de 40 secondes : crête 0,03482, RMS 0,00367, aucune saturation numérique. Aucun Android physique ou Safari/iPhone réel disponible : l’amélioration perceptive signalée reste à confirmer, sans diagnostic matériel établi. Correctif non publié.
+
+
+## Nouveau motif d’aventure, revue audio
+
+Branche `audio/adventure-hook` : composition originale en huit mesures à 108 BPM, durée 17,78 s. Motif récurrent avec seconde moitié variée, basse alternant fondamentale/quinte et deux pulses discrets par boucle. Le registre mélodique reste entre ré4 et do5 ; la forme d’onde enrichie dans les médiums est conservée. Gains de musique doublés par rapport à la version publiée : lead 0,036, basse 0,040, pulse 0,024. Effets, moteur de lecture, mute, préférences, interruptions et reprises inchangés.
+
+Validation : 96 tests Node et 592 assertions navigateur HTTP ciblées réussis (Chromium, Supabase simulé). Les tests vérifient motif, variation, jonction de boucle, ordonnanceur unique, mute, suspension/reprise, mobile et accueil FR/EN. Rendu Web Audio natif de deux boucles, sans normalisation : 35,56 s, 44,1 kHz, crête 0,07105, RMS 0,00744 ; aucune saturation numérique. Aucun appareil Android/iPhone physique ni WebKit disponible. Suite complète de jeu non relancée pour cette modification de partition et de gains. Aucun déploiement du jeu avant validation audio.
+
+
+## Révision : thème fredonnable et notes tenues
+
+Le premier aperçu court est remplacé par un thème de deux mesures au rythme régulier (« mi sol la sol / mi ré do »), repris à l’identique, avec réponse mélodique et cadence finale. Huit mesures, 108 BPM, 17,78 secondes, 26 notes de mélodie. La nouvelle enveloppe de la voix principale maintient 80 % du niveau jusqu’à la courte relâche finale ; elle évite la retombée exponentielle immédiate qui produisait des sons ponctuels. Basse, percussion rare, forme d’onde pour petits haut-parleurs et gains doublés sont conservés. Les effets du jeu restent inchangés.
+
+97 tests Node et 592 assertions HTTP ciblées passent. Rendu natif de deux boucles sans normalisation : 35,56 s, crête 0,06955, RMS 0,02103, aucune saturation numérique. Le niveau moyen augmente avec les notes tenues ; les gains et le maximum prévu restent ceux du volume ×2 demandé. Pas de publication du jeu avant validation du nouvel aperçu.
+
+## Révision : thème d’expédition plus posé
+
+Composition originale en huit mesures à 90 BPM (21,33 s), phrases ascendantes, notes longues et respirations, motif repris avec une réponse différente. Aucune mélodie de film réutilisée. Harmoniques 3/5 adoucies à 0,22/0,04 avec énergie de forme d’onde compensée ; attaque de 25 ms, tenue à 70 %, relâche de 160 ms. Gains musique ×2 par rapport à la version publiée conservés ; effets et cycle de vie audio inchangés.
+
+Validation : 97 tests Node natifs et 592 assertions HTTP ciblées réussis, Supabase simulé. Rendu Web Audio natif de deux boucles sans normalisation : 42,67 s, 44,1 kHz, crête 0,06932, RMS 0,01769 ; aucune saturation numérique. Pas de nouvelle suite complète des modes pour cette seule révision musicale. Safari/iPhone et Android physiques non disponibles. Aperçu uniquement : aucun déploiement du jeu.
+
+## Révision : élan héroïque et notes plus courtes
+
+Thème original en huit mesures à 96 BPM, boucle de 20 secondes. Motif ascendant, réponses pointées et relances en demi-temps. Durée maximale des notes mélodiques : 0,5625 seconde ; notes courtes de 0,25 seconde. Timbre adouci, enveloppe, gains et effets conservés. Tests de durée des notes et grille rythmique adaptés.
+
+97 tests Node et 592 assertions HTTP ciblées réussis, Supabase simulé. Rendu natif de deux boucles sans normalisation : 40 s, crête 0,06918, RMS 0,01571 ; aucune saturation numérique. Suite complète des modes non relancée pour la partition seule. Appareils iPhone/Android réels non disponibles. Aperçu audio accessible uniquement, aucun déploiement du jeu.
