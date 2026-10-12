@@ -78,3 +78,7 @@ Composition originale du commit `37d7fa3`, branche `audio/adventure-hook`, non d
 ## Thème fredonnable — deuxième proposition
 
 [Écouter la nouvelle version WAV](singable-adventure-preview.wav). Thème original de deux mesures, repris avec réponse et cadence, rythme régulier et notes tenues (« mi sol la sol / mi ré do »). Une boucle fait 17,78 s ; le fichier contient deux répétitions, 35,56 s. Rendu natif sans normalisation, gains de musique ×2 conservés, effets inchangés. Crête 0,06955, RMS 0,02103, aucun écrêtage numérique. Commit `34e719f`, non déployé dans le jeu.
+
+### Original expedition theme preview
+
+`expedition-theme-preview.wav`: two cycles of the original GeoFact expedition theme (90 BPM, 21.33 seconds per loop), rendered by the actual Web Audio engine, mono 44.1 kHz PCM16, without normalization. Softer harmonics and breathing phrases; requested doubled music gain preserved, game effects unchanged. 97 Node tests and 592 focused HTTP assertions passed. This review artifact does not deploy the game.
