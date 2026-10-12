@@ -6,17 +6,18 @@
   'use strict';
   // Original eight-bar adventure hook: 108 BPM, ~17.8 seconds, no samples.
   const BEAT=60/108, LENGTH=32*BEAT;
+  // A singable two-bar theme, answered and then repeated with a final cadence.
   const phrases=[
-    [[0,64,.45],[.75,67,.45],[1.5,69,.45],[2.25,67,.45],[3,72,.75]],
-    [[0,71,.65],[.75,67,.45],[1.5,64,.45],[2.25,62,.45],[3,64,.75]],
-    [[0,64,.45],[.75,67,.45],[1.5,72,.65],[2.5,69,.45],[3.25,67,.55]],
-    [[0,65,.65],[1,69,.45],[1.75,67,.45],[2.5,65,.45],[3.25,62,.55]],
-    [[0,64,.45],[.75,67,.45],[1.5,69,.45],[2.25,67,.45],[3,72,.75]],
-    [[0,69,.65],[1,72,.45],[1.75,71,.45],[2.5,69,.45],[3.25,67,.55]],
-    [[0,65,.45],[.75,64,.45],[1.5,62,.65],[2.5,64,.45],[3.25,65,.55]],
-    [[0,67,.65],[1,62,.45],[1.75,67,.45],[2.5,71,.45],[3.25,62,.55]]
+    [[0,64,.92],[1,67,.92],[2,69,.92],[3,67,.92]],
+    [[0,64,.92],[1,62,.92],[2,60,1.88]],
+    [[0,65,.92],[1,69,.92],[2,67,1.88]],
+    [[0,62,.92],[1,64,.92],[2,67,1.88]],
+    [[0,64,.92],[1,67,.92],[2,69,.92],[3,67,.92]],
+    [[0,64,.92],[1,62,.92],[2,60,1.88]],
+    [[0,65,.92],[1,69,.92],[2,67,1.88]],
+    [[0,62,.92],[1,59,.92],[2,60,1.88]]
   ];
-  const roots=[48,43,45,41,48,45,41,43];
+  const roots=[48,48,41,43,48,48,41,48];
   const score=[];
   for(let bar=0;bar<phrases.length;bar++){
     for(const [beat,midi,duration] of phrases[bar])score.push({at:(bar*4+beat)*BEAT,midi,duration:duration*BEAT,voice:'lead',level:.036});
@@ -40,6 +41,8 @@
       oscillator.frequency.setValueAtTime(frequency(n.midi),at);
       if(n.voice==='pulse')oscillator.frequency.exponentialRampToValueAtTime(45,at+n.duration);
       gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(n.level,at+.015);
+      // Hold the melody instead of letting each note immediately decay into a ping.
+      if(n.voice==='lead')gain.gain.linearRampToValueAtTime(n.level*.8,at+n.duration-.10);
       gain.gain.exponentialRampToValueAtTime(.00001,at+n.duration);
       oscillator.connect(gain);gain.connect(context.destination);nodes.add(oscillator);
       oscillator.onended=()=>{nodes.delete(oscillator);oscillator.disconnect();gain.disconnect();};

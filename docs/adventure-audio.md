@@ -62,3 +62,10 @@ Validation : 96 tests Node et 592 assertions HTTP ciblées réussis (Chromium, S
 Branche `audio/adventure-hook` : composition originale en huit mesures à 108 BPM, durée 17,78 s. Motif récurrent avec seconde moitié variée, basse alternant fondamentale/quinte et deux pulses discrets par boucle. Le registre mélodique reste entre ré4 et do5 ; la forme d’onde enrichie dans les médiums est conservée. Gains de musique doublés par rapport à la version publiée : lead 0,036, basse 0,040, pulse 0,024. Effets, moteur de lecture, mute, préférences, interruptions et reprises inchangés.
 
 Validation : 96 tests Node et 592 assertions navigateur HTTP ciblées réussis (Chromium, Supabase simulé). Les tests vérifient motif, variation, jonction de boucle, ordonnanceur unique, mute, suspension/reprise, mobile et accueil FR/EN. Rendu Web Audio natif de deux boucles, sans normalisation : 35,56 s, 44,1 kHz, crête 0,07105, RMS 0,00744 ; aucune saturation numérique. Aucun appareil Android/iPhone physique ni WebKit disponible. Suite complète de jeu non relancée pour cette modification de partition et de gains. Aucun déploiement du jeu avant validation audio.
+
+
+## Révision : thème fredonnable et notes tenues
+
+Le premier aperçu court est remplacé par un thème de deux mesures au rythme régulier (« mi sol la sol / mi ré do »), repris à l’identique, avec réponse mélodique et cadence finale. Huit mesures, 108 BPM, 17,78 secondes, 26 notes de mélodie. La nouvelle enveloppe de la voix principale maintient 80 % du niveau jusqu’à la courte relâche finale ; elle évite la retombée exponentielle immédiate qui produisait des sons ponctuels. Basse, percussion rare, forme d’onde pour petits haut-parleurs et gains doublés sont conservés. Les effets du jeu restent inchangés.
+
+97 tests Node et 592 assertions HTTP ciblées passent. Rendu natif de deux boucles sans normalisation : 35,56 s, crête 0,06955, RMS 0,02103, aucune saturation numérique. Le niveau moyen augmente avec les notes tenues ; les gains et le maximum prévu restent ceux du volume ×2 demandé. Pas de publication du jeu avant validation du nouvel aperçu.
