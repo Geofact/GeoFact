@@ -75,3 +75,9 @@ Le premier aperçu court est remplacé par un thème de deux mesures au rythme r
 Composition originale en huit mesures à 90 BPM (21,33 s), phrases ascendantes, notes longues et respirations, motif repris avec une réponse différente. Aucune mélodie de film réutilisée. Harmoniques 3/5 adoucies à 0,22/0,04 avec énergie de forme d’onde compensée ; attaque de 25 ms, tenue à 70 %, relâche de 160 ms. Gains musique ×2 par rapport à la version publiée conservés ; effets et cycle de vie audio inchangés.
 
 Validation : 97 tests Node natifs et 592 assertions HTTP ciblées réussis, Supabase simulé. Rendu Web Audio natif de deux boucles sans normalisation : 42,67 s, 44,1 kHz, crête 0,06932, RMS 0,01769 ; aucune saturation numérique. Pas de nouvelle suite complète des modes pour cette seule révision musicale. Safari/iPhone et Android physiques non disponibles. Aperçu uniquement : aucun déploiement du jeu.
+
+## Révision : élan héroïque et notes plus courtes
+
+Thème original en huit mesures à 96 BPM, boucle de 20 secondes. Motif ascendant, réponses pointées et relances en demi-temps. Durée maximale des notes mélodiques : 0,5625 seconde ; notes courtes de 0,25 seconde. Timbre adouci, enveloppe, gains et effets conservés. Tests de durée des notes et grille rythmique adaptés.
+
+97 tests Node et 592 assertions HTTP ciblées réussis, Supabase simulé. Rendu natif de deux boucles sans normalisation : 40 s, crête 0,06918, RMS 0,01571 ; aucune saturation numérique. Suite complète des modes non relancée pour la partition seule. Appareils iPhone/Android réels non disponibles. Aperçu audio accessible uniquement, aucun déploiement du jeu.

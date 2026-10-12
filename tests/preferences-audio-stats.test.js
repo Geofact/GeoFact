@@ -152,10 +152,12 @@ function musicDevice(){
 }
 test('original adventure hook is shorter, recurring, varied and uses sparse percussion',()=>{
  assert.deepEqual(Object.fromEntries(['lead','bass','pulse'].map(voice=>[voice,[...new Set(musicModule.score.filter(n=>n.voice===voice).map(n=>n.level))]])),{lead:[.036],bass:[.040],pulse:[.024]});
- assert.ok(musicModule.LENGTH>21&&musicModule.LENGTH<22);assert.equal(musicModule.score.filter(n=>n.voice==='pulse').length,2);
+ assert.ok(musicModule.LENGTH>=20&&musicModule.LENGTH<21);assert.equal(musicModule.score.filter(n=>n.voice==='pulse').length,2);
  assert.ok(musicModule.score.every(n=>n.level<=.040&&n.at<musicModule.LENGTH));
  assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>musicModule.frequency(n.midi)<=524));
  const melody=musicModule.score.filter(n=>n.voice==='lead');
+ assert.ok(melody.every(n=>n.duration<=.6),'no prolonged melody notes');
+ assert.ok(melody.some(n=>n.duration<.3),'short pickups give the theme momentum');
  assert.deepEqual(melody.filter(n=>n.at<4*musicModule.BEAT).map(n=>n.midi),melody.filter(n=>n.at>=16*musicModule.BEAT&&n.at<20*musicModule.BEAT).map(n=>n.midi),'recognizable hook returns');
  assert.notDeepEqual(musicModule.score.filter(n=>n.voice==='lead'&&n.at<musicModule.LENGTH/2).map(n=>n.midi),musicModule.score.filter(n=>n.voice==='lead'&&n.at>=musicModule.LENGTH/2).map(n=>n.midi));
 });
@@ -166,7 +168,7 @@ test('melody holds its notes and uses a regular beat for a singable phrase',()=>
  assert.equal(ramps[0].length,2,'lead has an attack and a sustained level before release');
  assert.ok(ramps[0][1].at-ramps[0][0].at>.35,'first melody note stays audible beyond a short ping');
  assert.ok(ramps[0][1].value>=ramps[0][0].value*.69,'melody retains its level until release');
- assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>Math.abs(n.at/musicModule.BEAT-Math.round(n.at/musicModule.BEAT))<1e-6),'melody follows a regular beat');
+ assert.ok(musicModule.score.filter(n=>n.voice==='lead').every(n=>Math.abs(2*n.at/musicModule.BEAT-Math.round(2*n.at/musicModule.BEAT))<1e-6),'melody follows a regular half-beat grid');
  m.dispose();assert.equal(f.timers.size,0);
 });
 test('music lead has more speaker-friendly harmonics at unchanged RMS energy',()=>{

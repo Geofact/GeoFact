@@ -4,18 +4,18 @@
   else root.GeoFactMusic=api;
 })(globalThis,function(){
   'use strict';
-  // Original expedition theme: eight bars at 90 BPM, ~21.3 seconds.
-  const BEAT=60/90, LENGTH=32*BEAT;
-  // Broad rising phrases, pauses and a returning hook; no borrowed theme.
+  // Original heroic adventure theme: eight bars at 96 BPM, 20 seconds.
+  const BEAT=60/96, LENGTH=32*BEAT;
+  // A rising fanfare-like hook and dotted answers, without long held notes.
   const phrases=[
-    [[0,60,1.7],[2,67,.7],[3,64,.7]],
-    [[0,69,1.7],[2,67,1.4]],
-    [[0,65,1.7],[2,64,.7],[3,62,.7]],
-    [[0,67,2.7]],
-    [[0,60,1.7],[2,67,.7],[3,64,.7]],
-    [[0,69,1.7],[2,72,1.4]],
-    [[0,69,1.7],[2,65,.7],[3,62,.7]],
-    [[0,64,.7],[1,62,.7],[2,60,1.4]]
+    [[0,60,.9],[1,64,.4],[1.5,67,.4],[2,72,.9],[3,67,.7]],
+    [[0,69,.9],[1.5,67,.4],[2,65,.9],[3,64,.7]],
+    [[0,65,.9],[1,69,.4],[1.5,72,.4],[2,69,.9],[3,67,.7]],
+    [[0,62,.9],[1.5,64,.4],[2,67,.9],[3,62,.7]],
+    [[0,60,.9],[1,64,.4],[1.5,67,.4],[2,72,.9],[3,67,.7]],
+    [[0,69,.9],[1.5,72,.4],[2,71,.9],[3,67,.7]],
+    [[0,69,.9],[1,67,.4],[1.5,65,.4],[2,64,.9],[3,62,.7]],
+    [[0,67,.9],[1.5,62,.4],[2,60,.9]]
   ];
   const roots=[48,45,41,43,48,45,41,48];
   const score=[];
