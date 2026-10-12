@@ -58,3 +58,11 @@ Captures de la branche `ui/result-modal`, avec données fictives et Supabase sim
 - [Après fermeture, mobile FR](modal-result-closed-375-fr.png) · [EN](modal-result-closed-375-en.png)
 
 Les captures ne sont pas interactives. Safari/iPhone et Android physiques restent à vérifier.
+
+
+## Correction : pays suivant après fermeture
+
+Bouton original déplacé dans les actions près de la carte, sans duplication. Revue de `fix/result-next-access` avec données fictives et Supabase simulé.
+
+- [Mobile FR](next-access-375-fr.png) · [EN](next-access-375-en.png)
+- [Ordinateur FR](next-access-1280-fr.png) · [EN](next-access-1280-en.png)
