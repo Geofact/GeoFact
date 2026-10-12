@@ -95,7 +95,7 @@
   async function initializeRewards() {
     rewardsLoading = true; rewardError = null; render();
     try {
-      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-update1'), import('./daily-rewards.mjs?v=20261009-update1'), import('./bonus-rules.mjs?v=20261009-update1')]);
+      rewardModules ||= Promise.all([import('./reward-repository.mjs?v=20261009-update1&home=20261012-daily12h'), import('./daily-rewards.mjs?v=20261009-update1&home=20261012-daily12h'), import('./bonus-rules.mjs?v=20261009-update1')]);
       const [repositoryModule,,rules] = await rewardModules; bonusRules = rules;
       rewardsRepository?.close(); rewardsRepository = await repositoryModule.openRewardRepository();
       let snapshot = await rewardsRepository.read();
@@ -211,7 +211,7 @@
   }
   let justUnlockedCard = false;
   let finalWasRecord = false;
-  let renderedDailyKey = core.utcDayKey();
+  let renderedDailyKey = core.dailyKey();
   function blankState() {
     return { screen: 'home', mode: null, difficulty: 'easy', series: [], queue: [], index: 0, current: null,
       answered: false, attempts: 0, points: core.ROUND_MAX, score: 0, streak: 0, factIndex: null, wrong: null, wrongGuesses: [], challenge: null, dailyTiles: [], dailyErrors: 0, practicePool: [], bonusMode: null };
@@ -313,7 +313,7 @@
     return distanceCache.get(key);
   }
   function todayDaily() {
-    const now = new Date(), key = core.utcDayKey(now);
+    const now = new Date(), key = core.dailyKey(now);
     return { key, number: core.dailyNumber(now), series: core.dailySeries(countries, now), result: dailyData.days[key] || null };
   }
   function activeDailyStreak() {
@@ -323,7 +323,7 @@
   }
   function updateCountdown() {
     const el = $('dailyCountdown'); if (!el) return;
-    const now = new Date(), next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+    const now = new Date(), next = core.nextDailyAt(now);
     let seconds = Math.max(0, Math.floor((next - now.getTime()) / 1000));
     const h = String(Math.floor(seconds / 3600)).padStart(2, '0'); seconds %= 3600;
     const m = String(Math.floor(seconds / 60)).padStart(2, '0'), sec = String(seconds % 60).padStart(2, '0');
@@ -350,7 +350,7 @@
     $('chooseDaily').textContent = t(daily.result ? 'dailyView' : 'dailyPlay');
     const oldPending = Object.entries(dailyData.days).filter(([key,r]) => key !== daily.key && r.card && !r.cardOpened).sort(([a],[b])=>a.localeCompare(b))[0];
     $('resumeDailyChest').classList.toggle('hidden', !oldPending);
-    if(oldPending) { $('resumeDailyChest').dataset.day = oldPending[0]; $('resumeDailyChest').textContent = t('resumeDailyChest',{date:oldPending[0]}); }
+    if(oldPending) { $('resumeDailyChest').dataset.day = oldPending[0]; $('resumeDailyChest').textContent = t('resumeDailyChest',{date:oldPending[0].replace('~12',' 12:00 UTC')}); }
     updateCountdown();
   }
   function cardFlag(iso) { return flag(byISO.get(iso)); }
@@ -618,7 +618,7 @@
     const pool = Array.isArray(customPool) && customPool.length ? [...customPool] : countries.filter(c => c.difficulty === difficulty).map(c => c.iso);
     state.practicePool = mode === 'practice' ? [...pool] : [];
     if (mode === 'daily') { const daily = todayDaily(); state.dailyKey = daily.key; state.dailyNumber = daily.number; }
-    state.series = challenge ? [...challenge.c] : mode === 'daily' ? core.dailySeries(countries, new Date(state.dailyKey+'T12:00:00Z')) : mode === 'game' ? core.shuffle(pool).slice(0, 5) : [];
+    state.series = challenge ? [...challenge.c] : mode === 'daily' ? core.dailySeries(countries, new Date(core.dailyStart(state.dailyKey))) : mode === 'game' ? core.shuffle(pool).slice(0, 5) : [];
     state.queue = mode === 'practice' ? core.shuffle(pool) : [];
     round();
   }
@@ -895,5 +895,5 @@
   render();
   initializeRewards().then(()=>{if(!rewardError&&pendingPractice.length)savePracticeAnswers();});
   recordEvent('visit');
-  setInterval(() => { updateCountdown(); const key = core.utcDayKey(); if (key !== renderedDailyKey) { renderedDailyKey = key; if (state.screen === 'home') render(); else renderBonusRewards(); } }, 1000);
+  setInterval(() => { updateCountdown(); const key = core.dailyKey(); if (key !== renderedDailyKey) { renderedDailyKey = key; if (state.screen === 'home') render(); else renderBonusRewards(); } }, 1000);
 })();

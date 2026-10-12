@@ -43,9 +43,10 @@
       return p;
     } catch { return null; }
   }
-  const dailyEpoch = Date.UTC(2026, 9, 7);
+  const periods = typeof module !== 'undefined' && module.exports ? require('./daily-periods.js') : root.GeoFactDailyPeriods;
+  const {dailyKey,dailyStart,dailyNumber,nextDailyAt} = periods;
   function utcDayKey(date = new Date()) { return date.toISOString().slice(0, 10); }
-  function dailyNumber(date = new Date()) { return Math.floor((Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) - dailyEpoch) / 86400000) + 1; }
+
   function hashSeed(text) {
     let h = 2166136261;
     for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -56,7 +57,7 @@
     return () => { x += 0x6D2B79F5; let t = x; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   }
   function dailySeries(countries, date = new Date()) {
-    const key = utcDayKey(date), random = seededRandom(hashSeed('GeoFactDaily-v1:' + key));
+    const key = dailyKey(date), random = seededRandom(hashSeed('GeoFactDaily-v1:' + key));
     const pick = (level, count) => shuffle(countries.filter(c => c.difficulty === level).map(c => c.iso), random).slice(0, count);
     // Deliberately balanced: approachable every day, with one harder country.
     return shuffle([...pick('easy', 2), ...pick('medium', 2), ...pick('hard', 1)], random);
@@ -120,7 +121,7 @@
     const neighbours = borders.neighbours[countryA];
     return countryA !== countryB && Array.isArray(neighbours) && neighbours.includes(countryB);
   }
-  const core = { ROUND_MAX, SCORE_MAX, levels, penaltyFor, penalise, shuffle, encodeChallenge, encodeChallengeResult, parseChallenge, utcDayKey, dailyNumber, dailySeries, dailyTile, dailyShareCircle, chooseFact, samplePath, spherePoint, territoryDistance, areLandNeighbours };
+  const core = { ROUND_MAX, SCORE_MAX, levels, penaltyFor, penalise, shuffle, encodeChallenge, encodeChallengeResult, parseChallenge, utcDayKey, dailyKey, dailyStart, nextDailyAt, dailyNumber, dailySeries, dailyTile, dailyShareCircle, chooseFact, samplePath, spherePoint, territoryDistance, areLandNeighbours };
   root.GeoFactCore = core;
   if (typeof module !== 'undefined' && module.exports) module.exports = core;
 })(globalThis);

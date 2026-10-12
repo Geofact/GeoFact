@@ -195,3 +195,16 @@ test('Documented disputed land interfaces remain neighbours without changing the
   const originalDistance=core.territoryDistance(contours.get('FRA'),contours.get('BEL'));
   assert.equal(originalDistance,10); assert.equal(core.penalise(20,originalDistance),19);
 });
+
+test('Daily switches at noon and midnight UTC without renumbering historical challenges',()=>{
+ const before=new Date('2026-10-13T11:59:59Z'),noon=new Date('2026-10-13T12:00:00Z'),night=new Date('2026-10-14T00:00:00Z');
+ assert.equal(core.dailyKey(before),'2026-10-13');assert.equal(core.dailyKey(noon),'2026-10-13~12');
+ assert.equal(core.nextDailyAt(before),noon.getTime());assert.equal(core.nextDailyAt(noon),night.getTime());
+ assert.equal(core.dailyNumber(before),7);assert.equal(core.dailyNumber(noon),8);assert.equal(core.dailyNumber(night),9);
+ assert.notDeepEqual(core.dailySeries(countries,before),core.dailySeries(countries,noon));
+ assert.deepEqual(core.dailySeries(countries,noon),core.dailySeries(countries,new Date('2026-10-13T23:59:59Z')));
+ assert.equal(core.dailyKey(new Date('2026-10-12T23:59:59Z')),'2026-10-12');assert.equal(core.dailyNumber(new Date('2026-10-12T23:59:59Z')),6);
+ assert.equal(core.utcDayKey(noon),'2026-10-13','bonus quotas retain calendar days');
+ assert.equal(core.dailyStart('2026-10-13~12'),noon.getTime());
+ for(const key of ['2026-02-30','2026-10-12~12','2026-10-13~00'])assert.throws(()=>core.dailyStart(key));
+});
