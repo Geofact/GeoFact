@@ -92,11 +92,12 @@
       const tether=make('line','microstate-tether'), marker=make('circle','microstate-marker'), core=make('circle','target-core');
       core.setAttribute('aria-hidden','true');
       marker.dataset.iso=source.dataset.iso;
+      marker.dataset.anchorX=anchor.x;marker.dataset.anchorY=anchor.y;
       marker.setAttribute('role','button'); marker.dataset.i18nAria='smallCountryTarget';
       marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
       return {source,marker,core,tether,anchor,box,area:main.area};
     });
-    let clusters = [], visible = [], groupFocus = false;
+    let clusters = [], visible = [];
     const clusterPool = new Map();
     const coarse = matchMedia('(pointer: coarse)');
     const label = key => root.GeoFactTranslations?.[document.documentElement.lang]?.[key] || root.GeoFactTranslations?.fr?.[key] || '';
@@ -120,13 +121,13 @@
     function layoutMicrostateMarkers() {
       const matrix = svg.getScreenCTM(); if (!matrix) return;
       const inverse=matrix.inverse(), scale=Math.hypot(matrix.a,matrix.b), rect=svg.getBoundingClientRect();
-      const detail=Math.max(Math.max(0,Math.min(1,(Math.log2(1200/view.w)-1.5)/1.5)),groupFocus?Math.max(0,Math.min(1,(1200-view.w)/520)):0);
-      const radius=4+9*detail, hit=coarse.matches?44:32;
-      const spacing=detail>.8?hit+6:22+detail*28;
+      const detail=Math.max(0,Math.min(1,(Math.log2(1200/view.w)-1.5)/1.5));
+      const radius=3+10*detail, hit=coarse.matches?44:32;
+      const spacing=detail>.8?hit+6:34+detail*16;
       const screen=p=>({x:matrix.a*p.x+matrix.c*p.y+matrix.e,y:matrix.b*p.x+matrix.d*p.y+matrix.f});
       const local=p=>{const q=svg.createSVGPoint();q.x=p.x;q.y=p.y;return q.matrixTransform(inverse);};
       const controls=[...(svg.closest('.map-wrap')?.querySelectorAll('.map-controls')||[])].map(el=>el.getBoundingClientRect());
-      const margin=Math.max(radius+3,detail>.8?hit/2:12);
+      const margin=radius+2;
       const clearance=hit/2+5;
       const blocked=p=>controls.some(r=>p.x+clearance>r.left&&p.x-clearance<r.right&&p.y+clearance>r.top&&p.y-clearance<r.bottom);
       const inMap=p=>p.x>=rect.left+margin&&p.x<=rect.right-margin&&p.y>=rect.top+margin&&p.y<=rect.bottom-margin&&!blocked(p);
@@ -137,17 +138,20 @@
       };
       const eligible=[];
       for(const item of markers){
-        const size=Math.min(item.box.w*scale,item.box.h*scale,Math.sqrt(item.area)*scale);
-        const threshold=coarse.matches?44:32;
+        const size=Math.min(Math.sqrt(item.area),Math.min(item.box.w,item.box.h)*2)*scale;
+        // A dot is useful for genuinely tiny land, not every narrow or medium country.
+        const threshold=coarse.matches?18+10*detail:14+8*detail;
         item.opacity=Math.max(0,Math.min(1,(threshold-size)/(threshold*.35)));
         item.screen=screen(item.anchor);item.localTarget=detail>.8;item.hitSize=hit;
+        item.marker.dataset.local=String(item.localTarget);
         if(item.opacity>.02&&item.screen.x>=rect.left&&item.screen.x<=rect.right&&item.screen.y>=rect.top&&item.screen.y<=rect.bottom)eligible.push(item);
       }
+      const close=(a,b)=>detail>.8?Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))<spacing:Math.hypot(a.x-b.x,a.y-b.y)<spacing;
       const pending=new Set(eligible), groups=[];
       while(pending.size){
         const group=[pending.values().next().value];pending.delete(group[0]);
         for(let i=0;i<group.length;i++)for(const item of pending){
-          if(Math.hypot(group[i].screen.x-item.screen.x,group[i].screen.y-item.screen.y)<spacing && (detail>.8 || group.every(other=>Math.abs(other.screen.x-item.screen.x)<56&&Math.abs(other.screen.y-item.screen.y)<56))){pending.delete(item);group.push(item);}
+          if(close(group[i].screen,item.screen) && (detail>.8 || group.every(other=>Math.abs(other.screen.x-item.screen.x)<56&&Math.abs(other.screen.y-item.screen.y)<56))){pending.delete(item);group.push(item);}
         }
         groups.push(group);
       }
@@ -157,7 +161,7 @@
       while(merged){merged=false;
         outer:for(let i=0;i<groups.length;i++)for(let j=i+1;j<groups.length;j++){
           const a=center(groups[i]),b=center(groups[j]);
-          if(Math.hypot(a.x-b.x,a.y-b.y)<spacing && (detail>.8 || groups[i].every(p=>groups[j].every(q=>Math.abs(p.screen.x-q.screen.x)<70&&Math.abs(p.screen.y-q.screen.y)<70)))){groups[i].push(...groups[j]);groups.splice(j,1);merged=true;break outer;}
+          if(close(a,b) && (detail>.8 || groups[i].every(p=>groups[j].every(q=>Math.abs(p.screen.x-q.screen.x)<70&&Math.abs(p.screen.y-q.screen.y)<70)))){groups[i].push(...groups[j]);groups.splice(j,1);merged=true;break outer;}
         }
       }
       visible=[];const occupied=[];const activeClusters=new Set();clusters=[];
@@ -165,7 +169,7 @@
         const q=local(p),a=item.anchor;
         occupied.push(p);visible.push(item);
         item.marker.setAttribute('cx',q.x);item.marker.setAttribute('cy',q.y);item.marker.setAttribute('r',radius/scale);
-        item.core.setAttribute('cx',q.x);item.core.setAttribute('cy',q.y);item.core.setAttribute('r',2/scale);item.core.style.display='';item.core.style.opacity=item.opacity;
+        item.core.setAttribute('cx',q.x);item.core.setAttribute('cy',q.y);item.core.setAttribute('r',(1.4+.6*detail)/scale);item.core.style.display='';item.core.style.opacity=item.opacity;
         item.marker.dataset.local=String(item.localTarget);
         item.marker.setAttribute('aria-label',label('smallCountryTarget'));
         reveal(item.marker,true,item.opacity);
@@ -173,7 +177,7 @@
         item.tether.style.display=shifted?'':'none';item.tether.style.pointerEvents='none';item.tether.style.opacity=item.opacity;
         if(shifted){item.tether.setAttribute('x1',a.x);item.tether.setAttribute('y1',a.y);item.tether.setAttribute('x2',q.x);item.tether.setAttribute('y2',q.y);}
       };
-      const free=p=>inMap(p)&&occupied.every(q=>Math.abs(q.x-p.x)>=hit+4||Math.abs(q.y-p.y)>=hit+4);
+      const free=p=>inMap(p)&&occupied.every(q=>!close(q,p));
       const separate=item=>{
         const start=clamp(item.screen);
         if(free(start))return start;
@@ -184,14 +188,16 @@
         return null;
       };
       for(const group of groups){
-        // At local zoom, reveal small groups as separately spaced controls with geographic leader lines.
-        const spread=group.length===1||(detail>.8&&group.length<=6)||view.w<=4.01;
+        // Keep nearby countries grouped until zoom separates their actual geographic positions.
+        // Only at the hard zoom limit use a compact, tethered fallback.
+        const spread=group.length===1||view.w<=4.01;
         if(spread){
           const chosen=[],previous=occupied.length;
-          for(const item of group){const p=separate(item);if(!p)break;chosen.push({item,p});occupied.push(p);}
+          for(const item of group){const p=view.w<=4.01?separate(item):(!blocked(item.screen)&&free(clamp(item.screen))?clamp(item.screen):null);if(!p)break;chosen.push({item,p});occupied.push(p);}
           occupied.length=previous;
           if(chosen.length===group.length){for(const {item,p} of chosen)place(item,p);continue;}
         }
+        if(group.length===1)continue;
         const key=group.map(i=>i.source.dataset.iso).sort().join('|');
         let cluster=clusterPool.get(key);
         if(!cluster){
@@ -202,8 +208,8 @@
           cluster={el,disc,plus,group};clusterPool.set(key,cluster);
           el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(el.dataset.active==='true')expandCluster(cluster);}});
         }
-        cluster.group=group;activeClusters.add(key);clusters.push(cluster);
-        const p=center(group),q=local(p),r=(8+3*detail)/scale,arm=(3+detail)/scale;
+        cluster.group=group;cluster.el.dataset.local=String(detail>.8);activeClusters.add(key);clusters.push(cluster);
+        const p=center(group),q=local(p),r=(6+5*detail)/scale,arm=4/scale;
         occupied.push(p);cluster.el.setAttribute('cx',q.x);cluster.el.setAttribute('cy',q.y);
         cluster.disc.setAttribute('cx',q.x);cluster.disc.setAttribute('cy',q.y);cluster.disc.setAttribute('r',r);
         cluster.plus.setAttribute('d',`M${q.x-arm},${q.y}H${q.x+arm} M${q.x},${q.y-arm}V${q.y+arm}`);
@@ -228,14 +234,14 @@
       const span=Math.max(Math.max(...xs)-Math.min(...xs),2*(Math.max(...ys)-Math.min(...ys)));
       const scale=Math.hypot(svg.getScreenCTM().a,svg.getScreenCTM().b);
       const w=Math.max(4,Math.min(view.w*.72,Math.max(span*1.45+52/scale,4)));
-      groupFocus=true;
       const x=(Math.min(...xs)+Math.max(...xs))/2,y=(Math.min(...ys)+Math.max(...ys))/2;
       setView({x:x-w/2,y:y-w/4,w});
     }
     function setView(next) {
       const w = Math.min(1200, Math.max(4, next.w)), h = w / 2;
-      if(w>=1199)groupFocus=false;
-      view = { x: Math.min(1200 - w, Math.max(0, next.x)), y: Math.min(600 - h, Math.max(0, next.y)), w, h };
+      // Leave ocean padding at the dateline when zoomed, so islands stay clear of the controls.
+      const oceanPadding=w<1200?w*.3:0;
+      view = { x: Math.min(1200 - w + oceanPadding, Math.max(-oceanPadding, next.x)), y: Math.min(600 - h, Math.max(0, next.y)), w, h };
       svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
       layoutMicrostateMarkers();
     }

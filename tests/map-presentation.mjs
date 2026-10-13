@@ -24,7 +24,7 @@ export async function testMapPresentation({newContext,url,core,check,equal,outpu
      await p.waitForTimeout(260);continue;
     }
     const chosen=await p.evaluate(iso=>{
-     const s=document.querySelector('#map'),shape=s.querySelector(`.territory-detail[data-iso="${iso}"]`),b=shape.getBBox(),pt=s.createSVGPoint();pt.x=b.x+b.width/2;pt.y=b.y+b.height/2;const a=pt.matrixTransform(s.getScreenCTM());
+     const s=document.querySelector('#map'),shape=s.querySelector(`.territory-detail[data-iso="${iso}"]`),b=shape.getBBox(),pt=s.createSVGPoint();const marker=s.querySelector(`.microstate-marker[data-iso="${iso}"]`);pt.x=+marker.dataset.anchorX;pt.y=+marker.dataset.anchorY;const a=pt.matrixTransform(s.getScreenCTM());
      return [...s.querySelectorAll('.microstate-cluster[data-active="true"]')].map(n=>{const r=n.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,d:Math.hypot(a.x-r.x-r.width/2,a.y-r.y-r.height/2)};}).sort((a,b)=>a.d-b.d)[0];
     },iso);
     check(!!chosen,name+': regional group can be opened');
@@ -47,6 +47,8 @@ export async function testMapPresentation({newContext,url,core,check,equal,outpu
    equal(await p.locator('.map-zoom-hint span').textContent(),'Touche les repères + pour agrandir la zone.',name+': world + hint');
    check(await p.evaluate(()=>[...document.querySelectorAll('.microstate-cluster[data-active="true"]')].every(n=>n.querySelector('.cluster-plus')&&getComputedStyle(n.querySelector('.cluster-disc')).strokeDasharray==='none'&&n.getBoundingClientRect().width<=19)),name+': compact solid + groups');
    check(await p.evaluate(()=>[...document.querySelectorAll('.microstate-marker[data-active="true"]')].every(n=>n.getBoundingClientRect().width<=11)),name+': compact world dots');
+   check(await p.evaluate(()=>[...document.querySelectorAll('.microstate-cluster[data-active="true"] .cluster-disc')].every(n=>getComputedStyle(n).stroke==='none'&&getComputedStyle(n).fill==='rgba(0, 0, 0, 0)')),name+': world groups are bare plus signs without outlined circles');
+   check(await p.evaluate(limit=>[...document.querySelectorAll('.microstate-marker[data-active="true"],.microstate-cluster[data-active="true"]')].length<=limit,mobile?20:40),name+': world overlay stays sparse');
    await controlsSafe();await capture('monde');
    await setLanguage(p,'en');equal(await p.locator('.map-zoom-hint span').textContent(),'Tap the + markers to zoom into the area.',name+': English contextual hint');await setLanguage(p,'fr');
    await openGroups('VAT',true);
@@ -57,6 +59,7 @@ export async function testMapPresentation({newContext,url,core,check,equal,outpu
     const sb=await smr.boundingBox();check(Math.abs(vb.x-sb.x)>=(mobile?44:32)||Math.abs(vb.y-sb.y)>=(mobile?44:32),name+': Vatican and San Marino have separate touch areas');
     check(await p.evaluate(()=>[...document.querySelectorAll('.microstate-tether')].filter(n=>n.style.display!=='none').every(n=>n.hasAttribute('x1')&&n.hasAttribute('x2'))),name+': every local offset has a leader line');
    }
+   check(await p.evaluate(()=>['VAT','SMR'].every(iso=>{const m=document.querySelector(`.microstate-marker[data-iso="${iso}"]`);return m.dataset.active!=='true'||m.previousElementSibling.style.display==='none';})),name+': local microstates remain at their exact location without leader lines');
    await capture('vatican-saint-marin');
    check(await p.evaluate(()=>[...document.querySelectorAll('.microstate-marker[data-active="true"],.microstate-cluster[data-active="true"]')].every(n=>!n.textContent&&!/Vatican|Saint|flag|Monaco/.test(n.getAttribute('aria-label')))),name+': no name, flag or searched-country styling');
    // Padding of the 44×44 square takes precedence over the neighbouring polygon.

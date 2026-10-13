@@ -1683,3 +1683,11 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 .microstate-marker.country-found,.microstate-marker.country-found:hover{fill:#4ade80}
 .microstate-marker.country-found + .target-core{fill:#fffefa}
 @media(prefers-reduced-motion:reduce){.target-core{transition:none}}
+
+/* World map: dots and bare plus signs, without an overlay of outlined discs. */
+.microstate-marker[data-local="false"]{fill:#315d55;stroke:#fffefa;stroke-width:1px}
+.microstate-marker[data-local="false"] + .target-core{opacity:0!important}
+.microstate-cluster[data-local="false"] .cluster-disc{fill:transparent;stroke:none}
+.microstate-cluster[data-local="false"] .cluster-plus{stroke:#173f70;stroke-width:2px}
+
+.microstate-marker.country-found[data-local="false"]{fill:#4ade80}

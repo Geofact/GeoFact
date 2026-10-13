@@ -37,17 +37,16 @@ try{
   // Test the actual SVG CTM and real native input, not a synthetic selection target.
   const zoomTo=async(iso,factor)=>{
    await p.evaluate(({iso,factor})=>{
-    controller.reset();const shape=document.querySelector(`path.territory-detail[data-iso="${iso}"]`)||document.querySelector(`path.country-shape[data-iso="${iso}"]`);
-    // Dominant ring's bounds provide a camera centre, never a guessed answer coordinate.
-    const rings=shape.getAttribute('d').match(/M[^M]+/g).map(d=>{const n=d.match(/-?\d+(?:\.\d+)?/g).map(Number),xs=n.filter((_,i)=>i%2===0),ys=n.filter((_,i)=>i%2);return{x:(Math.min(...xs)+Math.max(...xs))/2,y:(Math.min(...ys)+Math.max(...ys))/2,area:(Math.max(...xs)-Math.min(...xs))*(Math.max(...ys)-Math.min(...ys))};}).sort((a,b)=>b.area-a.area);
-    const q=document.querySelector('#map').createSVGPoint();q.x=rings[0].x;q.y=rings[0].y;const a=q.matrixTransform(document.querySelector('#map').getScreenCTM());controller.zoom(factor,a.x,a.y);
+    controller.reset();
+    // Camera uses the verified interior anchor, not an archipelago's bounding-box centre.
+    const q=document.querySelector('#map').createSVGPoint();const marker=document.querySelector(`.microstate-marker[data-iso="${iso}"]`);q.x=+marker.dataset.anchorX;q.y=+marker.dataset.anchorY;const a=q.matrixTransform(document.querySelector('#map').getScreenCTM());controller.zoom(factor,a.x,a.y);
    },{iso,factor});await p.waitForTimeout(220);
   };
   const click=async(x,y)=>mobile?p.touchscreen.tap(x,y):p.mouse.click(x,y);
   for(const iso of ['MCO','VAT','SMR','LIE','TUV','NRU','KNA','DMA','MDV','KIR','MHL','SGP']){
    await zoomTo(iso,({LIE:20,SMR:20,SGP:10,KIR:5,MHL:20})[iso]||80);
    const m=p.locator(`.microstate-marker[data-iso="${iso}"]`);
-   for(const factor of [20,40,10,5,80,160]){if(await m.isVisible())break;await zoomTo(iso,factor);}
+   for(const factor of [20,40,10,5,3,2,80,160]){if(await m.isVisible())break;await zoomTo(iso,factor);}
    check(await m.isVisible(),iso+' visible at intermediate zoom');
    const b=await m.boundingBox();check(b.width>=9 && b.width<=28.5,iso+' screen-sized target '+JSON.stringify(b));
    await click(b.x+b.width/2,b.y+b.height/2);
