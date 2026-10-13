@@ -77,7 +77,7 @@ async function countryName(){return page.locator('#countryName').textContent();}
 // Native mouse/gesture tests below cover the real pointer path separately.
 async function tap(iso, type='mouse', targetPage=page){
   await targetPage.evaluate(({iso,type})=>{
-    const target=document.querySelector(`[data-iso="${iso}"]`);
+    const target=document.querySelector(`path.territory-detail[data-iso="${iso}"]`) || document.querySelector(`[data-iso="${iso}"]`);
     for(const event of ['pointerdown','pointerup']) target.dispatchEvent(new PointerEvent(event,{bubbles:true,pointerId:1,pointerType:type,clientX:-1,clientY:-1,button:0}));
   },{iso,type});
 }
@@ -116,7 +116,7 @@ try {
   await visible('distanceRow',false);
   await tap('BEL'); await visible('result',false); await visible('distanceRow');
   equal(await page.locator('#distance').textContent(),'','no kilometres for land neighbour');await visible('distance',false);check((await page.locator('#distanceReaction').textContent()).includes("Tout près ! C'est un pays voisin."),'French neighbour message');equal(await page.locator('#penalty').textContent(),'−1 points','wrong-guess penalty');
-  equal(await page.locator('#map circle.microstate').count(),29,'microstate geometries');equal(await page.locator('#map circle.microstate-marker').count(),29,'microstate display markers');
+  equal(await page.locator('#map circle.microstate').count(),29,'legacy distance references');equal(await page.locator('#map circle.microstate-marker').count(),198,'adaptive markers for all countries and regions');
   await setLanguage(page,'en');equal(await countryName(),'France');equal(await page.locator('#roundPoints').textContent(),'19 points');
   // Native mouse input at a genuine interior point of metropolitan France.
   const centre=await page.evaluate(()=>{const s=document.getElementById('map'),p=s.createSVGPoint();p.x=(2.5+180)/.3;p.y=(90-48)/.3;const q=p.matrixTransform(s.getScreenCTM());return{x:q.x,y:q.y};});
@@ -153,24 +153,6 @@ try {
     const target=await page.evaluate(name=>GeoFactCountries.find(c=>c.name[document.documentElement.lang]===name).iso,await countryName());
     await tap(target,'touch');await visible('result');await visible('roundEarned',false);await clickResultAction(page,'#next');await visible('playing');
   }
-  // Exercise the rendered CTM and selection priority at different zoom levels.
-  const hitboxResults=await page.evaluate(async()=>{
-    const original=document.getElementById('map'),svg=original.cloneNode(true);svg.removeAttribute('id');svg.querySelector('.microstate-marker-layer')?.remove();original.parentNode.appendChild(svg);const controller=GeoFactMap(svg,()=>{});
-    const output=[];
-    for(const zoom of [1,10,80]){
-      controller.reset();controller.zoom(zoom);
-      // Markers can move away from their geographic anchor to avoid overlap.
-      // setView schedules layout; explicitly allow it to finish before measuring.
-      await new Promise(requestAnimationFrame);
-      const marker=svg.querySelector('.microstate-marker[data-iso="TUV"]'),r=marker.getBoundingClientRect();
-      const x=r.left+r.width/2,y=r.top+r.height/2;
-      output.push(controller.resolveCountry(svg,x+12,y,'touch')==='TUV');
-      output.push(controller.resolveCountry(svg,x+12,y,'mouse')!=='TUV');
-      output.push(controller.resolveCountry(svg.querySelector('[data-iso="FRA"]'),x,y,'touch')==='FRA');
-    }
-    controller.reset();for(let i=0;i<30;i++)controller.zoom(1.5);output.push(controller.getView().w===4&&controller.getView().h===2);controller.reset();svg.remove();return output;
-  });
-  for(const result of hitboxResults)check(result,'screen hitbox / real path priority / zoom cap');
   // A blocked native share falls back; an intentional cancellation does not.
   const target=await page.evaluate(name=>GeoFactCountries.find(c=>c.name.en===name).iso,await countryName());await tap(target);
   await page.evaluate(()=>{window.copied=[];Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new Error('Unavailable')}});Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.copied.push(text)}});});

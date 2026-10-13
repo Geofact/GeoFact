@@ -1,5 +1,6 @@
 globalThis.GeoFactTranslations = {
   fr: {
+    smallCountriesHint: "Les petits pays sont indiqués par un point.", smallCountryTarget: "Sélectionner ce petit territoire", smallCountriesCluster: "Zoomer pour séparer ces petits territoires",
     albumNavigation: "Navigation de la collection",
     albumBack: "← Les continents",
     albumAll: "Tous les drapeaux",
@@ -96,6 +97,7 @@ globalThis.GeoFactTranslations = {
     against: 'Score de ton ami : {score} / 100', loading: 'Chargement…'
   },
   en: {
+    smallCountriesHint: "Small countries are marked with a dot.", smallCountryTarget: "Select this small territory", smallCountriesCluster: "Zoom in to separate these small territories",
     albumNavigation: "Collection navigation",
     albumBack: "← Continents",
     albumAll: "All flags",

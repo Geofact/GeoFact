@@ -102,7 +102,7 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
         await p.waitForTimeout(950); // Real elapsed time past the 780 ms success pulse.
         await expectGreen(p, iso, `${label} ${mode} after animation`);
         equal(await p.locator('#map .country-correct').count(), 0, `${label} ${mode}: pulse ended`);
-        if (mode === 'practice') equal((await shapes(p, iso)).length, 2, `${label}: microstate geometry and marker`);
+        if (mode === 'practice') equal((await shapes(p, iso)).length, 3, `${label}: microstate geometry and marker`);
         await interact(p, iso, `${label} ${mode}`);
         check(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${label} ${mode}: no overflow`);
         await clickResultAction(p,'#next');
@@ -128,7 +128,7 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
       const baseline = await shapes(p, parent);
       await tap(region, 'mouse', p);
       await p.waitForTimeout(950);
-      equal((await shapes(p, parent)).map(s => s.iso).sort(), expected.sort(), region + ': every territory included');
+      equal([...new Set((await shapes(p, parent)).map(s => s.iso))].sort(), expected.sort(), region + ': every territory included');
       await expectGreen(p, parent, region + ' after animation');
       await interact(p, parent, region);
       if (parent === 'FRA') {
@@ -139,7 +139,7 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
           const screen = point.matrixTransform(svg.getScreenCTM()); return {x:screen.x,y:screen.y};
         });
         await p.mouse.move(centre.x, centre.y);
-        check(await p.locator('#map [data-iso="FRA"]').evaluate(el => el.matches(':hover')), 'France truly hovered');
+        check(await p.locator('#map path[data-iso="FRA"]').evaluate(el => el.matches(':hover')), 'France truly hovered');
         await expectGreen(p, parent, 'France on hover');
       }
       await clickResultAction(p,'#next'); await expectCleared(p, parent, baseline, region + ' next round');
@@ -155,6 +155,13 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
     await tap('TUV', 'touch', p); await p.waitForTimeout(950);
     await expectGreen(p, 'TUV', 'same country answered again');
     await closeResultForMap(p);
+    // Reveal the marker at a rendered scale where its world-view cluster separates.
+    // This colour-only check frames the actual sourced geometry; native cluster zoom is covered by test:map.
+    await p.locator('#map').evaluate(svg=>{
+      const b=svg.querySelector('.territory-detail[data-iso="TUV"]').getBBox(),w=Math.max(b.width*2,b.height*4,4);
+      svg.setAttribute('viewBox',`${b.x+b.width/2-w/2} ${b.y+b.height/2-w/4} ${w} ${w/2}`);
+      dispatchEvent(new Event('resize'));
+    });
     await p.locator('#map .microstate-marker[data-iso="TUV"]').hover();
     await expectGreen(p, 'TUV', 'microstate marker on hover');
     await clickOutsideResult(p,'#brand'); await expectCleared(p, 'TUV', baseline, 'brand exits party');

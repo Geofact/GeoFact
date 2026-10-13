@@ -1652,3 +1652,14 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 #collection .locked-variant{opacity:1}
 .reward-summary>.flag-card{margin-top:14px;margin-bottom:14px}
 @media(min-width:760px){#collection .collection-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Geographic detail is independent of legacy distance references. */
+.territory-detail{fill:var(--land);stroke:#4e7990;stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer}
+.territory-detail:hover{fill:var(--land2)}
+.territory-detail.country-found,.territory-detail.country-correct{fill:#4ade80!important}
+.territory-detail.country-tried,.territory-detail.country-wrong{fill:#dc4c45!important}
+.microstate-marker{stroke-width:1.4px}
+.microstate-tether{stroke:#f7b955;stroke-width:1px;vector-effect:non-scaling-stroke;pointer-events:none}
+.microstate-cluster{fill:#f7b955;stroke:#173f70;stroke-width:2px;stroke-dasharray:2 2;vector-effect:non-scaling-stroke;pointer-events:all;cursor:zoom-in}
+.microstate-marker:focus-visible,.microstate-cluster:focus-visible{stroke:white;stroke-width:3px;outline:none}
+@media(prefers-reduced-motion:reduce){.microstate-marker{transition:none}}

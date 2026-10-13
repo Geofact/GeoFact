@@ -64,15 +64,15 @@ export async function testIphoneRegression({newContext,url,tap,core,check,equal}
    else if(mode==='challenge'){const token=await p.evaluate(()=>{const level=GeoFactCountries.find(c=>c.iso==='NGA').difficulty;const series=['NGA',...GeoFactCountries.filter(c=>c.difficulty===level&&c.iso!=='NGA').slice(0,4).map(c=>c.iso)];return GeoFactCore.encodeChallenge(level,series,90);});await p.goto(url+'?challenge='+token);await p.locator('#challengeIntro').waitFor({state:'visible'});await p.click('#acceptChallenge');}
    else {const level=await p.evaluate(()=>{const base=GeoFactCore.shuffle;GeoFactCore.shuffle=(list,...rest)=>list.includes('NGA')?['NGA',...base(list.filter(x=>x!=='NGA'),...rest)]:base(list,...rest);return GeoFactCountries.find(c=>c.iso==='NGA').difficulty;});await p.click('#chooseGame');await p.click(`[data-level="${level}"]`);}
    await p.locator('#playing').waitFor({state:'visible'});equal(await p.locator('#countryName').textContent(),'Nigeria','Nigeria requested in '+mode);
-   await tap('BEN','touch',p);check(await p.locator('#result').isHidden(),'wrong country has no anecdote');check(!(await p.locator('#map [data-iso=BEN]').getAttribute('class')).includes('country-found'),'wrong country is not validated green');
+   await tap('BEN','touch',p);check(await p.locator('#result').isHidden(),'wrong country has no anecdote');check(!(await p.locator('#map path[data-iso=BEN]').getAttribute('class')).includes('country-found'),'wrong country is not validated green');
    await nativeNigeria(p);await p.locator('#result').waitFor({state:'visible'});
    await p.waitForFunction(()=>getComputedStyle(document.getElementById('result')).opacity==='1'&&getComputedStyle(document.querySelector('.fact-reward')).opacity==='1');
    check((await p.locator('#fact').textContent()).trim().length>10,'Nigeria anecdote is rendered and opaque');check(await p.locator('#next').isEnabled(),'Nigeria next enabled');
    await p.waitForFunction(()=>!document.querySelector('#map .country-correct'));
-   equal(await p.locator('#map [data-iso=NGA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','Nigeria permanent green');
+   equal(await p.locator('#map path[data-iso=NGA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','Nigeria permanent green');
    const fact=await p.locator('#fact').textContent(),score=await p.locator('#totalScore').textContent();
    for(const iso of ['BEN','GHA','FRA','NGA'])await tap(iso,'touch',p);
-   equal(await p.locator('#fact').textContent(),fact,'extra taps preserve anecdote');equal(await p.locator('#totalScore').textContent(),score,'extra taps do not score');equal(await p.locator('#map .country-found').count(),1,'only Nigeria validated green');
+   equal(await p.locator('#fact').textContent(),fact,'extra taps preserve anecdote');equal(await p.locator('#totalScore').textContent(),score,'extra taps do not score');equal(await p.locator('#map .country-found').evaluateAll(nodes=>[...new Set(nodes.map(n=>n.dataset.iso))]),['NGA'],'only Nigeria validated green');
    await setLanguage(p,'en');check((await p.locator('#fact').textContent()).trim().length>10,'Nigeria anecdote translates');
    if(mode==='practice')await settled(p);
    await clickResultAction(p,'#next');await p.locator('#result').waitFor({state:'hidden'});equal(await p.locator('#map .country-found').count(),0,'next round clears success');

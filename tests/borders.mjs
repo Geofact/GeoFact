@@ -96,11 +96,7 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
       ];
       for(const [target,guess,neighbour] of cases) {
         await openPractice(p,target);const before=await snapshot(p);
-        if(['VAT','MCO'].includes(guess)) {
-          await p.locator(`#map .microstate-marker[data-iso="${guess}"]`).evaluate((marker,type)=>{
-            for(const event of ['pointerdown','pointerup']) marker.dispatchEvent(new PointerEvent(event,{bubbles:true,pointerId:7,pointerType:type,clientX:-1,clientY:-1,button:0}));
-          },input);
-        } else await tap(guess,input,p);
+        await tap(guess,input,p);
         await feedback(p,neighbour,`${label} ${target} / ${guess}`);
         check(!(await p.locator('#penalty').isVisible()),label+': practice has no penalty');
         equal(await snapshot(p),before,label+': practice wrong answer preserves saves');
@@ -118,7 +114,7 @@ export async function testBorders({newContext,url,core,tap,check,equal}) {
       equal(await daily.locator('#roundPoints').textContent(),`${core.penalise(20,dailyKM)} points`,label+': Daily penalty unchanged');
       equal(await snapshot(daily),dailyBefore,label+': Daily wrong answer preserves saves');
       await tap('IDN',input,daily);await daily.waitForTimeout(950);
-      equal(await daily.locator('#map [data-iso="IDN"]').evaluate(el=>getComputedStyle(el).fill),'rgb(74, 222, 128)',label+': Daily still green');
+      equal(await daily.locator('#map path[data-iso="IDN"]').evaluate(el=>getComputedStyle(el).fill),'rgb(74, 222, 128)',label+': Daily still green');
       await clickResultAction(daily,'#next');equal(await daily.locator('#map .country-found').count(),0,label+': Daily next clears green');
     } finally {await ctx.close();}
   }

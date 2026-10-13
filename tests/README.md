@@ -83,3 +83,7 @@ Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt f
 `tests/result-modal.mjs` est intégré à la suite HTTP : carte de résultat unique, ouverture/fermeture/réouverture, FR/EN, focus et Tab/Échap, position de page et zoom/déplacement de carte conservés, trois parcours de partage sans superposition, pays suivant et fin de partie/Daily. Les dimensions 320/375/390/1280 px et 568×320 avec longue anecdote couvrent le défilement intérieur et l’accès aux actions. `RESULT_CAPTURE_DIR=/chemin/local` active les captures, animations terminées pour montrer le rendu final.
 
 `tests/result-controls.mjs` permet aux tests historiques d’utiliser explicitement la croix avant d’inspecter la carte et de rouvrir le résultat avant une action. Aucun contournement du focus ou de la modalité n’est ajouté au jeu.
+
+## Petits territoires
+
+`npm run test:map` vérifie les nouvelles cibles avec de vrais clics souris et touchers Playwright sur des SVG rendus, puis les réponses et scores dans le jeu. Utiliser les mêmes variables Playwright et Chromium ci-dessus. Pour enregistrer les captures ordinateur/mobile du jeu, définir `GEOFACT_CAPTURE_DIR` vers un dossier de sortie local. Détails de la sélection et des sources : `docs/small-territories-map.md`.

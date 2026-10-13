@@ -35,7 +35,7 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
    await p.evaluate(()=>{GeoFactCore.shuffle=list=>list.includes('FRA')?['FRA']:list;});await p.click('#choosePractice');await p.click('#practiceByDifficulty');await p.click('[data-level=easy]');await p.locator('#playing').waitFor({state:'visible'});
    await tap('BEL','mouse',p);check((await p.locator('#distanceReaction').textContent()).includes('voisin'),'current border code despite stale cache');
    await tap('FRA','mouse',p);await p.locator('#result').waitFor({state:'visible'});
-   equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','current permanent-green map despite stale cache');
+   equal(await p.locator('#map path[data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','current permanent-green map despite stale cache');
    check(requests.length>=12,'reward module graph loaded');for(const request of requests)equal(new URL(request).searchParams.get('v'),'20261009-update1','versioned release resource');
   }finally{await ctx.close();}
  }
@@ -53,9 +53,9 @@ export async function testReleaseAudit({newContext,url,tap,check,equal}) {
     await p.click('#choosePractice');await p.click('#practiceCustom');await fit(lang+' picker');await p.locator('input[value="FRA"]').check();await p.click('#startCustomPractice');await p.locator('#playing').waitFor({state:'visible'});await fit(lang+' map');
     await tap('FRA','touch',p);await p.locator('#result').waitFor({state:'visible'});await fit(lang+' anecdote');
     // Even a reduced animation needs a painted frame before reading its final fill.
-    await p.waitForFunction(()=>getComputedStyle(document.querySelector('#map [data-iso=FRA]')).fill==='rgb(74, 222, 128)');
+    await p.waitForFunction(()=>getComputedStyle(document.querySelector('#map path[data-iso=FRA]')).fill==='rgb(74, 222, 128)');
     await setLanguage(p,lang==='fr'?'en':'fr');
-    equal(await p.locator('#map [data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await clickOutsideResult(p,'#brand');
+    equal(await p.locator('#map path[data-iso=FRA]').evaluate(e=>getComputedStyle(e).fill),'rgb(74, 222, 128)','green during language change');await clickOutsideResult(p,'#brand');
     await p.click('#openCollection');await p.locator('#collection').waitFor({state:'visible'});await p.click('#collectionAll');for(const sort of ['alpha','date','rarity','continent']){await p.selectOption('#collectionSort',sort);await fit(lang+' collection '+sort);}await clickOutsideResult(p,'#brand');
    }
    await p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();try{for(let n=0;n<10;n++)await r.answer({id:'viewport:'+n,roundId:'viewport-round:'+n,mode:'practice',correct:true,at:Date.now(),countryDraw:0,rarityDraw:.4},['FRA']);}finally{r.close();}});
