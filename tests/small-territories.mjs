@@ -26,7 +26,7 @@ try{
   const context=await browser.newContext({viewport:{width:mobile?390:1280,height:900},hasTouch:mobile,isMobile:mobile,locale:'fr-FR'});
   const p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));
   await p.setContent(`<html lang="fr"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}\nbody{margin:0;padding:8px}#map{width:100%;height:650px;touch-action:none}.map-wrap{width:100%;}</style><div class="map-wrap">${svg}</div></html>`);
-  for(const file of ['i18n.js','data/countries.js','data/small-territories.js','map.js'])await p.addScriptTag({content:await readFile(path.join(root,file),'utf8')});
+  for(const file of ['i18n.js','data/countries.js','data/small-territories.js','small-territory-view.js','map.js'])await p.addScriptTag({content:await readFile(path.join(root,file),'utf8')});
   await p.evaluate(()=>{globalThis.guesses=[];globalThis.controller=GeoFactMap(document.querySelector('#map'),iso=>guesses.push(iso));});
   await p.waitForTimeout(220);
   const data=await p.evaluate(()=>{
@@ -40,16 +40,23 @@ try{
     controller.reset();
     // Camera uses the verified interior anchor, not an archipelago's bounding-box centre.
     const q=document.querySelector('#map').createSVGPoint();const marker=document.querySelector(`.microstate-marker[data-iso="${iso}"]`);q.x=+marker.dataset.anchorX;q.y=+marker.dataset.anchorY;const a=q.matrixTransform(document.querySelector('#map').getScreenCTM());controller.zoom(factor,a.x,a.y);
-   },{iso,factor});await p.waitForTimeout(220);
+   },{iso,factor});await p.waitForTimeout(280);
   };
   const click=async(x,y)=>mobile?p.touchscreen.tap(x,y):p.mouse.click(x,y);
+  const selectInset=async iso=>{for(let i=0;i<12;i++){await p.waitForTimeout(260);const target=p.locator(`.small-territory-dialog[open] .small-view-target[data-country="${iso}"]`);if(await target.count()){const r=await target.boundingBox();await click(r.x+24,r.y+24);return;}const group=p.locator('.small-territory-dialog[open] .small-view-target[data-kind="cluster"]').filter({has:p.locator('span')});const index=await group.evaluateAll((nodes,iso)=>nodes.findIndex(n=>n.dataset.members.split('|').includes(iso)),iso);check(index>=0,iso+' can be separated in inset');const r=await group.nth(index).boundingBox();await click(r.x+r.width/2,r.y+r.height/2);}throw Error('Inset target not separated '+iso);};
   for(const iso of ['MCO','VAT','SMR','LIE','TUV','NRU','KNA','DMA','MDV','KIR','MHL','SGP']){
    await zoomTo(iso,({LIE:20,SMR:20,SGP:10,KIR:5,MHL:20})[iso]||80);
    const m=p.locator(`.microstate-marker[data-iso="${iso}"]`);
    for(const factor of [20,40,10,5,3,2,80,160]){if(await m.isVisible())break;await zoomTo(iso,factor);}
    check(await m.isVisible(),iso+' visible at intermediate zoom');
    const b=await m.boundingBox();check(b.width>=9 && b.width<=28.5,iso+' screen-sized target '+JSON.stringify(b));
+   const countBefore=await p.evaluate(()=>guesses.length);
    await click(b.x+b.width/2,b.y+b.height/2);
+   check(await p.locator('.small-territory-dialog[open]').count()===1,iso+' opens closer view');
+   check(await p.evaluate(()=>guesses.length)===countBefore,iso+' opening never answers');
+   await p.waitForTimeout(260);
+   const target=p.locator(`.small-territory-dialog[open] .small-view-target[data-country="${iso}"]`);
+   await selectInset(iso);
    check(await p.evaluate(iso=>guesses.at(-1)===iso,iso),iso+' native selection');
    check(await p.evaluate(iso=>{const m=document.querySelector(`.microstate-marker[data-iso="${iso}"]`),s=document.querySelector('#map'),p=s.createSVGPoint();const tether=m.previousElementSibling;p.x=+(tether.style.display!=='none'?tether.getAttribute('x1'):m.getAttribute('cx'));p.y=+(tether.style.display!=='none'?tether.getAttribute('y1'):m.getAttribute('cy'));return document.querySelector(`.territory-detail[data-iso="${iso}"]`).isPointInFill(p);},iso),iso+' dot inside sourced geometry');
   }
@@ -80,11 +87,11 @@ try{
   const haloView=await p.evaluate(()=>controller.getView().w),haloGuesses=await p.evaluate(()=>guesses.length);
   await click(halo.x,halo.y);
   check(await p.evaluate(()=>guesses.length)===haloGuesses,'cluster halo never answers');
-  check((await p.evaluate(()=>controller.getView().w)<haloView)===mobile,'touch cluster comfort is 44px, mouse is compact');
+  check((await p.locator('.small-territory-dialog[open]').count()===1)===mobile,'touch cluster comfort is 44px, mouse is compact');
   await zoomTo('MLT',1);
   const count=await p.evaluate(()=>guesses.length),cluster=p.locator('.microstate-cluster').first(),cb=await cluster.boundingBox(),before=await p.evaluate(()=>controller.getView());
   await click(cb.x+cb.width/2,cb.y+cb.height/2);await p.waitForTimeout(220);
-  check(await p.evaluate(()=>guesses.length)===count,'cluster never answers');check((await p.evaluate(()=>controller.getView())).w<before.w,'cluster zooms');
+  check(await p.evaluate(()=>guesses.length)===count,'cluster never answers');check(await p.locator('.small-territory-dialog[open]').count()===1,'cluster opens closer view');
   await zoomTo('MLT',300);
   check(await p.locator('.microstate-marker[data-iso="MLT"]').isVisible()===false,'dot fades out when real shape is selectable');
   check(await p.evaluate(()=>controller.getView().w)===4,'maximum zoom preserved');
@@ -108,17 +115,16 @@ try{
   const separated=await p.locator('.microstate-marker').evaluateAll(ms=>ms.map(m=>{const r=m.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};}));
   check(Math.hypot(separated[0].x-separated[1].x,separated[0].y-separated[1].y)>=(mobile?44:24),'max zoom separate comfort zones');
   check(await p.locator('.microstate-tether').evaluateAll(ls=>ls.some(l=>l.style.display!=='none')),'max zoom offsets tethered');
-  for(let i=0;i<2;i++){await click(separated[i].x,separated[i].y);check(await p.evaluate(iso=>guesses.at(-1)===iso,i?'BBB':'AAA'),'max zoom native selection');}
+  for(let i=0;i<2;i++){await p.waitForTimeout(280);await click(separated[i].x,separated[i].y);await p.waitForTimeout(260);await selectInset(i?'BBB':'AAA');check(await p.evaluate(iso=>guesses.at(-1)===iso,i?'BBB':'AAA'),'max zoom native selection');}
   // Real application: wrong and correct answers through dots, no persistence during cluster zoom.
   await context.route('**/*',route=>new URL(route.request().url()).origin===url?route.continue():route.abort());
   await p.goto(url+'/?challenge='+core.encodeChallenge('hard',['MCO','VAT','SMR','LIE','TUV'],100));await p.click('#acceptChallenge');
   const savedBeforeZoom=await p.evaluate(()=>JSON.stringify({...localStorage}));
   await p.evaluate(()=>{const s=document.querySelector('#map'),pt=s.createSVGPoint();pt.x=(7.398291+180)/.3;pt.y=(90-43.739652)/.3;const q=pt.matrixTransform(s.getScreenCTM());document.querySelector('#map').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,clientX:q.x,clientY:q.y,deltaY:-100}));});
   await p.waitForTimeout(220);
-  // Repeated native cluster clicks around southern Europe make the camera precise without answering.
-  for(let i=0;i<10&&(await p.locator('.microstate-marker[data-iso="MCO"]').getAttribute('data-active'))!=='true';i++){
-   const chosen=await p.evaluate(()=>{const s=document.querySelector('#map'),pt=s.createSVGPoint();pt.x=(7.398291+180)/.3;pt.y=(90-43.739652)/.3;const a=pt.matrixTransform(s.getScreenCTM());return [...s.querySelectorAll('.microstate-cluster[data-active="true"]')].map(c=>{const r=c.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,d:Math.hypot(a.x-r.x-r.width/2,a.y-r.y-r.height/2)};}).sort((a,b)=>a.d-b.d)[0];});
-   check(!!chosen,'cluster available to separate Monaco');await click(chosen.x,chosen.y);await p.waitForTimeout(220);
+  // Native wheel zoom retains the original main-map camera and normal borders.
+  for(let i=0;i<12&&(await p.locator('.microstate-marker[data-iso="MCO"]').getAttribute('data-active'))!=='true';i++){
+   await p.evaluate(()=>{const s=document.querySelector('#map'),m=s.querySelector('.microstate-marker[data-iso="MCO"]'),pt=s.createSVGPoint();pt.x=+m.dataset.anchorX;pt.y=+m.dataset.anchorY;const a=pt.matrixTransform(s.getScreenCTM());s.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,clientX:a.x,clientY:a.y,deltaY:-100}));});await p.waitForTimeout(260);
   }
   check(!await p.locator('#result').isVisible(),'cluster exploration produces no result');
   check(await p.evaluate(()=>JSON.stringify({...localStorage}))===savedBeforeZoom,'cluster zoom preserves saves');
@@ -126,14 +132,15 @@ try{
   if(output)await p.locator('#playing').screenshot({path:path.join(output,mobile?'geofact-mobile.png':'geofact-desktop.png')});
   const wrong=p.locator('.microstate-marker[data-active="true"]:not([data-iso="MCO"])').filter({visible:true}).first();
   if(await wrong.count()){
-   const wb=await wrong.boundingBox();await click(wb.x+wb.width/2,wb.y+wb.height/2);
+   const wrongISO=await wrong.getAttribute('data-iso');const wb=await wrong.boundingBox();await click(wb.x+wb.width/2,wb.y+wb.height/2);await p.waitForTimeout(260);const insetWrong=p.locator(`.small-territory-dialog[open] .small-view-target[data-country="${wrongISO}"]`);await selectInset(wrongISO);
    check(await p.locator('#distanceRow').isVisible(),'wrong dot uses existing feedback');
    check(!await p.locator('#result').isVisible(),'wrong dot keeps round active');
    check(!(await p.locator('#roundPoints').textContent()).startsWith('20'),'wrong dot applies existing penalty');
    check(await wrong.evaluate(n=>n.classList.contains('country-tried')),'wrong dot existing colour');
   }else throw new Error('No wrong marker available in native game test');
+  await p.waitForTimeout(280);
   const marker=p.locator('.microstate-marker[data-iso="MCO"]');const realBox=await marker.boundingBox();check(!!realBox,'real-game Monaco target accessible');
-  await click(realBox.x+realBox.width/2,realBox.y+realBox.height/2);await p.locator('#result').waitFor({state:'visible'});
+  await click(realBox.x+realBox.width/2,realBox.y+realBox.height/2);await p.waitForTimeout(260);await selectInset('MCO');await p.locator('#result').waitFor({state:'visible'});
   check(await p.locator('.microstate-marker[data-iso="MCO"]').evaluate(n=>n.classList.contains('country-found')),'correct dot uses existing success logic');
   await context.close();
  }

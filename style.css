@@ -1691,3 +1691,26 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 .microstate-cluster[data-local="false"] .cluster-plus{stroke:#173f70;stroke-width:2px}
 
 .microstate-marker.country-found[data-local="false"]{fill:#4ade80}
+
+/* Geography is context in the closer view; only explicit 48px targets answer. */
+.small-territory-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);padding:16px;border:1px solid #dfd1bb;border-radius:20px;background:#fffaf2;color:#173f57;overflow:auto;box-shadow:0 12px 40px rgba(23,59,87,.15)}
+.small-territory-dialog::backdrop{background:rgba(22,39,37,.28)}
+.small-territory-dialog[open]{animation:resultModalIn .18s ease-out}
+.small-territory-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.small-territory-dialog h2{margin:0;font-size:20px;text-align:left}
+.small-view-close,.small-view-controls button{width:44px;height:44px;padding:0;border:1px solid #dfd1bb;border-radius:12px;background:#fffaf2;color:#173f57;font-size:24px;cursor:pointer}
+.small-view-frame{position:relative;width:100%;height:clamp(200px,48dvh,320px);overflow:hidden;border:1px solid #b6ccca;border-radius:12px;touch-action:none;background:#dceef1;user-select:none}
+.small-view-map{display:block;width:100%;height:100%;pointer-events:none}
+.small-view-map path{pointer-events:none;stroke-width:.6px;vector-effect:non-scaling-stroke}
+.small-view-targets{position:absolute;inset:0;pointer-events:none}
+.small-view-target{position:absolute;display:grid;place-items:center;transform:translate(-50%,-50%);width:48px;height:48px;min-height:0;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:all;touch-action:none}
+.small-view-target span{box-sizing:border-box;display:grid;place-items:center;width:28px;height:28px;border:1.5px solid #315d55;border-radius:50%;background:#fffaf2;color:#173f57;font-size:24px;line-height:1;pointer-events:none}
+.small-view-target[data-kind="country"] span::after{content:'';width:5px;height:5px;border-radius:50%;background:#315d55}
+.small-view-target[data-kind="cluster"]{cursor:zoom-in}
+.small-view-target:focus-visible{outline:2px solid #173f57;outline-offset:-4px;border-radius:12px}
+.small-view-tried span{background:#dc4c45;border-color:#9f302d}
+.small-view-found span{background:#4ade80}
+.small-view-controls{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.small-territory-dialog p{margin:8px 0 0;font-size:14px;text-align:center}
+.small-view-tether{stroke:#315d55;stroke-width:1px;vector-effect:non-scaling-stroke;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.small-territory-dialog[open]{animation:none}}

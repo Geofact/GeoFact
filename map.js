@@ -94,13 +94,14 @@
       marker.dataset.iso=source.dataset.iso;
       marker.dataset.anchorX=anchor.x;marker.dataset.anchorY=anchor.y;
       marker.setAttribute('role','button'); marker.dataset.i18nAria='smallCountryTarget';
-      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
+      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)smallView.open([markers.find(i=>i.source===source)]);}});
       return {source,marker,core,tether,anchor,box,area:main.area};
     });
     let clusters = [], visible = [];
     const clusterPool = new Map();
     const coarse = matchMedia('(pointer: coarse)');
     const label = key => root.GeoFactTranslations?.[document.documentElement.lang]?.[key] || root.GeoFactTranslations?.fr?.[key] || '';
+    const smallView=root.GeoFactSmallTerritoryView({svg,items:markers,onGuess,label,onClose:()=>{zoomGuardUntil=performance.now()+240;}});
     function reveal(el, active, opacity = 1) {
       clearTimeout(el.hideTimer);
       const entering = active && el.dataset.active !== 'true';
@@ -144,7 +145,7 @@
         item.opacity=Math.max(0,Math.min(1,(threshold-size)/(threshold*.35)));
         item.screen=screen(item.anchor);item.localTarget=detail>.8;item.hitSize=hit;
         item.marker.dataset.local=String(item.localTarget);
-        if(item.opacity>.02&&item.screen.x>=rect.left&&item.screen.x<=rect.right&&item.screen.y>=rect.top&&item.screen.y<=rect.bottom)eligible.push(item);
+        if((item.source.classList.contains('territory-detail')||item.area<24)&&item.opacity>.02&&item.screen.x>=rect.left&&item.screen.x<=rect.right&&item.screen.y>=rect.top&&item.screen.y<=rect.bottom)eligible.push(item);
       }
       const close=(a,b)=>detail>.8?Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))<spacing:Math.hypot(a.x-b.x,a.y-b.y)<spacing;
       const pending=new Set(eligible), groups=[];
@@ -206,9 +207,9 @@
           disc.setAttribute('class','cluster-disc');plus.setAttribute('class','cluster-plus');el.append(disc,plus);
           el.setAttribute('role','button');el.dataset.i18nAria='smallCountriesCluster';
           cluster={el,disc,plus,group};clusterPool.set(key,cluster);
-          el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(el.dataset.active==='true')expandCluster(cluster);}});
+          el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(el.dataset.active==='true')openCluster(cluster);}});
         }
-        cluster.group=group;cluster.el.dataset.local=String(detail>.8);activeClusters.add(key);clusters.push(cluster);
+        cluster.group=group;cluster.el.dataset.members=key;cluster.el.dataset.local=String(detail>.8);activeClusters.add(key);clusters.push(cluster);
         const p=center(group),q=local(p),r=(6+5*detail)/scale,arm=4/scale;
         occupied.push(p);cluster.el.setAttribute('cx',q.x);cluster.el.setAttribute('cy',q.y);
         cluster.disc.setAttribute('cx',q.x);cluster.disc.setAttribute('cy',q.y);cluster.disc.setAttribute('r',r);
@@ -226,16 +227,11 @@
     }
     function refreshHint(){
       const hint=svg.closest('#playing')?.querySelector('.map-zoom-hint [data-i18n]');
-      if(hint){hint.dataset.i18n=clusters.length?'mapClusterHint':'mapZoomHint';hint.textContent=label(hint.dataset.i18n);}
+      if(hint){hint.dataset.i18n=clusters.length||visible.length?'mapSmallHint':'mapZoomHint';hint.textContent=label(hint.dataset.i18n);}
     }
-    function expandCluster(cluster){
-      zoomGuardUntil=performance.now()+220;
-      const xs=cluster.group.map(i=>i.anchor.x),ys=cluster.group.map(i=>i.anchor.y);
-      const span=Math.max(Math.max(...xs)-Math.min(...xs),2*(Math.max(...ys)-Math.min(...ys)));
-      const scale=Math.hypot(svg.getScreenCTM().a,svg.getScreenCTM().b);
-      const w=Math.max(4,Math.min(view.w*.72,Math.max(span*1.45+52/scale,4)));
-      const x=(Math.min(...xs)+Math.max(...xs))/2,y=(Math.min(...ys)+Math.max(...ys))/2;
-      setView({x:x-w/2,y:y-w/4,w});
+    function openCluster(cluster){
+      zoomGuardUntil=performance.now()+240;
+      smallView.open(cluster.group);
     }
     function setView(next) {
       const w = Math.min(1200, Math.max(4, next.w)), h = w / 2;
@@ -325,9 +321,13 @@
           const clusterCandidates=directMarker?[]:directCluster?clusters.filter(c=>c.el===directCluster):clusters.filter(c=>{const q=markerScreenCenter(c.el),half=p.type==='touch'?22:16;return (view.w<500||!hitTarget?.closest?.('path[data-iso]'))&&Math.abs(q.x-e.clientX)<=half&&Math.abs(q.y-e.clientY)<=half;});
           if(clusterCandidates.length>1){drag=pinch=null;return;}
           const cluster=clusterCandidates[0];
-          if(cluster){expandCluster(cluster);drag=pinch=null;return;}
+          if(cluster){openCluster(cluster);drag=pinch=null;return;}
           const iso = resolveCountry(actualTarget && svg.contains(actualTarget) ? actualTarget : p.target, e.clientX, e.clientY, p.type);
-          if (iso) onGuess(iso);
+          if(iso){
+            const item=visible.find(i=>i.source.dataset.iso===iso),q=item&&markerScreenCenter(item.marker),half=p.type==='touch'?22:16;
+            if(item&&(directMarker||(Math.abs(q.x-e.clientX)<=half&&Math.abs(q.y-e.clientY)<=half))){zoomGuardUntil=performance.now()+240;smallView.open([item]);}
+            else onGuess(iso);
+          }
         }
         drag = pinch = null;
       }
@@ -342,6 +342,7 @@
       return setTimeout(() => { for (const shape of shapes) shape.classList.remove(className); }, duration);
     }
     function clearFound() {
+      if(svg.querySelector('.country-found,.country-correct'))smallView.close();
       clearTimeout(celebrationTimer);
       celebrationTimer = null;
       for (const shape of svg.querySelectorAll('.country-found, .country-correct')) {
@@ -370,7 +371,7 @@
     coarse.addEventListener('change',()=>requestAnimationFrame(layoutMicrostateMarkers));
     addEventListener('resize', () => requestAnimationFrame(layoutMicrostateMarkers));
     requestAnimationFrame(layoutMicrostateMarkers);
-    return { zoom, celebrate, clearFound, reject, reset() { zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry };
+    return { zoom, celebrate, clearFound, reject, reset() { smallView.close(); zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry };
   }
   root.GeoFactMap = createMap;
 })(globalThis);
