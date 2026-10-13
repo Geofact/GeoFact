@@ -547,6 +547,7 @@
     renderBonusRewards();
     if (collection === null) for (const id of ['dailyStreak','dailyBestStreak','dailyPlayed']) $(id).textContent = '—';
     renderCollection();
+    map.refreshHint();
     $('mapHint').textContent = t(matchMedia('(pointer: coarse)').matches ? 'mapHint' : 'mapHintDesktop');
     const game = state.mode === 'game' || state.mode === 'daily';
     $('roundLabel').classList.toggle('hidden', !game);

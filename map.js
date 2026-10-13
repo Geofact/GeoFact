@@ -4,7 +4,7 @@
     const base = { x: 0, y: 0, w: 1200, h: 600 };
     let view = { ...base }, drag = null, pinch = null, moved = false, multi = false;
     const pointers = new Map();
-    let celebrationTimer = null;
+    let celebrationTimer = null, zoomGuardUntil = 0;
     const microstates = [...svg.querySelectorAll('circle[data-iso]')];
     const frenchPath = svg.querySelector('path.country-shape[data-iso="FRA"]');
     if (frenchPath) {
@@ -89,87 +89,152 @@
         if(candidates.length){anchor=candidates[0];break;}
       }
       if (!anchor) throw new Error(`No interior anchor: ${source.dataset.iso}`);
-      const tether=make('line','microstate-tether'), marker=make('circle','microstate-marker');
+      const tether=make('line','microstate-tether'), marker=make('circle','microstate-marker'), core=make('circle','target-core');
+      core.setAttribute('aria-hidden','true');
       marker.dataset.iso=source.dataset.iso;
       marker.setAttribute('role','button'); marker.dataset.i18nAria='smallCountryTarget';
-      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.style.display!=='none')onGuess(source.dataset.iso);}});
-      return {source,marker,tether,anchor,box,area:main.area};
+      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
+      return {source,marker,core,tether,anchor,box,area:main.area};
     });
-    let clusters = [], visible = [];
+    let clusters = [], visible = [], groupFocus = false;
+    const clusterPool = new Map();
     const coarse = matchMedia('(pointer: coarse)');
     const label = key => root.GeoFactTranslations?.[document.documentElement.lang]?.[key] || root.GeoFactTranslations?.fr?.[key] || '';
+    function reveal(el, active, opacity = 1) {
+      clearTimeout(el.hideTimer);
+      const entering = active && el.dataset.active !== 'true';
+      if(!active && el.dataset.active==='true')el.fading=true;
+      if(active)el.fading=false;
+      el.dataset.active = String(active);
+      el.style.pointerEvents = active||el.fading ? 'all' : 'none';
+      el.setAttribute('tabindex', active ? '0' : '-1');
+      if (active) {
+        el.style.display = '';
+        if (entering) { el.classList.remove('marker-enter'); void el.getBoundingClientRect(); el.classList.add('marker-enter'); setTimeout(()=>el.classList.remove('marker-enter'),190); }
+        el.style.opacity = opacity;
+      } else {
+        el.style.opacity = 0;
+        el.hideTimer = setTimeout(() => { if (el.dataset.active === 'false') { el.style.display = 'none'; el.style.pointerEvents='none'; el.fading=false; } }, 180);
+      }
+    }
     function layoutMicrostateMarkers() {
       const matrix = svg.getScreenCTM(); if (!matrix) return;
       const inverse=matrix.inverse(), scale=Math.hypot(matrix.a,matrix.b), rect=svg.getBoundingClientRect();
-      const diameter=coarse.matches?44:24, radius=4.5;
-      const screen=p=>{const q=svg.createSVGPoint();q.x=p.x;q.y=p.y;return q.matrixTransform(matrix);};
+      const detail=Math.max(Math.max(0,Math.min(1,(Math.log2(1200/view.w)-1.5)/1.5)),groupFocus?Math.max(0,Math.min(1,(1200-view.w)/520)):0);
+      const radius=4+9*detail, hit=coarse.matches?44:32;
+      const spacing=detail>.8?hit+6:22+detail*28;
+      const screen=p=>({x:matrix.a*p.x+matrix.c*p.y+matrix.e,y:matrix.b*p.x+matrix.d*p.y+matrix.f});
       const local=p=>{const q=svg.createSVGPoint();q.x=p.x;q.y=p.y;return q.matrixTransform(inverse);};
-      const clamp=p=>({x:Math.max(rect.left+radius+2,Math.min(rect.right-radius-2,p.x)),y:Math.max(rect.top+radius+2,Math.min(rect.bottom-radius-2,p.y))});
-      const inMap=p=>p.x>=rect.left+radius+2&&p.x<=rect.right-radius-2&&p.y>=rect.top+radius+2&&p.y<=rect.bottom-radius-2;
-      visible=[];
+      const controls=[...(svg.closest('.map-wrap')?.querySelectorAll('.map-controls')||[])].map(el=>el.getBoundingClientRect());
+      const margin=Math.max(radius+3,detail>.8?hit/2:12);
+      const clearance=hit/2+5;
+      const blocked=p=>controls.some(r=>p.x+clearance>r.left&&p.x-clearance<r.right&&p.y+clearance>r.top&&p.y-clearance<r.bottom);
+      const inMap=p=>p.x>=rect.left+margin&&p.x<=rect.right-margin&&p.y>=rect.top+margin&&p.y<=rect.bottom-margin&&!blocked(p);
+      const clamp=p=>{
+        const q={x:Math.max(rect.left+margin,Math.min(rect.right-margin,p.x)),y:Math.max(rect.top+margin,Math.min(rect.bottom-margin,p.y))};
+        for(const r of controls)if(blocked(q))q.x=Math.max(rect.left+margin,r.left-clearance-1);
+        return q;
+      };
+      const eligible=[];
       for(const item of markers){
         const size=Math.min(item.box.w*scale,item.box.h*scale,Math.sqrt(item.area)*scale);
-        const opacity=Math.max(0,Math.min(1,(diameter-size)/(diameter*.35)));
-        item.screen=screen(item.anchor); item.opacity=opacity;
-        item.marker.style.display='none';item.tether.style.display='none';item.marker.setAttribute('tabindex','-1');
-        if(opacity>.02&&item.screen.x>=rect.left&&item.screen.x<=rect.right&&item.screen.y>=rect.top&&item.screen.y<=rect.bottom)visible.push(item);
+        const threshold=coarse.matches?44:32;
+        item.opacity=Math.max(0,Math.min(1,(threshold-size)/(threshold*.35)));
+        item.screen=screen(item.anchor);item.localTarget=detail>.8;item.hitSize=hit;
+        if(item.opacity>.02&&item.screen.x>=rect.left&&item.screen.x<=rect.right&&item.screen.y>=rect.top&&item.screen.y<=rect.bottom)eligible.push(item);
       }
-      for(const c of clusters)c.el.remove(); clusters=[];
-      const pending=new Set(visible), groups=[];
+      const pending=new Set(eligible), groups=[];
       while(pending.size){
         const group=[pending.values().next().value];pending.delete(group[0]);
-        for(let i=0;i<group.length;i++)for(const item of pending)if(Math.hypot(group[i].screen.x-item.screen.x,group[i].screen.y-item.screen.y)<diameter+4){pending.delete(item);group.push(item);}
+        for(let i=0;i<group.length;i++)for(const item of pending){
+          if(Math.hypot(group[i].screen.x-item.screen.x,group[i].screen.y-item.screen.y)<spacing && (detail>.8 || group.every(other=>Math.abs(other.screen.x-item.screen.x)<56&&Math.abs(other.screen.y-item.screen.y)<56))){pending.delete(item);group.push(item);}
+        }
         groups.push(group);
       }
-      // Clamping or averaging a group must not create a new collision with another group.
       const center=group=>clamp({x:group.reduce((sum,i)=>sum+i.screen.x,0)/group.length,y:group.reduce((sum,i)=>sum+i.screen.y,0)/group.length});
+      // Individual controls and group controls must never occupy ambiguous overlapping positions.
       let merged=true;
       while(merged){merged=false;
         outer:for(let i=0;i<groups.length;i++)for(let j=i+1;j<groups.length;j++){
           const a=center(groups[i]),b=center(groups[j]);
-          if(Math.hypot(a.x-b.x,a.y-b.y)<diameter+4){groups[i].push(...groups[j]);groups.splice(j,1);merged=true;break outer;}
+          if(Math.hypot(a.x-b.x,a.y-b.y)<spacing && (detail>.8 || groups[i].every(p=>groups[j].every(q=>Math.abs(p.screen.x-q.screen.x)<70&&Math.abs(p.screen.y-q.screen.y)<70)))){groups[i].push(...groups[j]);groups.splice(j,1);merged=true;break outer;}
         }
       }
+      visible=[];const occupied=[];const activeClusters=new Set();clusters=[];
       const place=(item,p)=>{
-        p=clamp(p);
         const q=local(p),a=item.anchor;
-        item.display=p;item.marker.style.display='';item.marker.style.opacity=item.opacity;
+        occupied.push(p);visible.push(item);
         item.marker.setAttribute('cx',q.x);item.marker.setAttribute('cy',q.y);item.marker.setAttribute('r',radius/scale);
-        item.marker.setAttribute('tabindex','0');item.marker.setAttribute('aria-label',label('smallCountryTarget'));
-        if(Math.hypot(p.x-item.screen.x,p.y-item.screen.y)>1){
-          item.tether.style.display='';item.tether.setAttribute('x1',a.x);item.tether.setAttribute('y1',a.y);item.tether.setAttribute('x2',q.x);item.tether.setAttribute('y2',q.y);
+        item.core.setAttribute('cx',q.x);item.core.setAttribute('cy',q.y);item.core.setAttribute('r',2/scale);item.core.style.display='';item.core.style.opacity=item.opacity;
+        item.marker.dataset.local=String(item.localTarget);
+        item.marker.setAttribute('aria-label',label('smallCountryTarget'));
+        reveal(item.marker,true,item.opacity);
+        const shifted=Math.hypot(p.x-item.screen.x,p.y-item.screen.y)>1;
+        item.tether.style.display=shifted?'':'none';item.tether.style.pointerEvents='none';item.tether.style.opacity=item.opacity;
+        if(shifted){item.tether.setAttribute('x1',a.x);item.tether.setAttribute('y1',a.y);item.tether.setAttribute('x2',q.x);item.tether.setAttribute('y2',q.y);}
+      };
+      const free=p=>inMap(p)&&occupied.every(q=>Math.abs(q.x-p.x)>=hit+4||Math.abs(q.y-p.y)>=hit+4);
+      const separate=item=>{
+        const start=clamp(item.screen);
+        if(free(start))return start;
+        for(let ring=1;ring<=12;ring++)for(let step=0;step<32;step++){
+          const angle=step*Math.PI/16,p={x:start.x+ring*(hit+4)*Math.cos(angle),y:start.y+ring*(hit+4)*Math.sin(angle)};
+          if(free(p))return p;
         }
+        return null;
       };
       for(const group of groups){
-        if(group.length===1){place(group[0],group[0].screen);continue;}
-        // Never leave an unresolvable cluster at the zoom cap: separate with explicit leader lines.
-        if(view.w<=4.01){
-          const placed=[];
-          for(const item of group){let p=item.screen;
-            search:for(let ring=0;ring<20;ring++)for(let step=0;step<32;step++){
-              const angle=step*Math.PI/16,candidate={x:item.screen.x+ring*diameter*Math.cos(angle),y:item.screen.y+ring*diameter*Math.sin(angle)};
-              if(inMap(candidate)&&placed.every(q=>Math.hypot(q.x-candidate.x,q.y-candidate.y)>=diameter+2)){p=candidate;break search;}
-            }
-            placed.push(p);place(item,p);
-          }
-          continue;
+        // At local zoom, reveal small groups as separately spaced controls with geographic leader lines.
+        const spread=group.length===1||(detail>.8&&group.length<=6)||view.w<=4.01;
+        if(spread){
+          const chosen=[],previous=occupied.length;
+          for(const item of group){const p=separate(item);if(!p)break;chosen.push({item,p});occupied.push(p);}
+          occupied.length=previous;
+          if(chosen.length===group.length){for(const {item,p} of chosen)place(item,p);continue;}
         }
-        const p={x:group.reduce((sum,i)=>sum+i.screen.x,0)/group.length,y:group.reduce((sum,i)=>sum+i.screen.y,0)/group.length};
-        const painted=clamp(p),q=local(painted),el=make('circle','microstate-cluster');el.setAttribute('cx',q.x);el.setAttribute('cy',q.y);el.setAttribute('r',6/scale);
-        el.setAttribute('role','button');el.setAttribute('tabindex','0');el.dataset.i18nAria='smallCountriesCluster';el.setAttribute('aria-label',label('smallCountriesCluster'));
-        const cluster={el,screen:painted,group};clusters.push(cluster);
-        el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();expandCluster(cluster);}});
+        const key=group.map(i=>i.source.dataset.iso).sort().join('|');
+        let cluster=clusterPool.get(key);
+        if(!cluster){
+          const el=make('g','microstate-cluster');
+          const disc=document.createElementNS(ns,'circle'),plus=document.createElementNS(ns,'path');
+          disc.setAttribute('class','cluster-disc');plus.setAttribute('class','cluster-plus');el.append(disc,plus);
+          el.setAttribute('role','button');el.dataset.i18nAria='smallCountriesCluster';
+          cluster={el,disc,plus,group};clusterPool.set(key,cluster);
+          el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(el.dataset.active==='true')expandCluster(cluster);}});
+        }
+        cluster.group=group;activeClusters.add(key);clusters.push(cluster);
+        const p=center(group),q=local(p),r=(8+3*detail)/scale,arm=(3+detail)/scale;
+        occupied.push(p);cluster.el.setAttribute('cx',q.x);cluster.el.setAttribute('cy',q.y);
+        cluster.disc.setAttribute('cx',q.x);cluster.disc.setAttribute('cy',q.y);cluster.disc.setAttribute('r',r);
+        cluster.plus.setAttribute('d',`M${q.x-arm},${q.y}H${q.x+arm} M${q.x},${q.y-arm}V${q.y+arm}`);
+        cluster.el.setAttribute('aria-label',label('smallCountriesCluster'));reveal(cluster.el,true);
       }
+      const shown=new Set(visible);
+      for(const item of markers)if(!shown.has(item)){reveal(item.marker,false);item.core.style.opacity=0;setTimeout(()=>{if(item.marker.dataset.active==='false')item.core.style.display='none';},180);item.tether.style.display='none';}
+      for(const [key,c] of clusterPool)if(!activeClusters.has(key)){
+        if(c.el.dataset.active!=='false')reveal(c.el,false);
+        // Keep a bounded pool while allowing opacity transitions to finish.
+        if(clusterPool.size>240&&c.el.style.display==='none'){c.el.remove();clusterPool.delete(key);}
+      }
+      refreshHint();
+    }
+    function refreshHint(){
+      const hint=svg.closest('#playing')?.querySelector('.map-zoom-hint [data-i18n]');
+      if(hint){hint.dataset.i18n=clusters.length?'mapClusterHint':'mapZoomHint';hint.textContent=label(hint.dataset.i18n);}
     }
     function expandCluster(cluster){
+      zoomGuardUntil=performance.now()+220;
       const xs=cluster.group.map(i=>i.anchor.x),ys=cluster.group.map(i=>i.anchor.y);
       const span=Math.max(Math.max(...xs)-Math.min(...xs),2*(Math.max(...ys)-Math.min(...ys)));
-      const w=Math.max(4,Math.min(view.w/2,Math.max(span*1.6,4)));
+      const scale=Math.hypot(svg.getScreenCTM().a,svg.getScreenCTM().b);
+      const w=Math.max(4,Math.min(view.w*.72,Math.max(span*1.45+52/scale,4)));
+      groupFocus=true;
       const x=(Math.min(...xs)+Math.max(...xs))/2,y=(Math.min(...ys)+Math.max(...ys))/2;
       setView({x:x-w/2,y:y-w/4,w});
     }
     function setView(next) {
       const w = Math.min(1200, Math.max(4, next.w)), h = w / 2;
+      if(w>=1199)groupFocus=false;
       view = { x: Math.min(1200 - w, Math.max(0, next.x)), y: Math.min(600 - h, Math.max(0, next.y)), w, h };
       svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
       layoutMicrostateMarkers();
@@ -195,14 +260,18 @@
     }
     function resolveCountry(target, x, y, type) {
       const marker = target?.closest?.('.microstate-marker[data-iso]');
-      if (marker && svg.contains(marker) && marker.style.display !== 'none') return marker.dataset.iso;
-      // Only the visible dot may override neighbouring land. Its invisible comfort zone may not.
+      if (marker && svg.contains(marker) && marker.dataset.active === 'true') return marker.dataset.iso;
       const real = target?.closest?.('path[data-iso]');
+      const candidates=visible.filter(i=>{
+        const p=markerScreenCenter(i.marker),half=type==='touch'?22:16;
+        return i.marker.dataset.active==='true' && Math.abs(p.x-x)<=half && Math.abs(p.y-y)<=half;
+      });
+      // A local control is a deliberate 44px touch target and takes precedence over neighbouring polygons.
+      if(candidates.some(i=>i.localTarget))return candidates.length===1?candidates[0].source.dataset.iso:null;
       if (real && svg.contains(real)) return real.dataset.iso;
-      const radius = type === 'touch' ? 22 : 12;
-      const candidates=visible.filter(i=>{const p=markerScreenCenter(i.marker);return i.marker.style.display!== 'none' && Math.hypot(p.x-x,p.y-y)<=radius;});
       return candidates.length===1 ? candidates[0].source.dataset.iso : null;
     }
+
     function beginDrag(p) { drag = { x: p.x, y: p.y, view: { ...view }, scale: svg.getScreenCTM().a }; }
     function beginPinch() {
       const [a, b] = [...pointers.values()];
@@ -240,11 +309,16 @@
       if (pointers.size >= 2) beginPinch();
       else if (pointers.size === 1) { pinch = null; beginDrag([...pointers.values()][0]); }
       else {
-        if (!moved && !multi && !cancelled) {
+        if (!moved && !multi && !cancelled && performance.now()>=zoomGuardUntil) {
           const actualTarget = document.elementFromPoint(e.clientX, e.clientY);
           if(e.isTrusted && (!actualTarget || !svg.contains(actualTarget))){drag=pinch=null;return;}
           const hitTarget=actualTarget && svg.contains(actualTarget) ? actualTarget : p.target;
-          const cluster=clusters.find(c=>{const q=markerScreenCenter(c.el);return c.el===hitTarget || (!hitTarget?.closest?.('path[data-iso], .microstate-marker') && Math.hypot(q.x-e.clientX,q.y-e.clientY)<(p.type==='touch'?22:12));});
+          if(hitTarget?.closest?.('.microstate-marker[data-active="false"], .microstate-cluster[data-active="false"]')){drag=pinch=null;return;}
+          const directCluster=hitTarget?.closest?.('.microstate-cluster[data-active="true"]');
+          const directMarker=hitTarget?.closest?.('.microstate-marker[data-active="true"]');
+          const clusterCandidates=directMarker?[]:directCluster?clusters.filter(c=>c.el===directCluster):clusters.filter(c=>{const q=markerScreenCenter(c.el),half=p.type==='touch'?22:16;return (view.w<500||!hitTarget?.closest?.('path[data-iso]'))&&Math.abs(q.x-e.clientX)<=half&&Math.abs(q.y-e.clientY)<=half;});
+          if(clusterCandidates.length>1){drag=pinch=null;return;}
+          const cluster=clusterCandidates[0];
           if(cluster){expandCluster(cluster);drag=pinch=null;return;}
           const iso = resolveCountry(actualTarget && svg.contains(actualTarget) ? actualTarget : p.target, e.clientX, e.clientY, p.type);
           if (iso) onGuess(iso);
@@ -290,7 +364,7 @@
     coarse.addEventListener('change',()=>requestAnimationFrame(layoutMicrostateMarkers));
     addEventListener('resize', () => requestAnimationFrame(layoutMicrostateMarkers));
     requestAnimationFrame(layoutMicrostateMarkers);
-    return { zoom, celebrate, clearFound, reject, reset() { pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), resolveCountry };
+    return { zoom, celebrate, clearFound, reject, reset() { zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry };
   }
   root.GeoFactMap = createMap;
 })(globalThis);

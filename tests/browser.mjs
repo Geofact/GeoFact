@@ -119,7 +119,7 @@ try {
   equal(await page.locator('#map circle.microstate').count(),29,'legacy distance references');equal(await page.locator('#map circle.microstate-marker').count(),198,'adaptive markers for all countries and regions');
   await setLanguage(page,'en');equal(await countryName(),'France');equal(await page.locator('#roundPoints').textContent(),'19 points');
   // Native mouse input at a genuine interior point of metropolitan France.
-  const centre=await page.evaluate(()=>{const s=document.getElementById('map'),p=s.createSVGPoint();p.x=(2.5+180)/.3;p.y=(90-48)/.3;const q=p.matrixTransform(s.getScreenCTM());return{x:q.x,y:q.y};});
+  const centre=await page.evaluate(()=>{const s=document.getElementById('map'),shape=s.querySelector('path.country-shape[data-iso="FRA"]'),b=shape.getBBox();for(let i=1;i<30;i++)for(let j=1;j<30;j++){const p=s.createSVGPoint();p.x=b.x+b.width*i/30;p.y=b.y+b.height*j/30;if(shape.isPointInFill(p)){const q=p.matrixTransform(s.getScreenCTM());if(document.elementFromPoint(q.x,q.y)===shape)return{x:q.x,y:q.y};}}throw new Error('No unoccluded French interior point');});
   await page.mouse.click(centre.x,centre.y);await visible('result');
   equal(await page.locator('#totalScore').textContent(),'19 / 100','round total');
   const frenchBefore=await page.evaluate(()=>localStorage.getItem('wg-seen-facts'));

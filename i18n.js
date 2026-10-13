@@ -1,5 +1,6 @@
 globalThis.GeoFactTranslations = {
   fr: {
+    mapClusterHint: "Touche les repères + pour agrandir la zone.",
     smallCountriesHint: "Les petits pays sont indiqués par un point.", smallCountryTarget: "Sélectionner ce petit territoire", smallCountriesCluster: "Zoomer pour séparer ces petits territoires",
     albumNavigation: "Navigation de la collection",
     albumBack: "← Les continents",
@@ -97,6 +98,7 @@ globalThis.GeoFactTranslations = {
     against: 'Score de ton ami : {score} / 100', loading: 'Chargement…'
   },
   en: {
+    mapClusterHint: "Tap the + markers to zoom into the area.",
     smallCountriesHint: "Small countries are marked with a dot.", smallCountryTarget: "Select this small territory", smallCountriesCluster: "Zoom in to separate these small territories",
     albumNavigation: "Collection navigation",
     albumBack: "← Continents",

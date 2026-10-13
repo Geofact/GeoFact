@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import path from 'node:path';
+import {testMapPresentation} from './map-presentation.mjs';
 import {createRequire} from 'node:module';
 const core=createRequire(import.meta.url)('../core.js');
 const root=path.resolve(new URL('../',import.meta.url).pathname);
@@ -48,7 +49,7 @@ try{
    const m=p.locator(`.microstate-marker[data-iso="${iso}"]`);
    for(const factor of [20,40,10,5,80,160]){if(await m.isVisible())break;await zoomTo(iso,factor);}
    check(await m.isVisible(),iso+' visible at intermediate zoom');
-   const b=await m.boundingBox();check(Math.abs(b.width-10.4)<.2,iso+' constant screen dot size '+JSON.stringify(b));
+   const b=await m.boundingBox();check(b.width>=9 && b.width<=28.5,iso+' screen-sized target '+JSON.stringify(b));
    await click(b.x+b.width/2,b.y+b.height/2);
    check(await p.evaluate(iso=>guesses.at(-1)===iso,iso),iso+' native selection');
    check(await p.evaluate(iso=>{const m=document.querySelector(`.microstate-marker[data-iso="${iso}"]`),s=document.querySelector('#map'),p=s.createSVGPoint();const tether=m.previousElementSibling;p.x=+(tether.style.display!=='none'?tether.getAttribute('x1'):m.getAttribute('cx'));p.y=+(tether.style.display!=='none'?tether.getAttribute('y1'):m.getAttribute('cy'));return document.querySelector(`.territory-detail[data-iso="${iso}"]`).isPointInFill(p);},iso),iso+' dot inside sourced geometry');
@@ -57,9 +58,9 @@ try{
   const neighbours=await p.evaluate(()=>{
    const s=document.querySelector('#map'),m=s.querySelector('.microstate-marker[data-iso="MCO"]'),r=m.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;
    const found=[];
-   for(let dx=-21;dx<=21;dx+=3)for(let dy=-21;dy<=21;dy+=3){const t=document.elementFromPoint(x+dx,y+dy);if(t?.matches('path[data-iso="FRA"]'))found.push({x:x+dx,y:y+dy,iso:controller.resolveCountry(t,x+dx,y+dy,'touch')});}
+   for(let dx=-35;dx<=35;dx+=3)for(let dy=-35;dy<=35;dy+=3){const t=document.elementFromPoint(x+dx,y+dy);if(t?.matches('path[data-iso="FRA"]')&&Math.max(Math.abs(dx),Math.abs(dy))>22)found.push({x:x+dx,y:y+dy,iso:controller.resolveCountry(t,x+dx,y+dy,'touch')});}
    return found;
-  });check(neighbours.length>0,'French land inside comfort radius exists');check(neighbours.every(n=>n.iso==='FRA'),'expanded target preserves neighbour selection');
+  });check(neighbours.length>0,'French land outside individual control exists');check(neighbours.every(n=>n.iso==='FRA'),'outside the control, neighbour selection is preserved');
   await click(neighbours[0].x,neighbours[0].y);check(await p.evaluate(()=>guesses.at(-1)==='FRA'),'native neighbour click');
   // Ocean comfort zone: touch gets 44px, mouse 24px, without a large painted circle.
   await zoomTo('NRU',80);
@@ -114,16 +115,17 @@ try{
   await p.goto(url+'/?challenge='+core.encodeChallenge('hard',['MCO','VAT','SMR','LIE','TUV'],100));await p.click('#acceptChallenge');
   const savedBeforeZoom=await p.evaluate(()=>JSON.stringify({...localStorage}));
   await p.evaluate(()=>{const s=document.querySelector('#map'),pt=s.createSVGPoint();pt.x=(7.398291+180)/.3;pt.y=(90-43.739652)/.3;const q=pt.matrixTransform(s.getScreenCTM());document.querySelector('#map').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,clientX:q.x,clientY:q.y,deltaY:-100}));});
+  await p.waitForTimeout(220);
   // Repeated native cluster clicks around southern Europe make the camera precise without answering.
-  for(let i=0;i<10&&!await p.locator('.microstate-marker[data-iso="MCO"]').isVisible();i++){
-   const chosen=await p.evaluate(()=>{const s=document.querySelector('#map'),pt=s.createSVGPoint();pt.x=(7.398291+180)/.3;pt.y=(90-43.739652)/.3;const a=pt.matrixTransform(s.getScreenCTM());return [...s.querySelectorAll('.microstate-cluster')].map(c=>{const r=c.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,d:Math.hypot(a.x-r.x-r.width/2,a.y-r.y-r.height/2)};}).sort((a,b)=>a.d-b.d)[0];});
+  for(let i=0;i<10&&(await p.locator('.microstate-marker[data-iso="MCO"]').getAttribute('data-active'))!=='true';i++){
+   const chosen=await p.evaluate(()=>{const s=document.querySelector('#map'),pt=s.createSVGPoint();pt.x=(7.398291+180)/.3;pt.y=(90-43.739652)/.3;const a=pt.matrixTransform(s.getScreenCTM());return [...s.querySelectorAll('.microstate-cluster[data-active="true"]')].map(c=>{const r=c.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,d:Math.hypot(a.x-r.x-r.width/2,a.y-r.y-r.height/2)};}).sort((a,b)=>a.d-b.d)[0];});
    check(!!chosen,'cluster available to separate Monaco');await click(chosen.x,chosen.y);await p.waitForTimeout(220);
   }
   check(!await p.locator('#result').isVisible(),'cluster exploration produces no result');
   check(await p.evaluate(()=>JSON.stringify({...localStorage}))===savedBeforeZoom,'cluster zoom preserves saves');
   check((await p.locator('#roundPoints').textContent()).startsWith('20'),'cluster zoom preserves score: '+await p.locator('#roundPoints').textContent());
   if(output)await p.locator('#playing').screenshot({path:path.join(output,mobile?'geofact-mobile.png':'geofact-desktop.png')});
-  const wrong=p.locator('.microstate-marker:not([data-iso="MCO"])').filter({visible:true}).first();
+  const wrong=p.locator('.microstate-marker[data-active="true"]:not([data-iso="MCO"])').filter({visible:true}).first();
   if(await wrong.count()){
    const wb=await wrong.boundingBox();await click(wb.x+wb.width/2,wb.y+wb.height/2);
    check(await p.locator('#distanceRow').isVisible(),'wrong dot uses existing feedback');
@@ -136,5 +138,11 @@ try{
   check(await p.locator('.microstate-marker[data-iso="MCO"]').evaluate(n=>n.classList.contains('country-found')),'correct dot uses existing success logic');
   await context.close();
  }
+ const presentationContext=async options=>{
+  const ctx=await browser.newContext({serviceWorkers:'block',...options});
+  await ctx.route('**/*',route=>new URL(route.request().url()).origin===url?route.continue():route.abort());
+  ctx.on('page',page=>page.on('pageerror',e=>errors.push(e.message)));return ctx;
+ };
+ await testMapPresentation({newContext:presentationContext,url:url+'/',core,check,equal:(a,b,message)=>{assert.deepEqual(a,b,message);checks++;},output});
  check(errors.length===0,errors.join('\n'));console.log(`Small territories: ${checks} checks passed on desktop and touch mobile.`);
 }finally{await browser.close();await new Promise(r=>server.close(r));}

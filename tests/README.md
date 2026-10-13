@@ -87,3 +87,5 @@ Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt f
 ## Petits territoires
 
 `npm run test:map` vérifie les nouvelles cibles avec de vrais clics souris et touchers Playwright sur des SVG rendus, puis les réponses et scores dans le jeu. Utiliser les mêmes variables Playwright et Chromium ci-dessus. Pour enregistrer les captures ordinateur/mobile du jeu, définir `GEOFACT_CAPTURE_DIR` vers un dossier de sortie local. Détails de la sélection et des sources : `docs/small-territories-map.md`.
+
+La révision visuelle est couverte par `tests/map-presentation.mjs`, intégré à `test:map`. Les captures optionnelles comprennent la vue mondiale, un regroupement ouvert, Vatican/Saint-Marin et une île, sur ordinateur et mobile. Voir `docs/small-target-presentation.md`.

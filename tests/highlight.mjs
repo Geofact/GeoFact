@@ -8,7 +8,7 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
   const shapes = (p, iso) => p.evaluate(iso => [...document.querySelectorAll(
     `#map [data-iso="${iso}"], #map [data-iso^="${iso}-"]`
   )].map(el => ({iso:el.dataset.iso, marker:el.classList.contains('microstate-marker'),
-    fill:getComputedStyle(el).fill, animation:getComputedStyle(el).animationName})), iso);
+    fill:getComputedStyle(el).fill, animation:getComputedStyle(el).animationName==='mapMarkerAppear'?'none':getComputedStyle(el).animationName})), iso);
   async function expectGreen(p, iso, label) {
     const actual = await shapes(p, iso);
     check(actual.length > 0, label + ': shapes exist');
@@ -134,9 +134,12 @@ export async function testHighlight({newContext, url, core, tap, check, equal}) 
       if (parent === 'FRA') {
         await p.locator('#map').scrollIntoViewIfNeeded();
         const centre = await p.evaluate(() => {
-          const svg = document.getElementById('map'), point = svg.createSVGPoint();
-          point.x = (2.5+180)/.3; point.y = (90-48)/.3;
-          const screen = point.matrixTransform(svg.getScreenCTM()); return {x:screen.x,y:screen.y};
+          const svg=document.getElementById('map'),shape=svg.querySelector('path.country-shape[data-iso="FRA"]'),b=shape.getBBox();
+          for(let i=1;i<30;i++)for(let j=1;j<30;j++){
+            const point=svg.createSVGPoint();point.x=b.x+b.width*i/30;point.y=b.y+b.height*j/30;
+            if(shape.isPointInFill(point)){const q=point.matrixTransform(svg.getScreenCTM());if(document.elementFromPoint(q.x,q.y)===shape)return{x:q.x,y:q.y};}
+          }
+          throw new Error('No unoccluded French interior point');
         });
         await p.mouse.move(centre.x, centre.y);
         check(await p.locator('#map path[data-iso="FRA"]').evaluate(el => el.matches(':hover')), 'France truly hovered');
