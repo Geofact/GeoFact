@@ -1,3 +1,4 @@
+import {testBonusActions} from './bonus-actions.mjs';
 import {testFactsExpansion} from './facts-expansion.mjs';
 import {testRewardMap} from './reward-map.mjs';
 import {testCollectionAlbum} from './collection-album.mjs';
@@ -308,6 +309,7 @@ try {
   await testResultModal({newContext,url,core,tap,check,equal});
   console.log('Persistent success highlight, all modes and reduced motion…');
   await testFactsExpansion({newContext,url,core,tap,check,equal,output:process.env.FACTS_CAPTURE_DIR});
+  await testBonusActions({newContext,url,check,equal,output:process.env.BONUS_ACTION_CAPTURE_DIR});
   await testRewardMap({newContext,url,check,equal,output:process.env.REWARD_MAP_CAPTURE_DIR});
  await testHighlight({newContext,url,core,tap,check,equal});
   console.log('Portable export not tested: GeoFact.html/export.py are absent; file:// is outside this HTTP suite.');

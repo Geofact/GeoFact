@@ -1692,8 +1692,9 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 .country-map-hint{margin:8px 0 0;font-size:13px;line-height:1.4;color:#667976}
 #countryMapRefocus{margin-top:10px}
 .country-location-pin{fill:#4ade80;stroke:#173f57;stroke-width:2px;vector-effect:non-scaling-stroke;pointer-events:none}
-.bonus-reveal-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
-.bonus-reveal-actions button{white-space:normal;min-height:64px}
+#bonusDialog .bonus-reveal-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;margin:16px auto 0;align-items:stretch}
+#bonusDialog .bonus-reveal-actions button{box-sizing:border-box;width:100%;min-width:0;min-height:64px;margin:0;padding:16px 12px;border:1px solid #dfd1bb;border-radius:18px;background:#fae1cf;color:#294553;font-size:15px;font-weight:700;line-height:1.35;text-align:center;white-space:normal;overflow-wrap:anywhere;box-shadow:0 3px 10px rgba(23,59,87,.04)}
+@media(max-width:600px){#bonusDialog .bonus-reveal-actions{grid-template-columns:minmax(0,1fr)}}
 
 #countryLookupMap,#countryLookupMap .country-shape,#countryLookupMap .territory-detail{cursor:grab}
 #countryLookupMap:active,#countryLookupMap:active .country-shape,#countryLookupMap:active .territory-detail{cursor:grabbing}

@@ -187,6 +187,7 @@
     }
     if ($('openBonusChest').classList.contains('opening')) return;
     const chest=bonusSnapshot?.chests[selectedBonus];
+    $('bonusViewCollection').classList.toggle('hidden',!!chest&&chest.openedAt!==null);
     $('bonusChestStage').classList.toggle('hidden',!chest||chest.openedAt!==null);
     $('bonusCardReveal').classList.toggle('hidden',!chest||chest.openedAt===null);
     if(chest&&chest.openedAt!==null) revealBonusCard(chest);
@@ -196,6 +197,7 @@
     const card = cardElement(chest.card.iso,chest.card.rarity);
     $('bonusCardReveal').dataset.rarity=chest.card.rarity;
     const summary=rewardSummary(chest.card,chest.discovery);summary.insertBefore(card,summary.querySelector('.reward-continent'));
+    $('bonusViewCollection').classList.add('hidden');
     $('bonusCardReveal').replaceChildren(summary);$('bonusCardReveal').classList.remove('hidden');$('bonusChestStage').classList.add('hidden');
   }
   async function openBonusRewards() {
