@@ -1,9 +1,7 @@
 globalThis.GeoFactTranslations = {
   fr: {
-    mapSmallHint: "Touche un repère pour agrandir.",
-    smallViewTitle: "Vue agrandie", smallViewClose: "Fermer la vue agrandie", smallViewHint: "Touche une cible pour répondre.", smallViewTarget: "Sélectionner ce petit territoire", smallViewGroup: "Agrandir pour séparer les cibles",
     mapClusterHint: "Touche les repères + pour agrandir la zone.",
-    smallCountriesHint: "Les petits pays sont indiqués par un point.", smallCountryTarget: "Agrandir ce petit territoire", smallCountriesCluster: "Zoomer pour séparer ces petits territoires",
+    smallCountriesHint: "Les petits pays sont indiqués par un point.", smallCountryTarget: "Sélectionner ce petit territoire", smallCountriesCluster: "Zoomer pour séparer ces petits territoires",
     albumNavigation: "Navigation de la collection",
     albumBack: "← Les continents",
     albumAll: "Tous les drapeaux",
@@ -100,10 +98,8 @@ globalThis.GeoFactTranslations = {
     against: 'Score de ton ami : {score} / 100', loading: 'Chargement…'
   },
   en: {
-    mapSmallHint: "Tap a marker for a closer view.",
-    smallViewTitle: "Closer view", smallViewClose: "Close the closer view", smallViewHint: "Tap a target to answer.", smallViewTarget: "Select this small territory", smallViewGroup: "Zoom in to separate the targets",
     mapClusterHint: "Tap the + markers to zoom into the area.",
-    smallCountriesHint: "Small countries are marked with a dot.", smallCountryTarget: "Open a closer view of this small territory", smallCountriesCluster: "Zoom in to separate these small territories",
+    smallCountriesHint: "Small countries are marked with a dot.", smallCountryTarget: "Select this small territory", smallCountriesCluster: "Zoom in to separate these small territories",
     albumNavigation: "Collection navigation",
     albumBack: "← Continents",
     albumAll: "All flags",

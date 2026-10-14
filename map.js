@@ -94,14 +94,12 @@
       marker.dataset.iso=source.dataset.iso;
       marker.dataset.anchorX=anchor.x;marker.dataset.anchorY=anchor.y;
       marker.setAttribute('role','button'); marker.dataset.i18nAria='smallCountryTarget';
-      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)smallView.open([markers.find(i=>i.source===source)]);}});
+      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
       return {source,marker,core,tether,anchor,box,area:main.area};
     });
-    let clusters = [], visible = [];
-    const clusterPool = new Map();
+    let visible = [];
     const coarse = matchMedia('(pointer: coarse)');
     const label = key => root.GeoFactTranslations?.[document.documentElement.lang]?.[key] || root.GeoFactTranslations?.fr?.[key] || '';
-    const smallView=root.GeoFactSmallTerritoryView({svg,items:markers,onGuess,label,onClose:()=>{zoomGuardUntil=performance.now()+240;}});
     function reveal(el, active, opacity = 1) {
       clearTimeout(el.hideTimer);
       const entering = active && el.dataset.active !== 'true';
@@ -120,118 +118,48 @@
       }
     }
     function layoutMicrostateMarkers() {
-      const matrix = svg.getScreenCTM(); if (!matrix) return;
-      const inverse=matrix.inverse(), scale=Math.hypot(matrix.a,matrix.b), rect=svg.getBoundingClientRect();
-      const detail=Math.max(0,Math.min(1,(Math.log2(1200/view.w)-1.5)/1.5));
-      const radius=3+10*detail, hit=coarse.matches?44:32;
-      const spacing=detail>.8?hit+6:34+detail*16;
-      const screen=p=>({x:matrix.a*p.x+matrix.c*p.y+matrix.e,y:matrix.b*p.x+matrix.d*p.y+matrix.f});
-      const local=p=>{const q=svg.createSVGPoint();q.x=p.x;q.y=p.y;return q.matrixTransform(inverse);};
+      const matrix=svg.getScreenCTM();if(!matrix)return;
+      const scale=Math.hypot(matrix.a,matrix.b),rect=svg.getBoundingClientRect(),inverse=matrix.inverse();
+      const detail=Math.max(0,Math.min(1,Math.log2(1200/view.w)/4));
+      const radius=2.5+2.5*detail,half=coarse.matches?22:12;
       const controls=[...(svg.closest('.map-wrap')?.querySelectorAll('.map-controls')||[])].map(el=>el.getBoundingClientRect());
-      const margin=radius+2;
-      const clearance=hit/2+5;
-      const blocked=p=>controls.some(r=>p.x+clearance>r.left&&p.x-clearance<r.right&&p.y+clearance>r.top&&p.y-clearance<r.bottom);
-      const inMap=p=>p.x>=rect.left+margin&&p.x<=rect.right-margin&&p.y>=rect.top+margin&&p.y<=rect.bottom-margin&&!blocked(p);
-      const clamp=p=>{
-        const q={x:Math.max(rect.left+margin,Math.min(rect.right-margin,p.x)),y:Math.max(rect.top+margin,Math.min(rect.bottom-margin,p.y))};
-        for(const r of controls)if(blocked(q))q.x=Math.max(rect.left+margin,r.left-clearance-1);
-        return q;
-      };
-      const eligible=[];
+      visible=[];
       for(const item of markers){
         const size=Math.min(Math.sqrt(item.area),Math.min(item.box.w,item.box.h)*2)*scale;
-        // A dot is useful for genuinely tiny land, not every narrow or medium country.
         const threshold=coarse.matches?18+10*detail:14+8*detail;
-        item.opacity=Math.max(0,Math.min(1,(threshold-size)/(threshold*.35)));
-        item.screen=screen(item.anchor);item.localTarget=detail>.8;item.hitSize=hit;
-        item.marker.dataset.local=String(item.localTarget);
-        if((item.source.classList.contains('territory-detail')||item.area<24)&&item.opacity>.02&&item.screen.x>=rect.left&&item.screen.x<=rect.right&&item.screen.y>=rect.top&&item.screen.y<=rect.bottom)eligible.push(item);
-      }
-      const close=(a,b)=>detail>.8?Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))<spacing:Math.hypot(a.x-b.x,a.y-b.y)<spacing;
-      const pending=new Set(eligible), groups=[];
-      while(pending.size){
-        const group=[pending.values().next().value];pending.delete(group[0]);
-        for(let i=0;i<group.length;i++)for(const item of pending){
-          if(close(group[i].screen,item.screen) && (detail>.8 || group.every(other=>Math.abs(other.screen.x-item.screen.x)<56&&Math.abs(other.screen.y-item.screen.y)<56))){pending.delete(item);group.push(item);}
+        const opacity=Math.max(0,Math.min(1,(threshold-size)/(threshold*.35)));
+        const x=matrix.a*item.anchor.x+matrix.c*item.anchor.y+matrix.e,y=matrix.b*item.anchor.x+matrix.d*item.anchor.y+matrix.f;
+        const blocked=controls.some(r=>x+half+3>r.left&&x-half-3<r.right&&y+half+3>r.top&&y-half-3<r.bottom);
+        const active=(item.source.classList.contains('territory-detail')||item.area<24)&&opacity>.02&&x>=rect.left-radius&&x<=rect.right+radius&&y>=rect.top-radius&&y<=rect.bottom+radius&&!blocked;
+        item.marker.dataset.local=String(detail>.5);item.core.style.display='none';item.tether.style.display='none';
+        if(active){
+          // Only tuck a dot inward at the edge; its original geographic anchor stays unchanged.
+          const p=svg.createSVGPoint();p.x=Math.max(rect.left+radius+1,Math.min(rect.right-radius-1,x));p.y=Math.max(rect.top+radius+1,Math.min(rect.bottom-radius-1,y));
+          const q=p.matrixTransform(inverse);item.marker.setAttribute('cx',q.x);item.marker.setAttribute('cy',q.y);item.marker.setAttribute('r',radius/scale);
+          item.marker.setAttribute('aria-label',label('smallCountryTarget'));
+          if(Math.hypot(p.x-x,p.y-y)>1){item.tether.style.display='';item.tether.style.pointerEvents='none';item.tether.setAttribute('x1',item.anchor.x);item.tether.setAttribute('y1',item.anchor.y);item.tether.setAttribute('x2',q.x);item.tether.setAttribute('y2',q.y);}
+          visible.push(item);
         }
-        groups.push(group);
-      }
-      const center=group=>clamp({x:group.reduce((sum,i)=>sum+i.screen.x,0)/group.length,y:group.reduce((sum,i)=>sum+i.screen.y,0)/group.length});
-      // Individual controls and group controls must never occupy ambiguous overlapping positions.
-      let merged=true;
-      while(merged){merged=false;
-        outer:for(let i=0;i<groups.length;i++)for(let j=i+1;j<groups.length;j++){
-          const a=center(groups[i]),b=center(groups[j]);
-          if(close(a,b) && (detail>.8 || groups[i].every(p=>groups[j].every(q=>Math.abs(p.screen.x-q.screen.x)<70&&Math.abs(p.screen.y-q.screen.y)<70)))){groups[i].push(...groups[j]);groups.splice(j,1);merged=true;break outer;}
-        }
-      }
-      visible=[];const occupied=[];const activeClusters=new Set();clusters=[];
-      const place=(item,p)=>{
-        const q=local(p),a=item.anchor;
-        occupied.push(p);visible.push(item);
-        item.marker.setAttribute('cx',q.x);item.marker.setAttribute('cy',q.y);item.marker.setAttribute('r',radius/scale);
-        item.core.setAttribute('cx',q.x);item.core.setAttribute('cy',q.y);item.core.setAttribute('r',(1.4+.6*detail)/scale);item.core.style.display='';item.core.style.opacity=item.opacity;
-        item.marker.dataset.local=String(item.localTarget);
-        item.marker.setAttribute('aria-label',label('smallCountryTarget'));
-        reveal(item.marker,true,item.opacity);
-        const shifted=Math.hypot(p.x-item.screen.x,p.y-item.screen.y)>1;
-        item.tether.style.display=shifted?'':'none';item.tether.style.pointerEvents='none';item.tether.style.opacity=item.opacity;
-        if(shifted){item.tether.setAttribute('x1',a.x);item.tether.setAttribute('y1',a.y);item.tether.setAttribute('x2',q.x);item.tether.setAttribute('y2',q.y);}
-      };
-      const free=p=>inMap(p)&&occupied.every(q=>!close(q,p));
-      const separate=item=>{
-        const start=clamp(item.screen);
-        if(free(start))return start;
-        for(let ring=1;ring<=12;ring++)for(let step=0;step<32;step++){
-          const angle=step*Math.PI/16,p={x:start.x+ring*(hit+4)*Math.cos(angle),y:start.y+ring*(hit+4)*Math.sin(angle)};
-          if(free(p))return p;
-        }
-        return null;
-      };
-      for(const group of groups){
-        // Keep nearby countries grouped until zoom separates their actual geographic positions.
-        // Only at the hard zoom limit use a compact, tethered fallback.
-        const spread=group.length===1||view.w<=4.01;
-        if(spread){
-          const chosen=[],previous=occupied.length;
-          for(const item of group){const p=view.w<=4.01?separate(item):(!blocked(item.screen)&&free(clamp(item.screen))?clamp(item.screen):null);if(!p)break;chosen.push({item,p});occupied.push(p);}
-          occupied.length=previous;
-          if(chosen.length===group.length){for(const {item,p} of chosen)place(item,p);continue;}
-        }
-        if(group.length===1)continue;
-        const key=group.map(i=>i.source.dataset.iso).sort().join('|');
-        let cluster=clusterPool.get(key);
-        if(!cluster){
-          const el=make('g','microstate-cluster');
-          const disc=document.createElementNS(ns,'circle'),plus=document.createElementNS(ns,'path');
-          disc.setAttribute('class','cluster-disc');plus.setAttribute('class','cluster-plus');el.append(disc,plus);
-          el.setAttribute('role','button');el.dataset.i18nAria='smallCountriesCluster';
-          cluster={el,disc,plus,group};clusterPool.set(key,cluster);
-          el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(el.dataset.active==='true')openCluster(cluster);}});
-        }
-        cluster.group=group;cluster.el.dataset.members=key;cluster.el.dataset.local=String(detail>.8);activeClusters.add(key);clusters.push(cluster);
-        const p=center(group),q=local(p),r=(6+5*detail)/scale,arm=4/scale;
-        occupied.push(p);cluster.el.setAttribute('cx',q.x);cluster.el.setAttribute('cy',q.y);
-        cluster.disc.setAttribute('cx',q.x);cluster.disc.setAttribute('cy',q.y);cluster.disc.setAttribute('r',r);
-        cluster.plus.setAttribute('d',`M${q.x-arm},${q.y}H${q.x+arm} M${q.x},${q.y-arm}V${q.y+arm}`);
-        cluster.el.setAttribute('aria-label',label('smallCountriesCluster'));reveal(cluster.el,true);
-      }
-      const shown=new Set(visible);
-      for(const item of markers)if(!shown.has(item)){reveal(item.marker,false);item.core.style.opacity=0;setTimeout(()=>{if(item.marker.dataset.active==='false')item.core.style.display='none';},180);item.tether.style.display='none';}
-      for(const [key,c] of clusterPool)if(!activeClusters.has(key)){
-        if(c.el.dataset.active!=='false')reveal(c.el,false);
-        // Keep a bounded pool while allowing opacity transitions to finish.
-        if(clusterPool.size>240&&c.el.style.display==='none'){c.el.remove();clusterPool.delete(key);}
+        reveal(item.marker,active,opacity);
       }
       refreshHint();
     }
     function refreshHint(){
       const hint=svg.closest('#playing')?.querySelector('.map-zoom-hint [data-i18n]');
-      if(hint){hint.dataset.i18n=clusters.length||visible.length?'mapSmallHint':'mapZoomHint';hint.textContent=label(hint.dataset.i18n);}
+      if(hint){hint.dataset.i18n='mapZoomHint';hint.textContent=label('mapZoomHint');}
     }
-    function openCluster(cluster){
+    function separateTargets(items){
+      // An ambiguous finger tap only zooms the existing map; it never chooses a country.
+      if(view.w<=4.01)return;
       zoomGuardUntil=performance.now()+240;
-      smallView.open(cluster.group);
+      const xs=items.map(i=>i.anchor.x),ys=items.map(i=>i.anchor.y),x=(Math.min(...xs)+Math.max(...xs))/2,y=(Math.min(...ys)+Math.max(...ys))/2;
+      const span=Math.max(Math.max(...xs)-Math.min(...xs),2*(Math.max(...ys)-Math.min(...ys)));
+      const w=Math.max(4,Math.min(view.w*.5,span*2.5||4));
+      setView({x:x-w/2,y:y-w/4,w});
+    }
+    function nearbyTargets(x,y,type){
+      const half=type==='touch'?22:12;
+      return visible.filter(i=>{const p=markerScreenCenter(i.marker);return i.marker.dataset.active==='true'&&Math.abs(p.x-x)<=half&&Math.abs(p.y-y)<=half;});
     }
     function setView(next) {
       const w = Math.min(1200, Math.max(4, next.w)), h = w / 2;
@@ -260,18 +188,14 @@
       const x=+el.getAttribute('cx'),y=+el.getAttribute('cy');
       return {x:m.a*x+m.c*y+m.e,y:m.b*x+m.d*y+m.f};
     }
-    function resolveCountry(target, x, y, type) {
-      const marker = target?.closest?.('.microstate-marker[data-iso]');
-      if (marker && svg.contains(marker) && marker.dataset.active === 'true') return marker.dataset.iso;
-      const real = target?.closest?.('path[data-iso]');
-      const candidates=visible.filter(i=>{
-        const p=markerScreenCenter(i.marker),half=type==='touch'?22:16;
-        return i.marker.dataset.active==='true' && Math.abs(p.x-x)<=half && Math.abs(p.y-y)<=half;
-      });
-      // A local control is a deliberate 44px touch target and takes precedence over neighbouring polygons.
-      if(candidates.some(i=>i.localTarget))return candidates.length===1?candidates[0].source.dataset.iso:null;
-      if (real && svg.contains(real)) return real.dataset.iso;
-      return candidates.length===1 ? candidates[0].source.dataset.iso : null;
+    function resolveCountry(target,x,y,type){
+      const candidates=nearbyTargets(x,y,type);
+      if(candidates.length>1)return null;
+      const marker=target?.closest?.('.microstate-marker[data-iso]');
+      if(marker&&svg.contains(marker)&&marker.dataset.active==='true')return marker.dataset.iso;
+      if(candidates.length===1)return candidates[0].source.dataset.iso;
+      const real=target?.closest?.('path[data-iso]');
+      return real&&svg.contains(real)?real.dataset.iso:null;
     }
 
     function beginDrag(p) { drag = { x: p.x, y: p.y, view: { ...view }, scale: svg.getScreenCTM().a }; }
@@ -315,19 +239,11 @@
           const actualTarget = document.elementFromPoint(e.clientX, e.clientY);
           if(e.isTrusted && (!actualTarget || !svg.contains(actualTarget))){drag=pinch=null;return;}
           const hitTarget=actualTarget && svg.contains(actualTarget) ? actualTarget : p.target;
-          if(hitTarget?.closest?.('.microstate-marker[data-active="false"], .microstate-cluster[data-active="false"]')){drag=pinch=null;return;}
-          const directCluster=hitTarget?.closest?.('.microstate-cluster[data-active="true"]');
-          const directMarker=hitTarget?.closest?.('.microstate-marker[data-active="true"]');
-          const clusterCandidates=directMarker?[]:directCluster?clusters.filter(c=>c.el===directCluster):clusters.filter(c=>{const q=markerScreenCenter(c.el),half=p.type==='touch'?22:16;return (view.w<500||!hitTarget?.closest?.('path[data-iso]'))&&Math.abs(q.x-e.clientX)<=half&&Math.abs(q.y-e.clientY)<=half;});
-          if(clusterCandidates.length>1){drag=pinch=null;return;}
-          const cluster=clusterCandidates[0];
-          if(cluster){openCluster(cluster);drag=pinch=null;return;}
-          const iso = resolveCountry(actualTarget && svg.contains(actualTarget) ? actualTarget : p.target, e.clientX, e.clientY, p.type);
-          if(iso){
-            const item=visible.find(i=>i.source.dataset.iso===iso),q=item&&markerScreenCenter(item.marker),half=p.type==='touch'?22:16;
-            if(item&&(directMarker||(Math.abs(q.x-e.clientX)<=half&&Math.abs(q.y-e.clientY)<=half))){zoomGuardUntil=performance.now()+240;smallView.open([item]);}
-            else onGuess(iso);
-          }
+          if(hitTarget?.closest?.('.microstate-marker[data-active="false"]')){drag=pinch=null;return;}
+          const candidates=nearbyTargets(e.clientX,e.clientY,p.type);
+          if(candidates.length>1){separateTargets(candidates);drag=pinch=null;return;}
+          const iso=resolveCountry(hitTarget,e.clientX,e.clientY,p.type);
+          if(iso)onGuess(iso);
         }
         drag = pinch = null;
       }
@@ -342,7 +258,6 @@
       return setTimeout(() => { for (const shape of shapes) shape.classList.remove(className); }, duration);
     }
     function clearFound() {
-      if(svg.querySelector('.country-found,.country-correct'))smallView.close();
       clearTimeout(celebrationTimer);
       celebrationTimer = null;
       for (const shape of svg.querySelectorAll('.country-found, .country-correct')) {
@@ -371,7 +286,7 @@
     coarse.addEventListener('change',()=>requestAnimationFrame(layoutMicrostateMarkers));
     addEventListener('resize', () => requestAnimationFrame(layoutMicrostateMarkers));
     requestAnimationFrame(layoutMicrostateMarkers);
-    return { zoom, celebrate, clearFound, reject, reset() { smallView.close(); zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry };
+    return { zoom, celebrate, clearFound, reject, reset() { zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry };
   }
   root.GeoFactMap = createMap;
 })(globalThis);

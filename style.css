@@ -1660,22 +1660,18 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 .territory-detail.country-tried,.territory-detail.country-wrong{fill:#dc4c45!important}
 .microstate-marker{stroke-width:1.4px}
 .microstate-tether{stroke:#f7b955;stroke-width:1px;vector-effect:non-scaling-stroke;pointer-events:none}
-.microstate-marker:focus-visible,.microstate-cluster:focus-visible{stroke:white;stroke-width:3px;outline:none}
+.microstate-marker:focus-visible{stroke:white;stroke-width:3px;outline:none}
 @media(prefers-reduced-motion:reduce){.microstate-marker{transition:none}}
 
 /* + means zoom; a solid disc means select. Keep the world overview compact. */
 .microstate-marker{fill:#eef5eb;stroke:#315d55;stroke-width:1.5px;transition:opacity .18s ease,fill .18s ease}
 .microstate-marker:hover{fill:#d5e8d1}
-.microstate-cluster{fill:none;stroke:none;stroke-dasharray:none;cursor:zoom-in;transition:opacity .18s ease;pointer-events:all}
-.cluster-disc{fill:#fffefa;stroke:#315d55;stroke-width:1.5px;vector-effect:non-scaling-stroke}
-.cluster-plus{fill:none;stroke:#315d55;stroke-width:1.8px;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
 .microstate-tether{stroke:#315d55;stroke-width:1px}
 .marker-enter{animation:mapMarkerAppear .18s ease both}
 @keyframes mapMarkerAppear{from{opacity:0}to{opacity:1}}
 #playing .map-zoom-hint{font-size:14px;gap:7px}
 #playing .map-zoom-hint span{min-width:0}
-@media(prefers-reduced-motion:reduce){.marker-enter{animation:none}.microstate-marker,.microstate-cluster{transition:none}}
-.microstate-cluster:focus-visible .cluster-disc{stroke:white;stroke-width:3px}
+@media(prefers-reduced-motion:reduce){.marker-enter{animation:none}.microstate-marker{transition:none}}
 @media(max-width:420px){#playing .map-zoom-hint{font-size:clamp(12px,3.5vw,14px)}}
 /* Correct coastlines turn green immediately, including reduced-motion rendering. */
 .territory-detail.country-found{transition:none}
@@ -1687,30 +1683,11 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 /* World map: dots and bare plus signs, without an overlay of outlined discs. */
 .microstate-marker[data-local="false"]{fill:#315d55;stroke:#fffefa;stroke-width:1px}
 .microstate-marker[data-local="false"] + .target-core{opacity:0!important}
-.microstate-cluster[data-local="false"] .cluster-disc{fill:transparent;stroke:none}
-.microstate-cluster[data-local="false"] .cluster-plus{stroke:#173f70;stroke-width:2px}
 
 .microstate-marker.country-found[data-local="false"]{fill:#4ade80}
 
-/* Geography is context in the closer view; only explicit 48px targets answer. */
-.small-territory-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);padding:16px;border:1px solid #dfd1bb;border-radius:20px;background:#fffaf2;color:#173f57;overflow:auto;box-shadow:0 12px 40px rgba(23,59,87,.15)}
-.small-territory-dialog::backdrop{background:rgba(22,39,37,.28)}
-.small-territory-dialog[open]{animation:resultModalIn .18s ease-out}
-.small-territory-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-.small-territory-dialog h2{margin:0;font-size:20px;text-align:left}
-.small-view-close,.small-view-controls button{width:44px;height:44px;padding:0;border:1px solid #dfd1bb;border-radius:12px;background:#fffaf2;color:#173f57;font-size:24px;cursor:pointer}
-.small-view-frame{position:relative;width:100%;height:clamp(200px,48dvh,320px);overflow:hidden;border:1px solid #b6ccca;border-radius:12px;touch-action:none;background:#dceef1;user-select:none}
-.small-view-map{display:block;width:100%;height:100%;pointer-events:none}
-.small-view-map path{pointer-events:none;stroke-width:.6px;vector-effect:non-scaling-stroke}
-.small-view-targets{position:absolute;inset:0;pointer-events:none}
-.small-view-target{position:absolute;display:grid;place-items:center;transform:translate(-50%,-50%);width:48px;height:48px;min-height:0;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:all;touch-action:none}
-.small-view-target span{box-sizing:border-box;display:grid;place-items:center;width:28px;height:28px;border:1.5px solid #315d55;border-radius:50%;background:#fffaf2;color:#173f57;font-size:24px;line-height:1;pointer-events:none}
-.small-view-target[data-kind="country"] span::after{content:'';width:5px;height:5px;border-radius:50%;background:#315d55}
-.small-view-target[data-kind="cluster"]{cursor:zoom-in}
-.small-view-target:focus-visible{outline:2px solid #173f57;outline-offset:-4px;border-radius:12px}
-.small-view-tried span{background:#dc4c45;border-color:#9f302d}
-.small-view-found span{background:#4ade80}
-.small-view-controls{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-.small-territory-dialog p{margin:8px 0 0;font-size:14px;text-align:center}
-.small-view-tether{stroke:#315d55;stroke-width:1px;vector-effect:non-scaling-stroke;pointer-events:none}
-@media(prefers-reduced-motion:reduce){.small-territory-dialog[open]{animation:none}}
+/* Small, direct targets: 5px at world scale, up to 10px when zoomed. */
+.microstate-marker,.microstate-marker:hover,.microstate-marker[data-local="false"]{fill:#111;stroke:none}
+.target-core{display:none!important}
+.microstate-marker.country-found,.microstate-marker.country-found:hover,.microstate-marker.country-found[data-local="false"]{fill:#4ade80}
+.microstate-tether{stroke:#111;stroke-width:.7px;opacity:.6;pointer-events:none}
