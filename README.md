@@ -20,18 +20,28 @@ Les statistiques publiques utilisent deux RPC Supabase. Les tests les intercepte
 
 ## Structure et tests
 
+- Racine : point d’entrée `index.html`, modules exécutés directement, feuille `style.css`, `package.json` et domaine `CNAME`. Ces chemins publics sont conservés pour les caches et l’hébergement existants.
 - `core.js`, `map.js`, `data/` : règles historiques, carte et données géographiques.
 - `bonus-rules.mjs`, `daily-rewards.mjs` : transitions pures de récompenses.
 - `reward-repository.mjs`, `legacy-rewards.mjs` : transactions IndexedDB et import minimal.
 - `app.js`, `index.html`, `style.css`, `i18n.js` : interface bilingue.
+- `preferences.js`, `sound.js`, `music.js`, `public-statistics.js` : préférences, audio et télémétrie facultative.
+- `assets/` : logo, icônes et image de partage.
 - `tests/` : tests Node et parcours HTTP isolés.
 - `docs/` : décisions, contrats et limites des étapes validées.
+- `work/` : captures, archives et journaux de validation locaux, ignorés par Git.
 
 ```sh
 npm test
 npm run test:browser
+npm run test:map
+npm run test:restart
 ```
+
+Pour simuler une mise à jour sur la même origine, archiver d’abord la version précédente dans un dossier local, puis lancer `GEOFACT_BASELINE_DIR=/chemin/vers/archive npm run test:update`. Ce test utilise uniquement des sauvegardes fictives et conserve leur stockage entre les deux versions. Voir [les instructions de validation](tests/README.md) et [l’index de documentation](docs/README.md).
 
 Voir `tests/README.md` pour les prérequis Playwright et les limites. Pour une nouvelle livraison, changer de façon cohérente la version des ressources dans `index.html` et tous les imports des modules de récompenses ; le test d'audit vérifie cette cohérence.
 
 Le domaine déclaré dans `CNAME` est `geofact.app`. La configuration GitHub Pages doit être vérifiée dans GitHub avant publication. Une fusion dans sa branche source peut déclencher immédiatement le déploiement.
+
+Cette version ne fournit ni manifest d’installation ni service worker : il n’y a donc aucun cache applicatif à purger. Les ressources utilisent des URL versionnées pour renouveler le cache HTTP sans toucher aux sauvegardes. Aucun script de construction ou de déploiement n’est présent dans le dépôt ; GitHub Pages sert les fichiers statiques.

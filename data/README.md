@@ -4,6 +4,7 @@
 - `borders.js` contient les paires de frontières terrestres et leur index symétrique ; sources, conventions et maintenance dans `borders.md`, licence dans `BORDERS-LICENSE.txt`.
 - `facts.js` contient les 201 faits utilisés après une bonne réponse.
 - `flag-cards.js` contient les 195 textes de cartes de drapeau FR/EN et une URL source d’audit pour chaque pays.
+- `small-territories.js` complète les contours des micro-États et îles absents du fond SVG ; sources, projection, licence et distinction avec les références de distance dans [small-territories.md](small-territories.md).
 
 Les cinq valeurs du champ continent dans les données sont : Afrique, Amériques, Asie, Europe et Océanie. Pour garder un classement simple et exclusif, les pays transcontinentaux sont affectés à un seul groupe de jeu.
 

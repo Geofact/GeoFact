@@ -91,3 +91,17 @@ Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt f
 La révision visuelle est couverte par `tests/map-presentation.mjs`, intégré à `test:map`. Les captures optionnelles comprennent la vue mondiale, un regroupement ouvert, Vatican/Saint-Marin et une île, sur ordinateur et mobile. Voir `docs/small-target-presentation.md`.
 
 La consultation du pays d’une récompense est vérifiée par `tests/reward-map.mjs`, intégré à `npm run test:browser` : grille 2 × 2 après révélation, pays tiré, carte en lecture seule, retour au Daily ou au coffre bonus sans avancer le quiz, zoom, focus, FR/EN et sauvegardes inchangées. `REWARD_MAP_CAPTURE_DIR=work/reward-map-captures` permet de garder les captures du parcours.
+
+## Mise à jour depuis une version archivée
+
+```sh
+mkdir -p work/baseline
+git archive <commit-précédent> | tar -x -C work/baseline
+GEOFACT_BASELINE_DIR=work/baseline npm run test:update
+```
+
+Ajouter les variables Playwright/Chromium indiquées plus haut si nécessaire. L’archive doit être une version compatible et fiable, jamais un profil de joueur. Le test crée quatre sauvegardes fictives dans l’ancienne version, puis sert le candidat sur **la même origine, dans les mêmes contextes**, sans effacer localStorage, sessionStorage ou IndexedDB. Il compare tous les enregistrements des stores et les valeurs textuelles des deux stockages, puis vérifie l’ouverture unique d’un coffre et une installation neuve.
+
+Scénarios : progression bonus partielle, coffre scellé, coffre déjà ouvert, Daily commencé après un Daily terminé. Tous incluent cartes, raretés, doublons, séries, compteurs, statistiques historiques, préférences et reçus. Un Daily en cours est un état de jeu en mémoire, pas une sauvegarde de tour persistante ; le test préserve les données réellement enregistrées et ne prétend pas restaurer ce tour après rechargement.
+
+Les ressources de l’ancienne version sont mises en cache explicitement par URL complète dans le harnais, car les interceptions Playwright désactivent le cache HTTP natif. C’est une simulation du cache HTTP chaud, pas une validation des en-têtes de production. Aucun manifest ni service worker n’existe dans cette version. Les deux RPC Supabase sont interceptés et aucun profil réel n’est utilisé.

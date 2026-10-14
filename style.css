@@ -1292,18 +1292,14 @@ html[lang="en"] .hero-orbit-copy text,html[lang="en"] .hero-orbit-copy .orbit-bo
 }
 
 
-/* Readable microstates: screen-sized markers with collision-aware placement. */
+/* Screen-sized targets; hit testing and ambiguous taps are handled in map.js. */
 .microstate-marker-layer{pointer-events:none}
 .microstate-marker{
-  fill:#f7b955;
-  stroke:#173f70;
-  stroke-width:var(--marker-stroke,1px);
   vector-effect:non-scaling-stroke;
   pointer-events:all;
   cursor:pointer;
   transition:opacity .18s ease,fill .18s ease;
 }
-.microstate-marker:hover{fill:#ffd27d}
 .microstate-marker.country-tried{fill:#dc4c45!important;stroke:#9f302d!important}
 .microstate-marker.country-correct{animation:microMarkerCorrect .78s ease-out}
 .microstate-marker.country-wrong{animation:microMarkerWrong .42s ease-out}
@@ -1658,15 +1654,11 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 .territory-detail:hover{fill:var(--land2)}
 .territory-detail.country-found,.territory-detail.country-correct{fill:#4ade80!important}
 .territory-detail.country-tried,.territory-detail.country-wrong{fill:#dc4c45!important}
-.microstate-marker{stroke-width:1.4px}
-.microstate-tether{stroke:#f7b955;stroke-width:1px;vector-effect:non-scaling-stroke;pointer-events:none}
+.microstate-marker{stroke-width:1.5px}
 .microstate-marker:focus-visible{stroke:white;stroke-width:3px;outline:none}
 @media(prefers-reduced-motion:reduce){.microstate-marker{transition:none}}
 
-/* + means zoom; a solid disc means select. Keep the world overview compact. */
-.microstate-marker{fill:#eef5eb;stroke:#315d55;stroke-width:1.5px;transition:opacity .18s ease,fill .18s ease}
-.microstate-marker:hover{fill:#d5e8d1}
-.microstate-tether{stroke:#315d55;stroke-width:1px}
+/* Fade targets between zoom levels without changing the geographic anchor. */
 .marker-enter{animation:mapMarkerAppear .18s ease both}
 @keyframes mapMarkerAppear{from{opacity:0}to{opacity:1}}
 #playing .map-zoom-hint{font-size:14px;gap:7px}
@@ -1675,26 +1667,17 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 @media(max-width:420px){#playing .map-zoom-hint{font-size:clamp(12px,3.5vw,14px)}}
 /* Correct coastlines turn green immediately, including reduced-motion rendering. */
 .territory-detail.country-found{transition:none}
-.target-core{fill:#315d55;stroke:none;pointer-events:none;transition:opacity .18s ease}
-.microstate-marker.country-found,.microstate-marker.country-found:hover{fill:#4ade80}
-.microstate-marker.country-found + .target-core{fill:#fffefa}
-@media(prefers-reduced-motion:reduce){.target-core{transition:none}}
-
-/* World map: dots and bare plus signs, without an overlay of outlined discs. */
-.microstate-marker[data-local="false"]{fill:#315d55;stroke:#fffefa;stroke-width:1px}
-.microstate-marker[data-local="false"] + .target-core{opacity:0!important}
-
-.microstate-marker.country-found[data-local="false"]{fill:#4ade80}
+/* Keep the existing error outline thinner at world scale. */
+.microstate-marker[data-local="false"]{stroke-width:1px}
 
 /* Small, direct targets: 5px at world scale, up to 10px when zoomed. */
 .microstate-marker,.microstate-marker:hover,.microstate-marker[data-local="false"]{fill:#111;stroke:none}
-.target-core{display:none!important}
 .microstate-marker.country-found,.microstate-marker.country-found:hover,.microstate-marker.country-found[data-local="false"]{fill:#4ade80}
-.microstate-tether{stroke:#111;stroke-width:.7px;opacity:.6;pointer-events:none}
+.microstate-tether{stroke:#111;stroke-width:.7px;vector-effect:non-scaling-stroke;opacity:.6;pointer-events:none}
 
 /* Four centred cards after the exploration reward is revealed. */
 #final .final-actions.revealed-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:min(560px,100%);margin:24px auto 0}
-#final .revealed-actions button{display:grid;align-content:center;justify-items:center;gap:10px;min-height:112px;padding:16px 12px;border:1px solid #dfd1bb;border-radius:18px;background:#fffaf2;color:#294553;font-size:15px;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere;box-shadow:0 3px 10px rgba(23,59,87,.04)}
+#final .revealed-actions button{display:grid;align-content:center;justify-items:center;gap:10px;min-height:112px;padding:16px 12px;border:1px solid #dfd1bb;border-radius:18px;background:#fae1cf;color:#294553;font-size:15px;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere;box-shadow:0 3px 10px rgba(23,59,87,.04)}
 #final .revealed-actions button::before{content:'';width:24px;height:24px;background:center/24px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z'/%3E%3C/svg%3E")}
 #finalExploreCollection::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Crect x='6' y='3' width='14' height='18' rx='2'/%3E%3Cpath d='M3 6v13a2 2 0 0 0 2 2m5-13h6m-6 4h6'/%3E%3C/svg%3E")!important}
 #final .revealed-actions #challengeFriend::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Ccircle cx='5' cy='12' r='3'/%3E%3Ccircle cx='18' cy='5' r='3'/%3E%3Ccircle cx='18' cy='19' r='3'/%3E%3Cpath d='m8 11 7-4m-7 6 7 4'/%3E%3C/svg%3E")}

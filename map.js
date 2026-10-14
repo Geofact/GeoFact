@@ -89,13 +89,13 @@
         if(candidates.length){anchor=candidates[0];break;}
       }
       if (!anchor) throw new Error(`No interior anchor: ${source.dataset.iso}`);
-      const tether=make('line','microstate-tether'), marker=make('circle','microstate-marker'), core=make('circle','target-core');
-      core.setAttribute('aria-hidden','true');
+      const tether=make('line','microstate-tether');
+      const marker=make('circle','microstate-marker');
       marker.dataset.iso=source.dataset.iso;
       marker.dataset.anchorX=anchor.x;marker.dataset.anchorY=anchor.y;
       if(!readOnly){marker.setAttribute('role','button');marker.dataset.i18nAria='smallCountryTarget';}else marker.setAttribute('aria-hidden','true');
       marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!readOnly&&marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
-      return {source,marker,core,tether,anchor,box,area:main.area};
+      return {source,marker,tether,anchor,box,area:main.area};
     });
     let visible = [];
     const coarse = matchMedia('(pointer: coarse)');
@@ -131,7 +131,7 @@
         const x=matrix.a*item.anchor.x+matrix.c*item.anchor.y+matrix.e,y=matrix.b*item.anchor.x+matrix.d*item.anchor.y+matrix.f;
         const blocked=controls.some(r=>x+half+3>r.left&&x-half-3<r.right&&y+half+3>r.top&&y-half-3<r.bottom);
         const active=(item.source.classList.contains('territory-detail')||item.area<24)&&opacity>.02&&x>=rect.left-radius&&x<=rect.right+radius&&y>=rect.top-radius&&y<=rect.bottom+radius&&!blocked;
-        item.marker.dataset.local=String(detail>.5);item.core.style.display='none';item.tether.style.display='none';
+        item.marker.dataset.local=String(detail>.5);item.tether.style.display='none';
         if(active){
           // Only tuck a dot inward at the edge; its original geographic anchor stays unchanged.
           const p=svg.createSVGPoint();p.x=Math.max(rect.left+radius+1,Math.min(rect.right-radius-1,x));p.y=Math.max(rect.top+radius+1,Math.min(rect.bottom-radius-1,y));

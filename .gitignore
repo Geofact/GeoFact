@@ -1,0 +1,5 @@
+# Local validation output and development dependencies are not site assets.
+work/
+node_modules/
+playwright-report/
+test-results/
