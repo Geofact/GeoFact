@@ -105,3 +105,9 @@ Ajouter les variables Playwright/Chromium indiquées plus haut si nécessaire. L
 Scénarios : progression bonus partielle, coffre scellé, coffre déjà ouvert, Daily commencé après un Daily terminé. Tous incluent cartes, raretés, doublons, séries, compteurs, statistiques historiques, préférences et reçus. Un Daily en cours est un état de jeu en mémoire, pas une sauvegarde de tour persistante ; le test préserve les données réellement enregistrées et ne prétend pas restaurer ce tour après rechargement.
 
 Les ressources de l’ancienne version sont mises en cache explicitement par URL complète dans le harnais, car les interceptions Playwright désactivent le cache HTTP natif. C’est une simulation du cache HTTP chaud, pas une validation des en-têtes de production. Aucun manifest ni service worker n’existe dans cette version. Les deux RPC Supabase sont interceptés et aucun profil réel n’est utilisé.
+
+## Corpus d’anecdotes du 14 octobre 2026
+
+`geofact.test.js` vérifie les 201 entrées historiques contre la fixture figée, les quatre ajouts pour chacun des 195 pays, les 780 textes FR/EN exacts et les trois cycles de rotation. Les sources éditoriales restent dans `docs/facts-20261014-sources.json`, hors du chargement du jeu.
+
+`facts-expansion.mjs`, intégré à `npm run test:browser`, vérifie une réponse et un cycle dans la version précédente, puis une mise à jour sur la même origine sans effacer de stockage. Il contrôle les anciens indices, les ajouts disponibles, les rechargements, la traduction du même fait et les anecdotes longues en Daily, entraînement et défi sur ordinateur/mobile. Coffre et collection restent dans les parcours. `FACTS_CAPTURE_DIR=/chemin/local` active les captures ; `GEOFACT_FACTS_BASELINE_DIR=/chemin/archive` permet d’utiliser les fichiers exacts de la version précédente au lieu du corpus historique figé.

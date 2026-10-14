@@ -26,9 +26,75 @@ test('All 195 countries have one selectable geometry, bilingual names, capitals 
     assert.ok(['africa','americas','asia','europe','oceania'].includes(c.continent));
     for (const f of facts[c.iso]) for (const key of ['fr', 'en', 'emoji', 'category']) assert.ok(typeof f[key] === 'string' && f[key].trim());
   }
-  assert.equal(Object.values(facts).flat().length, 201);
+  assert.equal(Object.values(facts).flat().length, 981);
   assert.notDeepEqual(facts.COG, facts.COD);
   assert.deepEqual(Object.fromEntries(['africa','americas','asia','europe','oceania'].map(x => [x, countries.filter(c => c.continent === x).length])), {africa:54,americas:35,asia:48,europe:44,oceania:14});
+});
+test('The 780-fact corpus is appended to all 195 unchanged historical arrays with exact FR/EN texts', () => {
+  const before = require('./fixtures/facts-before-20261014.json');
+  const editorial = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/facts-20261014-sources.json'), 'utf8'));
+  assert.equal(Object.keys(before).length, 195);
+  assert.equal(Object.values(before).flat().length, 201);
+  assert.equal(editorial.facts.length, 780);
+  assert.equal(new Set(editorial.facts.map(f => f.id)).size, 780);
+  assert.deepEqual([...new Set(editorial.facts.map(f => f.iso3))].sort(), Object.keys(before).sort());
+  const categories = new Set(Object.values(before).flat().map(f => f.category));
+  for (const iso of Object.keys(before)) {
+    assert.equal(facts[iso].length, before[iso].length + 4, iso);
+    assert.deepEqual(facts[iso].slice(0, before[iso].length), before[iso], iso + ' preserves every old field and index');
+    const source = editorial.facts.filter(f => f.iso3 === iso);
+    assert.equal(source.length, 4, iso + ' has exactly four editorial entries');
+    for (let offset = 0; offset < 4; offset++) {
+      const added = facts[iso][before[iso].length + offset], original = source[offset];
+      assert.deepEqual(Object.keys(added).sort(), ['category', 'emoji', 'en', 'fr']);
+      assert.ok(categories.has(added.category), iso + ' uses an existing category');
+      assert.match(added.emoji, /\p{Extended_Pictographic}/u);
+      assert.notEqual(added.fr, added.en, original.id + ' has two translations');
+      for (const language of ['fr', 'en']) {
+        assert.equal(added[language], original[language], original.id + ' ' + language + ' is preserved exactly');
+        assert.ok(added[language].trim());
+        assert.doesNotMatch(added[language], /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/u);
+      }
+      assert.ok(original.sources.length > 0, original.id + ' retains sources');
+      for (const reference of original.sources) {
+        assert.ok(reference.name.trim());
+        assert.ok(['https:', 'http:'].includes(new URL(reference.url).protocol));
+      }
+    }
+  }
+  const factsURL = html.match(/src="(data\/facts\.js[^"]*)"/)[1].replaceAll('&amp;', '&');
+  assert.equal(new URL(factsURL, 'https://geofact.app/').searchParams.get('facts'), '20261014-780');
+});
+test('All expanded countries rotate without repetition, survive JSON reload and expose new indices to old saves', () => {
+  const before = require('./fixtures/facts-before-20261014.json');
+  for (const iso of Object.keys(before)) {
+    const count = facts[iso].length;
+    let history = {}, last, draw = 0;
+    for (let cycle = 0; cycle < 3; cycle++) {
+      const seen = new Set();
+      for (let n = 0; n < count; n++) {
+        const index = core.chooseFact(iso, count, history, () => ((draw++ * 37) % 97) / 97);
+        assert.ok(index >= 0 && index < count, iso);
+        assert.ok(!seen.has(index), iso + ' has no repeat within its cycle');
+        if (n === 0 && last !== undefined) assert.notEqual(index, last, iso + ' avoids immediate cycle repetition');
+        seen.add(index); last = index;
+        history = JSON.parse(JSON.stringify(history));
+        assert.equal(history[iso].last, index);
+      }
+      assert.equal(seen.size, count, iso + ' visits the whole expanded array');
+    }
+    const oldIndices = before[iso].map((_, index) => index);
+    const recovered = {[iso]: {seen: oldIndices.slice(), last: oldIndices.at(-1)}, other: {seen: [0], last: 0}};
+    const newIndices = new Set();
+    for (let n = 0; n < 4; n++) {
+      const index = core.chooseFact(iso, count, recovered, () => .5);
+      assert.ok(index >= before[iso].length, iso + ' exhausts unseen additions before replaying old facts');
+      newIndices.add(index);
+      assert.deepEqual(recovered[iso].seen.slice(0, oldIndices.length), oldIndices, iso + ' keeps historical indices');
+      assert.deepEqual(recovered.other, {seen: [0], last: 0});
+    }
+    assert.equal(newIndices.size, 4, iso + ' exposes all four new entries');
+  }
 });
 test('Difficulty pools cover every country without duplicates and include confirmed historical choices', () => {
   assert.deepEqual(core.levels.map(level => countries.filter(c => c.difficulty === level).length), [50, 80, 65]);
