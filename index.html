@@ -23,9 +23,9 @@
   <link rel="icon" href="assets/geofact-icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <script src="i18n.js?v=20261009-update1&amp;home=20261012-album1&amp;map=20261014-1"></script>
+  <script src="i18n.js?v=20261009-update1&amp;home=20261012-album1&amp;map=20261014-rewardmap1"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;album=20261012-1&amp;home=20261012-next1&amp;map=20261014-1">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;album=20261012-1&amp;home=20261012-next1&amp;map=20261014-rewardmap1">
 </head>
 <body>
   <main class="app">
@@ -144,13 +144,18 @@
       <div id="cardReveal" class="card-reveal hidden" aria-live="polite"></div>
       <p class="versus hidden" id="versus"></p><p class="hidden" id="opponentScore"></p>
       <button id="finalBonusRewards" class="secondary hidden" type="button"></button>
-      <div class="actions final-actions"><button id="challengeFriend" class="primary" data-i18n="challengeFriend">Défier un ami</button><button id="replay" class="secondary" data-i18n="replay">Rejouer</button><button class="secondary" data-home data-i18n="home">Accueil</button></div>
+      <div class="actions final-actions"><button id="finalExploreCollection" class="secondary hidden" type="button"></button><button id="finalSeeCountryMap" class="secondary hidden" type="button" data-i18n="rewardSeeMap">Voir sur la carte</button><button id="challengeFriend" class="primary" data-i18n="challengeFriend">Défier un ami</button><button id="replay" class="secondary" data-i18n="replay">Rejouer</button><button class="secondary" data-home data-i18n="home">Accueil</button></div>
     </section>
     <p id="rewardStatus" class="hidden" role="status"></p><button id="retryRewards" class="secondary hidden" type="button"></button>
     <div id="toast" class="toast hidden" role="status"></div>
   <div id="howModal" class="how-modal hidden" role="dialog" aria-modal="true" aria-labelledby="howTitle"><div class="how-sheet"><button id="closeHow" class="how-close" type="button" aria-label="Fermer" data-i18n-aria="close">×</button><span class="home-kicker" data-i18n="howKicker">GeoFact en 1 minute</span><h2 id="howTitle" data-i18n="howTitle">Comment jouer ?</h2><div class="how-grid"><article><b data-i18n="howDailyTitle">Daily</b><p data-i18n="howDailyText">Trouve les 5 pays du jour sur la carte. Une erreur coûte des points selon ta distance. Termine le Daily pour ouvrir ton coffre quotidien.</p></article><article><b data-i18n="howPracticeTitle">Entraînement</b><p data-i18n="howPracticeText">Joue sans limite, par difficulté ou avec les pays que tu choisis toi-même. Aucun score à protéger.</p></article><article><b data-i18n="howChallengeTitle">Défie tes amis</b><p data-i18n="howChallengeText">Joue 5 pays puis partage ton lien. Ton ami reçoit exactement la même série et tente de battre ton score.</p></article><article><b data-i18n="howMapTitle">Sur la carte</b><p data-i18n="howMapText">Clique ou touche le pays que tu penses juste. Si tu te trompes, GeoFact t’indique la distance. Tu peux déplacer et zoomer la carte.</p></article><article><b data-i18n="howFactsTitle">Apprends</b><p data-i18n="howFactsText">Quand tu trouves un pays, découvre un fait surprenant et partage-le si tu veux.</p></article><article><b data-i18n="howCollectionTitle">Collection</b><p data-i18n="howCollectionText">Chaque Daily terminé donne un coffre. Ton score améliore tes chances de tirer une carte Silver, Gold ou Shiny.</p></article></div></div></div>
 
   </main>
+  <dialog id="countryMapDialog" class="country-map-dialog" aria-labelledby="countryMapHeading countryMapName">
+    <header class="country-map-heading"><div><h2 id="countryMapHeading" data-i18n="rewardSeeMap">Voir sur la carte</h2><p id="countryMapName"></p></div><button id="closeCountryMap" class="country-map-close" type="button" data-i18n-aria="close" aria-label="Fermer">×</button></header>
+    <div id="countryMapWrap" class="map-wrap country-map-wrap"><div class="map-controls"><button id="countryMapZoomIn" type="button" data-i18n-aria="zoomIn">+</button><button id="countryMapZoomOut" type="button" data-i18n-aria="zoomOut">−</button><button id="countryMapWorld" type="button" data-i18n-aria="resetMap">↺</button></div></div>
+    <button id="countryMapRefocus" class="text-button" type="button" data-i18n="rewardMapRefocus">Recentrer sur le pays</button><p class="country-map-hint" data-i18n="rewardMapHint">Le pays est indiqué en vert. Zoome ou déplace la carte pour explorer.</p>
+  </dialog>
   <dialog id="bonusDialog" class="bonus-dialog" aria-labelledby="bonusDialogTitle"><div class="collection-head"><h2 id="bonusDialogTitle" data-i18n="bonusChests">Coffres bonus</h2><button id="closeBonusRewards" class="text-button" data-i18n="close" type="button">Fermer</button></div><div id="bonusChestList" class="bonus-chest-list"></div><div id="bonusChestStage" class="daily-chest hidden"><strong data-i18n="bonusChestReady">Ton coffre bonus t’attend</strong></div><div id="bonusCardReveal" class="card-reveal hidden" aria-live="polite"></div><button id="bonusViewCollection" class="secondary" type="button" data-i18n="viewCollection">Voir ma collection</button><p id="bonusRewardStatus" role="status"></p><button id="retryBonusRewards" class="secondary hidden" type="button"></button></dialog>
   <dialog id="copyDialog"><h2 data-i18n="copyTitle">Copie ton partage</h2><p data-i18n="copyHelp">Sélectionne ce texte et copie-le pour le partager.</p><textarea id="copyText" readonly aria-label="Texte à partager" data-i18n-aria="shareText"></textarea><button id="closeCopy" class="primary" data-i18n="close">Fermer</button></dialog>
   <noscript>GeoFact a besoin de JavaScript pour fonctionner. / GeoFact needs JavaScript to run.</noscript>
@@ -163,9 +168,9 @@
   <script src="public-statistics.js?v=20261009-update1"></script>
   <script src="daily-periods.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
   <script src="core.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
-  <script src="data/small-territories.js?v=20261009-update1&amp;map=20261014-1"></script>
-  <script src="map.js?v=20261009-update1&amp;map=20261014-1"></script>
+  <script src="data/small-territories.js?v=20261009-update1&amp;map=20261014-rewardmap1"></script>
+  <script src="map.js?v=20261009-update1&amp;map=20261014-rewardmap1"></script>
   <script src="collection-album.js?v=20261009-update1&amp;home=20261012-album1"></script>
-  <script src="app.js?v=20261009-update1&amp;home=20261012-album1&amp;map=20261014-1"></script>
+  <script src="app.js?v=20261009-update1&amp;home=20261014-rewardmap1&amp;map=20261014-rewardmap1"></script>
 </body>
 </html>

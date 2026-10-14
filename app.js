@@ -223,7 +223,31 @@
   const t = (key, values = {}) => (GeoFactTranslations[lang][key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
   const format = n => n.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB');
   const flag = c => [...c.a2].map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
+  // Clone the untouched geometry before the quiz map splits overseas territories.
+  const countryMapTemplate=$('map').cloneNode(true);
   const map = GeoFactMap($('map'), guess);
+  let countryLookupMap=null,lookupISO=null,lookupSource=null,returnBonusMap=false;
+  function updateCountryLocation(){
+    const c=byISO.get(lookupISO);if(!c)return;
+    $('countryMapName').textContent=c.name[lang];
+    $('countryLookupMap')?.setAttribute('aria-label',t('rewardMapLabel',{country:c.name[lang]}));
+  }
+  function showCountryLocation(iso,source){
+    if(!byISO.has(iso))return;
+    closeCardModal();lookupISO=iso;lookupSource=source;returnBonusMap=$('bonusDialog').open;
+    if(returnBonusMap)$('bonusDialog').close();
+    $('countryMapDialog').showModal();
+    if(!countryLookupMap){const svg=countryMapTemplate.cloneNode(true);svg.id='countryLookupMap';svg.removeAttribute('data-i18n-aria');$('countryMapWrap').prepend(svg);countryLookupMap=GeoFactMap(svg,()=>{},{readOnly:true});}
+    updateCountryLocation();countryLookupMap.reset();countryLookupMap.locateCountry(iso);$('closeCountryMap').focus({preventScroll:true});
+  }
+  $('closeCountryMap').addEventListener('click',()=>$('countryMapDialog').close());
+  $('countryMapDialog').addEventListener('close',()=>{if(returnBonusMap){returnBonusMap=false;$('bonusDialog').showModal();}(lookupSource?.isConnected?lookupSource:$('bonusCardReveal').querySelector('[data-country-map]'))?.focus({preventScroll:true});});
+  $('countryMapZoomIn').addEventListener('click',()=>countryLookupMap?.zoom(1.6));
+  $('countryMapZoomOut').addEventListener('click',()=>countryLookupMap?.zoom(1/1.6));
+  $('countryMapWorld').addEventListener('click',()=>{countryLookupMap?.reset();countryLookupMap?.locateCountry(lookupISO);countryLookupMap?.zoom(1/300);});
+  $('countryMapRefocus').addEventListener('click',()=>countryLookupMap?.locateCountry(lookupISO));
+  $('finalSeeCountryMap').addEventListener('click',e=>{const result=selectedDailyResult();if(result?.cardOpened&&result.card)showCountryLocation(result.card.iso,e.currentTarget);});
+  $('finalExploreCollection').addEventListener('click',()=>{const result=selectedDailyResult();if(result?.cardOpened&&result.card)viewCollection(album.regionOf(result.card.iso));});
   let resultFocus = null, resultScroll = null, copyResultState = null;
   const nextHome = {parent:$('next').parentNode,next:$('next').nextSibling};
   const toastHome = {parent:$('toast').parentNode,next:$('toast').nextSibling};
@@ -478,7 +502,7 @@
       else {const locked=document.createElement('article');locked.className='flag-card locked';locked.dataset.country=iso;locked.innerHTML='<div class="card-flag" aria-hidden="true">?</div><h3></h3><p></p>';locked.querySelector('h3').textContent=byISO.get(iso).name[lang];locked.querySelector('p').textContent=t('lockedCard');grid.appendChild(locked);}
     }
   }
-  function rewardSummary(card,discovery) {
+  function rewardSummary(card,discovery,{daily=false}={}) {
     const summary=document.createElement('div');summary.className='reward-summary';
     const kind=discovery?.version===1?discovery.kind:null;
     summary.dataset.kind=kind||'historical';
@@ -489,7 +513,8 @@
     const meter=document.createElement('progress');meter.max=progress.total;meter.value=progress.owned;meter.setAttribute('aria-label',label.textContent);summary.appendChild(meter);
     if(kind==='country'){const advance=document.createElement('p');advance.className='reward-advance';advance.textContent=t('rewardAdvance',{before:format(discovery.before),after:format(discovery.after)});summary.appendChild(advance);
       if(discovery.before<discovery.total&&discovery.after===discovery.total){const completed=document.createElement('p');completed.className='reward-complete';completed.textContent=t('rewardContinentComplete',{continent:continentLabel(region)});summary.appendChild(completed);}}
-    const button=document.createElement('button');button.type='button';button.className='secondary reveal-collection';button.dataset.rewardContinent=region;button.textContent=t('rewardViewContinent',{continent:continentLabel(region)});button.addEventListener('click',()=>viewCollection(region));summary.appendChild(button);
+    if(!daily){const actions=document.createElement('div');actions.className='bonus-reveal-actions';
+    const button=document.createElement('button');button.type='button';button.className='secondary reveal-collection';button.dataset.rewardContinent=region;button.textContent=t('rewardViewContinent',{continent:continentLabel(region)});button.addEventListener('click',()=>viewCollection(region));actions.appendChild(button);const locate=document.createElement('button');locate.type='button';locate.className='secondary';locate.dataset.countryMap=card.iso;locate.textContent=t('rewardSeeMap');locate.addEventListener('click',()=>showCountryLocation(card.iso,locate));actions.appendChild(locate);summary.appendChild(actions);}
     return summary;
   }
   function revealDailyCard(result) {
@@ -497,7 +522,7 @@
     const reveal=$('cardReveal');reveal.dataset.rarity=result.card.rarity;
     const card=cardElement(result.card.iso,result.card.rarity);card.classList.add('zoomable-card');card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',t('albumInspectCard',{country:byISO.get(result.card.iso).name[lang],rarity:rarityLabel(result.card.rarity)}));
     const open=()=>openCardModal(result.card.iso,result.card.rarity);card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
-    const summary=rewardSummary(result.card,result.discovery);summary.insertBefore(card,summary.querySelector('.reward-continent'));reveal.replaceChildren(summary);reveal.classList.remove('hidden');$('dailyChest').classList.add('hidden');
+    const summary=rewardSummary(result.card,result.discovery,{daily:true});summary.insertBefore(card,summary.querySelector('.reward-continent'));reveal.replaceChildren(summary);reveal.classList.remove('hidden');$('dailyChest').classList.add('hidden');$('finalSeeCountryMap').classList.remove('hidden');$('finalExploreCollection').classList.remove('hidden');$('final').querySelector('.final-actions').classList.add('revealed-actions');$('finalExploreCollection').dataset.rewardContinent=album.regionOf(result.card.iso);$('finalExploreCollection').textContent=t('rewardViewContinent',{continent:continentLabel(album.regionOf(result.card.iso))});
   }
   function renderRewardStatus() {
     $('chooseDaily').disabled = rewardsLoading;
@@ -597,6 +622,7 @@
       if (resultLink) $('challengeResultSummary').textContent = t('challengeResultSummary', { mine: format(state.challenge.s), friend: format(state.challenge.r) });
       $('acceptChallenge').textContent = t(resultLink ? 'revenge' : 'accept');
     }
+    if($('countryMapDialog').open)updateCountryLocation();
     if (state.screen === 'final') {
       $('finalScore').textContent = `${format(state.score)} / ${format(core.SCORE_MAX)}`;
       const dailyMode = state.mode === 'daily';
@@ -606,6 +632,11 @@
       $('dailyFinalStats').classList.toggle('hidden', !dailyMode);
       $('personalBest').classList.toggle('hidden', dailyMode);
       $('replay').classList.toggle('hidden', dailyMode);
+      const revealedCard=dailyMode&&selectedDailyResult()?.cardOpened&&selectedDailyResult()?.card;
+      $('finalSeeCountryMap').classList.toggle('hidden',!revealedCard);$('finalExploreCollection').classList.toggle('hidden',!revealedCard);
+      $('final').querySelector('.final-actions').classList.toggle('revealed-actions',!!revealedCard);
+      if(revealedCard)$('finalExploreCollection').dataset.rewardContinent=album.regionOf(revealedCard.iso);
+      if(revealedCard)$('finalExploreCollection').textContent=t('rewardViewContinent',{continent:continentLabel(album.regionOf(revealedCard.iso))});
       if (dailyMode) {
         renderDailyMarks($('dailyFinalTiles'), state.dailyTiles);
         $('dailyFinalErrors').classList.remove('hidden');
@@ -641,7 +672,7 @@
   function clearURL() {
     try { const url = new URL(location.href); url.search = ''; url.hash = ''; history.replaceState(null, '', url); } catch { /* Some browsers restrict file URL history. */ }
   }
-  function home() { state = blankState(); justUnlockedCard = false; map.reset(); clearURL(); render(); $('chooseDaily').focus({ preventScroll: true }); }
+  function home() { if($('countryMapDialog').open){returnBonusMap=false;$('countryMapDialog').close();} state = blankState(); justUnlockedCard = false; map.reset(); clearURL(); render(); $('chooseDaily').focus({ preventScroll: true }); }
 
   function transitionFromHome(action) {
     const homeEl = $('home');

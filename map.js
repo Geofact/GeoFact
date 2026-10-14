@@ -1,10 +1,10 @@
 (function (root) {
   'use strict';
-  function createMap(svg, onGuess) {
+  function createMap(svg, onGuess, {readOnly=false}={}) {
     const base = { x: 0, y: 0, w: 1200, h: 600 };
     let view = { ...base }, drag = null, pinch = null, moved = false, multi = false;
     const pointers = new Map();
-    let celebrationTimer = null, zoomGuardUntil = 0;
+    let celebrationTimer = null, zoomGuardUntil = 0, locationTarget = null, locationPin = null;
     const microstates = [...svg.querySelectorAll('circle[data-iso]')];
     const frenchPath = svg.querySelector('path.country-shape[data-iso="FRA"]');
     if (frenchPath) {
@@ -93,8 +93,8 @@
       core.setAttribute('aria-hidden','true');
       marker.dataset.iso=source.dataset.iso;
       marker.dataset.anchorX=anchor.x;marker.dataset.anchorY=anchor.y;
-      marker.setAttribute('role','button'); marker.dataset.i18nAria='smallCountryTarget';
-      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
+      if(!readOnly){marker.setAttribute('role','button');marker.dataset.i18nAria='smallCountryTarget';}else marker.setAttribute('aria-hidden','true');
+      marker.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!readOnly&&marker.dataset.active==='true'&&performance.now()>=zoomGuardUntil)onGuess(source.dataset.iso);}});
       return {source,marker,core,tether,anchor,box,area:main.area};
     });
     let visible = [];
@@ -106,8 +106,8 @@
       if(!active && el.dataset.active==='true')el.fading=true;
       if(active)el.fading=false;
       el.dataset.active = String(active);
-      el.style.pointerEvents = active||el.fading ? 'all' : 'none';
-      el.setAttribute('tabindex', active ? '0' : '-1');
+      el.style.pointerEvents = !readOnly&&(active||el.fading) ? 'all' : 'none';
+      el.setAttribute('tabindex', active&&!readOnly ? '0' : '-1');
       if (active) {
         el.style.display = '';
         if (entering) { el.classList.remove('marker-enter'); void el.getBoundingClientRect(); el.classList.add('marker-enter'); setTimeout(()=>el.classList.remove('marker-enter'),190); }
@@ -142,6 +142,7 @@
         }
         reveal(item.marker,active,opacity);
       }
+      if(locationTarget&&locationPin){locationPin.setAttribute('cx',locationTarget.anchor.x);locationPin.setAttribute('cy',locationTarget.anchor.y);locationPin.setAttribute('r',7/scale);}
       refreshHint();
     }
     function refreshHint(){
@@ -188,8 +189,13 @@
       const x=+el.getAttribute('cx'),y=+el.getAttribute('cy');
       return {x:m.a*x+m.c*y+m.e,y:m.b*x+m.d*y+m.f};
     }
+    function preferWorldFrontier(target,candidates){
+      const real=target?.closest?.('path[data-iso]');
+      return real&&svg.contains(real)&&!target?.closest?.('.microstate-marker')&&candidates.every(i=>i.marker.dataset.local!=='true')?real:null;
+    }
     function resolveCountry(target,x,y,type){
       const candidates=nearbyTargets(x,y,type);
+      const frontier=preferWorldFrontier(target,candidates);if(frontier)return frontier.dataset.iso;
       if(candidates.length>1)return null;
       const marker=target?.closest?.('.microstate-marker[data-iso]');
       if(marker&&svg.contains(marker)&&marker.dataset.active==='true')return marker.dataset.iso;
@@ -235,13 +241,13 @@
       if (pointers.size >= 2) beginPinch();
       else if (pointers.size === 1) { pinch = null; beginDrag([...pointers.values()][0]); }
       else {
-        if (!moved && !multi && !cancelled && performance.now()>=zoomGuardUntil) {
+        if (!readOnly && !moved && !multi && !cancelled && performance.now()>=zoomGuardUntil) {
           const actualTarget = document.elementFromPoint(e.clientX, e.clientY);
           if(e.isTrusted && (!actualTarget || !svg.contains(actualTarget))){drag=pinch=null;return;}
           const hitTarget=actualTarget && svg.contains(actualTarget) ? actualTarget : p.target;
           if(hitTarget?.closest?.('.microstate-marker[data-active="false"]')){drag=pinch=null;return;}
           const candidates=nearbyTargets(e.clientX,e.clientY,p.type);
-          if(candidates.length>1){separateTargets(candidates);drag=pinch=null;return;}
+          if(candidates.length>1&&!preferWorldFrontier(hitTarget,candidates)){separateTargets(candidates);drag=pinch=null;return;}
           const iso=resolveCountry(hitTarget,e.clientX,e.clientY,p.type);
           if(iso)onGuess(iso);
         }
@@ -256,6 +262,16 @@
       const shapes = [...svg.querySelectorAll(`[data-iso="${iso}"]`)];
       for (const shape of shapes) { shape.classList.remove(className); void shape.getBoundingClientRect(); shape.classList.add(className); }
       return setTimeout(() => { for (const shape of shapes) shape.classList.remove(className); }, duration);
+    }
+    function locateCountry(iso){
+      const target=markers.find(i=>i.source.dataset.iso===iso);if(!target)return false;
+      clearFound();
+      for(const shape of svg.querySelectorAll(`[data-iso="${iso}"], [data-iso^="${iso}-"]`))shape.classList.add('country-found');
+      locationTarget=target;
+      if(!locationPin){locationPin=document.createElementNS(ns,'circle');locationPin.setAttribute('class','country-location-pin');locationPin.setAttribute('aria-hidden','true');svg.appendChild(locationPin);}
+      const full=target.source.getBBox(),box=full.width<600?{x:full.x,y:full.y,w:full.width,h:full.height}:target.box;
+      const w=Math.min(1100,Math.max(60,box.w*1.5,box.h*3));
+      setView({x:box.x+box.w/2-w/2,y:box.y+box.h/2-w/4,w});return true;
     }
     function clearFound() {
       clearTimeout(celebrationTimer);
@@ -286,7 +302,7 @@
     coarse.addEventListener('change',()=>requestAnimationFrame(layoutMicrostateMarkers));
     addEventListener('resize', () => requestAnimationFrame(layoutMicrostateMarkers));
     requestAnimationFrame(layoutMicrostateMarkers);
-    return { zoom, celebrate, clearFound, reject, reset() { zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry };
+    return { zoom, celebrate, clearFound, reject, reset() { zoomGuardUntil=0; pointers.clear(); drag = pinch = null; moved = multi = false; clearTried(); setView(base); }, getView: () => ({ ...view }), refreshHint, resolveCountry, locateCountry };
   }
   root.GeoFactMap = createMap;
 })(globalThis);

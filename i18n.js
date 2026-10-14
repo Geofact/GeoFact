@@ -1,5 +1,6 @@
 globalThis.GeoFactTranslations = {
   fr: {
+    rewardSeeMap: "Voir sur la carte", rewardMapRefocus: "Recentrer sur le pays", rewardMapHint: "Le pays est indiqué en vert. Zoome ou déplace la carte pour explorer.", rewardMapLabel: "Carte indiquant {country}",
     mapClusterHint: "Touche les repères + pour agrandir la zone.",
     smallCountriesHint: "Les petits pays sont indiqués par un point.", smallCountryTarget: "Sélectionner ce petit territoire", smallCountriesCluster: "Zoomer pour séparer ces petits territoires",
     albumNavigation: "Navigation de la collection",
@@ -98,6 +99,7 @@ globalThis.GeoFactTranslations = {
     against: 'Score de ton ami : {score} / 100', loading: 'Chargement…'
   },
   en: {
+    rewardSeeMap: "View on the map", rewardMapRefocus: "Centre on the country", rewardMapHint: "The country is highlighted in green. Zoom or drag the map to explore.", rewardMapLabel: "Map showing {country}",
     mapClusterHint: "Tap the + markers to zoom into the area.",
     smallCountriesHint: "Small countries are marked with a dot.", smallCountryTarget: "Select this small territory", smallCountriesCluster: "Zoom in to separate these small territories",
     albumNavigation: "Collection navigation",

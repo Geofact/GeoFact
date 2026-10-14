@@ -1691,3 +1691,27 @@ html[lang="en"] #home .hero-orbit-copy .orbit-bottom { font-size:31px!important;
 .target-core{display:none!important}
 .microstate-marker.country-found,.microstate-marker.country-found:hover,.microstate-marker.country-found[data-local="false"]{fill:#4ade80}
 .microstate-tether{stroke:#111;stroke-width:.7px;opacity:.6;pointer-events:none}
+
+/* Four centred cards after the exploration reward is revealed. */
+#final .final-actions.revealed-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:min(560px,100%);margin:24px auto 0}
+#final .revealed-actions button{display:grid;align-content:center;justify-items:center;gap:10px;min-height:112px;padding:16px 12px;border:1px solid #dfd1bb;border-radius:18px;background:#fffaf2;color:#294553;font-size:15px;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere;box-shadow:0 3px 10px rgba(23,59,87,.04)}
+#final .revealed-actions button::before{content:'';width:24px;height:24px;background:center/24px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z'/%3E%3C/svg%3E")}
+#finalExploreCollection::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Crect x='6' y='3' width='14' height='18' rx='2'/%3E%3Cpath d='M3 6v13a2 2 0 0 0 2 2m5-13h6m-6 4h6'/%3E%3C/svg%3E")!important}
+#final .revealed-actions #challengeFriend::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Ccircle cx='5' cy='12' r='3'/%3E%3Ccircle cx='18' cy='5' r='3'/%3E%3Ccircle cx='18' cy='19' r='3'/%3E%3Cpath d='m8 11 7-4m-7 6 7 4'/%3E%3C/svg%3E")}
+#final .revealed-actions [data-home]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23294553' stroke-width='1.6'%3E%3Cpath d='m3 10 9-7 9 7v11H3Zm6 11v-8h6v8'/%3E%3C/svg%3E")}
+.country-map-dialog{box-sizing:border-box;width:min(720px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);padding:16px;border-radius:20px;overflow:auto;background:#fffaf2}
+.country-map-heading{position:sticky;top:0;z-index:4;background:#fffaf2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.country-map-heading h2{margin:0;font-size:16px;font-weight:500;color:#667976;text-align:left}
+.country-map-heading p{margin:4px 0 0;font-size:23px;font-weight:700;color:#294553;overflow-wrap:anywhere}
+.country-map-close{flex-shrink:0;width:44px;height:44px;padding:0;border:1px solid #dfd1bb;border-radius:12px;background:#fffaf2;color:#294553;font-size:25px}
+.country-map-wrap{height:min(420px,50dvh);min-height:150px;overflow:hidden}
+#countryLookupMap{display:block;width:100%;height:100%;touch-action:none}
+.country-map-hint{margin:8px 0 0;font-size:13px;line-height:1.4;color:#667976}
+#countryMapRefocus{margin-top:10px}
+.country-location-pin{fill:#4ade80;stroke:#173f57;stroke-width:2px;vector-effect:non-scaling-stroke;pointer-events:none}
+.bonus-reveal-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.bonus-reveal-actions button{white-space:normal;min-height:64px}
+
+#countryLookupMap,#countryLookupMap .country-shape,#countryLookupMap .territory-detail{cursor:grab}
+#countryLookupMap:active,#countryLookupMap:active .country-shape,#countryLookupMap:active .territory-detail{cursor:grabbing}
+#countryLookupMap .country-shape:not(.country-found):hover,#countryLookupMap .territory-detail:not(.country-found):hover{fill:#9bc6a5}

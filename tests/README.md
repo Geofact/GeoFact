@@ -89,3 +89,5 @@ Ces tests de fermeture normale ne simulent pas une panne physique ou un arrêt f
 `npm run test:map` vérifie les nouvelles cibles avec de vrais clics souris et touchers Playwright sur des SVG rendus, puis les réponses et scores dans le jeu. Utiliser les mêmes variables Playwright et Chromium ci-dessus. Pour enregistrer les captures ordinateur/mobile du jeu, définir `GEOFACT_CAPTURE_DIR` vers un dossier de sortie local. Détails de la sélection et des sources : `docs/small-territories-map.md`.
 
 La révision visuelle est couverte par `tests/map-presentation.mjs`, intégré à `test:map`. Les captures optionnelles comprennent la vue mondiale, un regroupement ouvert, Vatican/Saint-Marin et une île, sur ordinateur et mobile. Voir `docs/small-target-presentation.md`.
+
+La consultation du pays d’une récompense est vérifiée par `tests/reward-map.mjs`, intégré à `npm run test:browser` : grille 2 × 2 après révélation, pays tiré, carte en lecture seule, retour au Daily ou au coffre bonus sans avancer le quiz, zoom, focus, FR/EN et sauvegardes inchangées. `REWARD_MAP_CAPTURE_DIR=work/reward-map-captures` permet de garder les captures du parcours.
