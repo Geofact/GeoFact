@@ -50,13 +50,14 @@ test('no autoplay or context is created before a gesture; a muted gesture create
  assert.equal(s.answer(true),false);assert.equal(created,0);assert.equal(d.nodes.length,0);
  s.setEnabled(false);s.unlock();assert.equal(created,0);s.setMusicEnabled(true);s.unlock();await flush();assert.equal(created,1);assert.equal(loops(d).length,1);
 });
-test('each combination gates only its category and uses unchanged reference gains',async()=>{
- assert.deepEqual(music.LEGACY_VOICE_GAINS,{lead:.036,bass:.040,pulse:.024});assert.equal(music.MUSIC_GAIN,.036);assert.equal(sound.EFFECT_GAIN,.035);
+test('each combination gates only its category and uses the requested 70% gain increase',async()=>{
+ assert.deepEqual(music.LEGACY_VOICE_GAINS,{lead:.036,bass:.040,pulse:.024});assert.equal(music.MUSIC_GAIN,.0612);assert.equal(sound.EFFECT_GAIN,.0595);
+ assert.ok(Math.abs(music.MUSIC_GAIN/.036-1.7)<1e-12);
  for(const m of [false,true])for(const f of [false,true]){
   const d=device(),s=createSoundEffects({...d.options,storage:memory({[MUSIC_KEY]:m?'on':'off',[EFFECTS_KEY]:f?'on':'off'})});s.unlock();await flush();s.answer(true);await flush();
   assert.equal(loops(d).length,m?1:0);assert.equal(effects(d).length,f?1:0);
-  if(m)assert.equal(loops(d)[0].target.gain.events[0][0],.036);
-  if(f){assert.equal(effects(d)[0].target.gain.events[0][0],.035);assert.ok(effects(d)[0].buffer.url.endsWith('Bonne-reponse.wav'));assert.equal(d.oscillators.length,0);}
+  if(m)assert.equal(loops(d)[0].target.gain.events[0][0],.0612);
+  if(f){assert.equal(effects(d)[0].target.gain.events[0][0],.0595);assert.ok(effects(d)[0].buffer.url.endsWith('Bonne-reponse.wav'));assert.equal(d.oscillators.length,0);}
  }
 });
 test('muting effects cuts both active and scheduled sources, leaves music running and never replays them',async()=>{
@@ -109,11 +110,11 @@ test('the supplied chest sample is scheduled so its shimmer coincides with revel
 test('answer throttling remains; each supplied answer plays once at native playback settings',async()=>{
  const d=device();let at=0;const s=createSoundEffects({...d.options,now:()=>at});s.unlock();await flush();assert.equal(s.answer(false),true);assert.equal(s.answer(false),false);assert.equal(s.answer(true),true);await flush();assert.equal(effects(d).length,2);at=200;s.answer(false);await flush();assert.equal(effects(d).length,3);
 });
-test('other rarity notification melodies and their gains are retained unchanged',async()=>{
+test('other rarity notifications retain their notes and receive the same 70% increase',async()=>{
  const d=device(),s=createSoundEffects({...d.options});s.unlock();await flush();
  for(const rarity of ['classic','silver','gold','shiny'])assert.equal(s.reveal(rarity),true);
  assert.deepEqual(d.oscillators.map(n=>n.frequency.events[0][0]),[392,523,659,440,659,880,523,659,784,1047,659,784,988,1319]);
- const notificationGains=d.gains.filter(n=>n.gain.events.length===3);assert.ok(notificationGains.every(n=>n.gain.events[1][0]===.035));
+ const notificationGains=d.gains.filter(n=>n.gain.events.length===3);assert.ok(notificationGains.every(n=>n.gain.events[1][0]===.0595));
 });
 test('missing audio, resume errors and closed devices do not interrupt game calls',async()=>{
  const d=device(),bad=createSoundEffects({...d.options,loadBuffer:()=>Promise.reject(Error('missing'))});bad.unlock();bad.answer(true);await flush();assert.equal(sampled(d).length,0);

@@ -5,10 +5,9 @@
 })(globalThis,function(){
   'use strict';
   const MUSIC_URL='assets/audio/GeoFact-Braise-Aventure-boucle.mp3';
-  // The former score had per-voice gains, not a stored user/master volume.
-  // Use its existing melody reference for the supplied, already mixed recording.
+  // Historical voice references are retained; playback is raised by 70%.
   const LEGACY_VOICE_GAINS=Object.freeze({lead:.036,bass:.040,pulse:.024});
-  const MUSIC_GAIN=LEGACY_VOICE_GAINS.lead;
+  const MUSIC_GAIN=.0612; // .036 × 1.7
   function createAdventureMusic(context,{loadBuffer}={}){
     if(!context?.createBufferSource||!context?.createGain||!loadBuffer)return null;
     let buffer=null,loading=null,source=null,gain=null,wanted=false,disposed=false,position=0,startedAt=0;

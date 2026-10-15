@@ -5,7 +5,7 @@
 })(globalThis,function(){
   'use strict';
   const SOUND_KEY='gf-sound-v1',MUSIC_KEY='gf-music-v1',EFFECTS_KEY='gf-effects-v1';
-  const EFFECT_GAIN=.035;
+  const EFFECT_GAIN=.0595; // .035 × 1.7
   const ASSETS=Object.freeze({correct:'assets/audio/GeoFact-Bonne-reponse.wav',wrong:'assets/audio/GeoFact-Mauvaise-reponse.wav',chest:'assets/audio/GeoFact-Coffre-scintillant.wav'});
   // The validated recording rises into its principal shimmer at 0.55 seconds.
   const CHEST_REVEAL_CUE=.55;
@@ -125,7 +125,7 @@
       const notes=melodies[effect];if(!notes)return false;
       try{
         const start=context.currentTime;
-        for(const [frequency,duration,delay,level=.035] of notes){
+        for(const [frequency,duration,delay,level=EFFECT_GAIN] of notes){
           const oscillator=context.createOscillator(),gain=context.createGain();
           oscillator.type='sine';oscillator.frequency.setValueAtTime(frequency,start+delay);
           gain.gain.setValueAtTime(0,start+delay);gain.gain.linearRampToValueAtTime(level,start+delay+.012);
