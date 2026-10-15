@@ -947,7 +947,7 @@ select {min-height:40px; max-width:104px; padding:7px 8px;}
 }
 @media (max-width:420px){#collection .album-continent {padding:16px 13px; min-height:163px; gap:12px;}
 #collection .album-continent-title {font-size:17px; max-width:100%; min-height:43px;}
-#collection .album-stamp {display:none;}
+#collection .album-stamp {display:block; position:static; align-self:flex-end; order:-1; width:28px; height:28px;}
 #collection .album-continent-count {font-size:24px;}
 #collection .album-continent-status {font-size:12px;}
 #collection .collection-tools {flex-wrap:wrap;}
@@ -1177,3 +1177,9 @@ dialog::backdrop, .result-dialog::backdrop {background:rgba(10,8,16,.78);}
 .audio-switch:has(input:focus-visible) {outline:2px solid var(--sun);outline-offset:-2px;border-radius:8px;}
 .audio-sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 @media(prefers-reduced-motion:reduce){.audio-switch-track,.audio-switch-track::after{transition:none;}}
+
+/* Continent collection progress: preserve the native, accessible progress value. */
+#collection .album-continent progress {background:var(--line);}
+#collection .album-continent progress::-webkit-progress-bar {background:var(--line);}
+#collection .album-continent progress::-webkit-progress-value {background:#ff986f;}
+#collection .album-continent progress::-moz-progress-bar {background:#ff986f;}

@@ -58,6 +58,7 @@
   document.addEventListener('visibilitychange',()=>sounds.setVisible(!document.hidden));
   window.addEventListener('pagehide',()=>sounds.setVisible(false));
   window.addEventListener('pageshow',()=>sounds.setVisible(!document.hidden));
+  window.addEventListener('focus',()=>sounds.setVisible(!document.hidden));
   const seen = storage.read('wg-seen-facts', {});
   const validHistory = seen && typeof seen === 'object' && !Array.isArray(seen) ? seen : {};
   const oldStats = storage.read('wg-stats', {});
@@ -222,6 +223,30 @@
       answered: false, attempts: 0, points: core.ROUND_MAX, score: 0, streak: 0, factIndex: null, wrong: null, wrongGuesses: [], challenge: null, dailyTiles: [], dailyErrors: 0, practicePool: [], bonusMode: null };
   }
   let state = blankState();
+  const DAILY_SESSION_KEY='gf-daily-session-v1';
+  function persistDailySession(){
+    if(state.mode!=='daily'||state.screen!=='playing'||!state.current)return;
+    const fields=['dailyKey','dailyNumber','series','index','answered','attempts','points','score','streak','factIndex','wrong','wrongGuesses','dailyTiles','dailyErrors'];
+    const saved={version:1};for(const field of fields)saved[field]=state[field];
+    storage.write(DAILY_SESSION_KEY,saved);
+  }
+  function restoreDailySession(daily){
+    const saved=storage.read(DAILY_SESSION_KEY,null);
+    if(!saved||saved.version!==1||saved.dailyKey!==daily.key||daily.result||
+      !Array.isArray(saved.series)||JSON.stringify(saved.series)!==JSON.stringify(daily.series)||
+      !Number.isInteger(saved.index)||saved.index<0||saved.index>4||
+      typeof saved.answered!=='boolean'||!Array.isArray(saved.dailyTiles)||
+      saved.dailyTiles.length!==saved.index+(saved.answered?1:0)||
+      !Array.isArray(saved.wrongGuesses)||saved.wrongGuesses.some(iso=>!byISO.has(iso)&&!overseas[iso])||
+      !['attempts','points','score','streak','dailyErrors'].every(key=>Number.isSafeInteger(saved[key])&&saved[key]>=0)||
+      saved.points>core.ROUND_MAX||saved.score>core.SCORE_MAX)return false;
+    const current=byISO.get(saved.series[saved.index]);
+    if(saved.answered&&(!Number.isInteger(saved.factIndex)||!facts[current.iso]?.[saved.factIndex]))return false;
+    state={...blankState(),...saved,mode:'daily',difficulty:'daily',screen:'playing',current};
+    map.reset();for(const iso of state.wrongGuesses)map.reject(iso);
+    render();return true;
+  }
+
   const t = (key, values = {}) => (GeoFactTranslations[lang][key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
   const format = n => n.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB');
   const flag = c => [...c.a2].map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
@@ -547,6 +572,7 @@
     $('retryBonusRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
   }
   function render() {
+    persistDailySession();
     sounds.cancelInvalidChests();
     if(state.screen !== 'playing' || !state.answered) closeResult({restoreFocus:false});
     $('closedResultActions').classList.toggle('hidden',state.screen !== 'playing' || !state.answered || $('resultDialog').open);
@@ -850,7 +876,7 @@
     const daily = todayDaily();
     if (daily.result) {
       state = blankState(); state.mode = 'daily'; state.dailyKey = daily.key; state.dailyNumber = daily.number; state.series = daily.series; state.score = daily.result.score; state.dailyTiles = [...daily.result.tiles].map(normalizeDailyMark); state.dailyErrors = Number.isSafeInteger(daily.result.errors) ? daily.result.errors : 0; state.screen = 'final'; render();
-    } else { transitionFromHome(() => start('daily', 'daily')); }
+    } else { transitionFromHome(() => { if(!restoreDailySession(daily))start('daily', 'daily'); }); }
   });
   $('resumeDailyChest').addEventListener('click', async () => {
     const day = $('resumeDailyChest').dataset.day; await refreshRewards();

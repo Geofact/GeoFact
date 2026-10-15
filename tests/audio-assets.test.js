@@ -78,10 +78,22 @@ test('music uses one native loop, no restart timer, resumes its position and doe
 test('a music load finishing after mute cannot start playback, and loading twice creates one source',async()=>{
  const d=device('running');let release;const m=music.createAdventureMusic(d.ctx,{loadBuffer:()=>new Promise(resolve=>{release=()=>resolve({duration:20,url:'music.mp3'});})});m.start();await flush();m.stop();release();await flush();assert.equal(loops(d).length,0);m.start();m.start();assert.equal(loops(d).length,1);
 });
-test('background silences categories and foreground never resumes a suspended device without a gesture',async()=>{
+test('background silences categories and foreground automatically recovers authorized audio',async()=>{
  const d=device(),s=createSoundEffects({...d.options});s.unlock();await flush();s.answer(true);await flush();s.setVisible(false);assert.ok(sampled(d).every(n=>n.stopped));
- d.ctx.state='suspended';const before=d.resumes();s.setVisible(true);assert.equal(d.resumes(),before);assert.equal(loops(d).filter(n=>!n.stopped).length,0);
- s.unlock();await flush();assert.equal(d.resumes(),before+1);assert.equal(loops(d).filter(n=>!n.stopped).length,1);assert.equal(effects(d).length,1);
+ d.ctx.state='suspended';const before=d.resumes();s.setVisible(true);await flush();assert.equal(d.resumes(),before+1);
+ assert.equal(loops(d).filter(n=>!n.stopped).length,1);assert.equal(effects(d).length,1);
+ s.unlock();s.unlock();await flush();assert.equal(loops(d).filter(n=>!n.stopped).length,1);
+});
+test('an unresolved or rejected mobile resume never blocks the next gesture, for all settings',async()=>{
+ for(const m of [false,true])for(const e of [false,true]){
+  const d=device(),store=memory({[MUSIC_KEY]:m?'on':'off',[EFFECTS_KEY]:e?'on':'off'});
+  let calls=0;d.ctx.resume=()=>{calls++;if(calls===1)return new Promise(()=>{});d.ctx.state='running';return Promise.resolve();};
+  const s=createSoundEffects({...d.options,storage:store});s.unlock();s.unlock();await flush();s.answer(true);await flush();
+  assert.equal(loops(d).filter(n=>!n.stopped).length,m?1:0);assert.equal(effects(d).length,e?1:0);
+  if(m||e){s.setVisible(false);d.ctx.state='interrupted';d.ctx.resume=()=>Promise.reject(new Error('gesture required'));s.setVisible(true);await flush();
+   d.ctx.resume=()=>{d.ctx.state='running';return Promise.resolve();};s.unlock();await flush();
+   assert.equal(loops(d).filter(n=>!n.stopped).length,m?1:0);s.answer(false);await flush();assert.equal(effects(d).length,e?2:0);}
+ }
 });
 test('delayed Safari resume preserves only the current answer; a mute cancels queued audio',async()=>{
  for(const muted of [false,true]){
@@ -107,4 +119,9 @@ test('missing audio, resume errors and closed devices do not interrupt game call
  const d=device(),bad=createSoundEffects({...d.options,loadBuffer:()=>Promise.reject(Error('missing'))});bad.unlock();bad.answer(true);await flush();assert.equal(sampled(d).length,0);
  d.ctx.state='closed';const next=device();let count=0;const s=createSoundEffects({...next.options,createContext:()=>{count++;return count===1?d.ctx:next.ctx;}});s.unlock();s.unlock();await flush();assert.equal(count,2);
  const absent=createSoundEffects({createContext:()=>null});assert.doesNotThrow(()=>absent.unlock());
+});
+
+test('a running context does not make effects wait for an obsolete pending resume',async()=>{
+ const d=device();d.ctx.resume=()=>{d.ctx.state='running';return new Promise(()=>{});};
+ const s=createSoundEffects({...d.options});s.unlock();await flush();s.answer(true);await flush();assert.equal(effects(d).length,1);
 });

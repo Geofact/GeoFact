@@ -54,10 +54,11 @@
       setMusicEnabled(value,{persist});setEffectsEnabled(value,{persist});if(persist)save(SOUND_KEY,!!value);
     }
     function preloadEffects(){if(effectsEnabled&&loadBuffer)for(const url of Object.values(ASSETS))loadBuffer(url).catch(()=>{});}
-    function unlock(){
+    function unlock({gesture=true}={}){
       if(!(musicEnabled||effectsEnabled)||!visible||!createContext)return;
+      if(!gesture&&!authorized)return;
       authorized=true;
-      try{preparePlayback?.();}catch{/* Unsupported playback sessions are optional. */}
+      try{if(gesture)preparePlayback?.();}catch{/* Unsupported playback sessions are optional. */}
       try{
         if(context?.state==='closed'){music?.dispose();silence();music=null;context=null;resumeAttempt=null;pendingEffect=null;effectGeneration++;}
         if(!context){
@@ -70,10 +71,12 @@
         }
         if(!context)return;
         preloadEffects();
-        if((context.state==='suspended'||context.state==='interrupted')&&!resumeAttempt){
+        if((context.state==='suspended'||context.state==='interrupted')&&(gesture||!resumeAttempt)){
+          // A mobile resume promise can remain pending across interruption.
+          // A fresh gesture must be able to retry without replacing the context.
           const attempt={context};resumeAttempt=attempt;
           try{
-            if(context.createBufferSource&&context.createBuffer){
+            if(gesture&&context.createBufferSource&&context.createBuffer){
               const source=context.createBufferSource();source.buffer=context.createBuffer(1,1,context.sampleRate||44100);
               source.connect(context.destination);source.onended=()=>source.disconnect();source.start(0);
             }
@@ -84,21 +87,22 @@
             if(context===attempt.context&&effectsEnabled&&pending&&now()-pending.at<=500)play(pending.effect);
             syncMusic();
           }).catch(()=>{if(resumeAttempt===attempt){resumeAttempt=null;pendingEffect=null;}});
-          if(context.state==='running')resumeAttempt=null;
+
         }
         syncMusic();
       }catch{resumeAttempt=null;pendingEffect=null;}
     }
     function setVisible(value){
       visible=!!value;
-      if(!visible){effectGeneration++;pendingEffect=null;silence();}
-      // A suspended device waits for the next gesture; a running one may resume its loop.
+      if(!visible){effectGeneration++;pendingEffect=null;resumeAttempt=null;silence();}
+      // Try automatic recovery; autoplay rejection leaves the next gesture free to retry.
+      if(visible&&authorized)unlock({gesture:false});
       syncMusic();
     }
     function sample(effect,{when,token,maxAge=500}={}){
       if(!effectsEnabled||!visible||!context||!loadBuffer)return false;
       const device=context,generation=effectGeneration,requested=now(),target=when??device.currentTime;
-      Promise.all([loadBuffer(ASSETS[effect]),resumeAttempt?.ready]).then(([buffer])=>{
+      Promise.all([loadBuffer(ASSETS[effect]),device.state==='running'?undefined:resumeAttempt?.ready]).then(([buffer])=>{
         if(generation!==effectGeneration||!effectsEnabled||!visible||context!==device||device.state!=='running'||token?.cancelled||(token?.valid&&!token.valid())||now()-requested>maxAge)return;
         const source=device.createBufferSource(),gain=device.createGain();source.buffer=buffer;
         gain.gain.setValueAtTime(EFFECT_GAIN,device.currentTime);source.connect(gain);gain.connect(device.destination);
