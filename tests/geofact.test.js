@@ -164,11 +164,12 @@ test('Corrupt fact storage is cleaned without blocking the next round', () => {
   assert.equal(core.chooseFact('FRA',3,history,()=>0),1);
   assert.equal(core.chooseFact('ITA',1,history),0);
 });
-test('Original branding PNGs and social metadata are present with local favicons', () => {
+test('Braise sharing metadata and legacy image path use the same current preview', () => {
   const png=fs.readFileSync(path.join(__dirname,'../assets/geofact-og.png'));
   assert.equal(png.readUInt32BE(16),1200); assert.equal(png.readUInt32BE(20),630);
-  assert.equal(crypto.createHash('sha256').update(png).digest('hex'),'9cb57bb31fdbe2522870f187c85622304277883dfaaa5accb06a9030a7eadcf8');
+
   const share=fs.readFileSync(path.join(__dirname,'../assets/geofact-og-braise.png'));
+  assert.deepEqual(png,share,'old Messenger image references also receive Braise');
   assert.equal(share.readUInt32BE(16),1200);assert.equal(share.readUInt32BE(20),630);
   assert.ok(html.includes('property="og:image" content="https://geofact.app/assets/geofact-og-braise.png"'));
   assert.ok(html.includes('name="twitter:image" content="https://geofact.app/assets/geofact-og-braise.png"'));
