@@ -55,8 +55,9 @@ export async function testBonusActions({newContext,url,check,equal,output}) {
       const progress=await p.locator('#bonusCardReveal .reward-summary progress').boundingBox();
       check(Math.abs(progress.x-layout.box.x)<1&&Math.abs(progress.width-layout.box.width)<1,'grid is centred and aligned with continent progress');
       check(layout.box.y>=progress.y+progress.height,'actions follow the unchanged continent progress');
-      equal(await buttons.evaluateAll(es=>es.map(e=>getComputedStyle(e).backgroundColor)),Array(2).fill('rgb(250, 225, 207)'),'both use the exact Daily peach');
-      equal(await buttons.evaluateAll(es=>es.map(e=>getComputedStyle(e).color)),Array(2).fill('rgb(41, 69, 83)'),'same dark Daily text');
+      await p.mouse.move(0,0);
+      equal(await buttons.evaluateAll(es=>es.map(e=>getComputedStyle(e).backgroundColor)),Array(2).fill('rgb(245, 198, 173)'),'both use the exact Daily peach');
+      equal(await buttons.evaluateAll(es=>es.map(e=>getComputedStyle(e).color)),Array(2).fill('rgb(52, 33, 43)'),'same dark Daily text');
       check(await buttons.evaluateAll(es=>es.every(e=>e.scrollWidth<=e.clientWidth+1&&e.getBoundingClientRect().height>=44)),'long translated labels wrap and keep comfortable targets');
       check(await p.locator('#bonusDialog').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'dialog has no horizontal overflow');
       check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'page has no horizontal overflow');
@@ -68,14 +69,14 @@ export async function testBonusActions({newContext,url,check,equal,output}) {
         check(box&&box.y>=0&&box.y+box.height<=height+1,'action and close remain reachable '+selector);
       }
       await buttons.first().scrollIntoViewIfNeeded();await buttons.first().hover();await p.waitForTimeout(180);
-      equal(await buttons.first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(250, 225, 207)','hover retains Daily peach');
-      equal(await buttons.first().evaluate(e=>getComputedStyle(e).transform),'matrix(1, 0, 0, 1, 0, -1)','same secondary/Daily hover motion');
+      equal(await buttons.first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 220, 192)','hover brightens Braise peach');
+      equal(await buttons.first().evaluate(e=>getComputedStyle(e).transform),'matrix(1, 0, 0, 1, 0, -1)','subtle hover displacement');
       await p.mouse.down();await p.waitForTimeout(180);
-      equal(await buttons.first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(250, 225, 207)','press retains Daily peach');
-      equal(await buttons.first().evaluate(e=>getComputedStyle(e).transform),'matrix(1, 0, 0, 1, 0, 1)','same secondary/Daily pressed motion');
+      equal(await buttons.first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 220, 192)','press retains Braise peach');
+      equal(await buttons.first().evaluate(e=>getComputedStyle(e).transform),'matrix(1, 0, 0, 1, 0, 1)','subtle pressed displacement');
       await p.mouse.move(0,0);await p.mouse.up();
       await p.keyboard.press('Tab');await buttons.first().focus();
-      equal(await buttons.first().evaluate(e=>getComputedStyle(e).outlineWidth),'3px','same visible focus outline');
+      equal(await buttons.first().evaluate(e=>getComputedStyle(e).outlineWidth),'2px','visible Braise focus outline');
       await buttons.first().evaluate(e=>e.blur());
       await p.mouse.move(0,0);await p.waitForTimeout(180);
       if(output){await mkdir(output,{recursive:true});await grid.scrollIntoViewIfNeeded();await p.screenshot({path:`${output}/bonus-${width}x${height}-${language}.png`,animations:'disabled'});}

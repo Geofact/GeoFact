@@ -23,9 +23,9 @@
   <link rel="icon" href="assets/geofact-icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <script src="i18n.js?v=20261009-update1&amp;home=20261012-album1&amp;map=20261014-rewardmap1"></script>
+  <script src="i18n.js?v=20261009-update1&amp;home=20261012-album1&amp;map=20261014-rewardmap1&amp;theme=20261015-braise2&amp;audio=20261015-files1"></script>
   <script src="preferences.js?v=20261009-update1"></script>
-  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;album=20261012-1&amp;home=20261012-next1&amp;map=20261014-rewardmap1&amp;maintenance=20261014-cleanup1&amp;bonus=20261014-actions1">
+  <link rel="stylesheet" href="style.css?v=20261009-update1&amp;theme=20261015-braise2&amp;audio=20261015-files1">
 </head>
 <body>
   <main class="app">
@@ -40,27 +40,26 @@
       </div>
       <div class="top-actions">
         <div class="header-controls">
-          <button id="toggleSound" class="sound-toggle" type="button" aria-pressed="false" aria-label="Couper les sons"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
+          <button id="toggleSound" class="sound-toggle" type="button" aria-expanded="false" aria-controls="audioPanel" aria-describedby="audioStatus" aria-label="Réglages audio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M16 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
           <button id="lang" class="language-control" type="button" value="fr" aria-label="Langue" data-i18n-aria="language"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18m0-18c5 5 5 13 0 18"/></svg><span id="languageBadge" aria-hidden="true">FR</span></button>
         </div>
-        <button id="openPublicStats" class="how-link" type="button" data-i18n-aria="publicStats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12h3v8m3 0V4h3v16m3 0V8h3v12M3 20h18"/></svg></button>
-        <button id="howToPlay" class="how-link" type="button" data-i18n-aria="homeHowToPlay"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 3v.1"/></svg></button>
+        <button id="openPublicStats" class="how-link" type="button" data-i18n-aria="publicStats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12h3v8m3 0V4h3v16m3 0V8h3v12M3 20h18"/></svg><span><strong data-i18n="publicStats">Stats</strong><small data-i18n="publicStatsKicker">GeoFact en chiffres</small></span><span class="utility-arrow" aria-hidden="true">›</span></button><button id="howToPlay" class="how-link" type="button" data-i18n-aria="homeHowToPlay"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 3v.1"/></svg><span><strong data-i18n="homeHowToPlay">Comment jouer</strong><small data-i18n="homeRulesHint">Découvre les règles.</small></span><span class="utility-arrow" aria-hidden="true">›</span></button>
+      </div>
+      <span id="audioStatus" class="audio-sr-only"></span>
+      <div id="audioPanel" class="audio-panel" role="group" aria-label="Réglages audio" data-i18n-aria="audioSettings" hidden>
+        <label class="audio-switch"><span data-i18n="audioMusic">Musique</span><input id="toggleMusic" type="checkbox" role="switch"><span class="audio-switch-track" aria-hidden="true"></span></label>
+        <label class="audio-switch"><span data-i18n="audioEffects">Effets sonores</span><input id="toggleEffects" type="checkbox" role="switch"><span class="audio-switch-track" aria-hidden="true"></span></label>
       </div>
     </header>
-      <div class="home-hero hero-orbit" aria-label="GeoFact">
-        <svg class="hero-orbit-copy" viewBox="0 0 560 360" aria-hidden="true">
-          <path id="heroArcPath" d="M 66 140 Q 280 54 494 140" fill="none"/>
-          <path id="heroArcBottomPath" d="M 128 280 Q 280 316 432 280" fill="none"/>
-          <text><textPath id="heroArcText" data-i18n="homeTitleArc" href="#heroArcPath" startOffset="50%" text-anchor="middle">Ton tour du monde</textPath></text>
-          <text class="orbit-bottom"><textPath id="heroArcEnd" data-i18n="homeTitleEnd" href="#heroArcBottomPath" startOffset="50%" text-anchor="middle">commence ici.</textPath></text>
-        </svg>
-        <div class="hero-brand" aria-hidden="true"><span class="hero-spark spark-a">✦</span><span class="hero-spark spark-b">✦</span><span class="hero-route route-a"></span><span class="hero-route route-b"></span><img src="assets/geofact-logo.svg" alt=""><span class="hero-compass">⌖</span></div>
+      <div class="home-hero hero-orbit">
+        <div class="hero-brand" aria-hidden="true"><img src="assets/geofact-logo-braise.svg" alt=""></div>
+        <h1><span data-i18n="homeTitleArc">Ton tour du monde</span> <em data-i18n="homeTitleEnd">commence ici.</em></h1>
+        <div class="home-intro-copy"><p data-i18n="homeSecondary">Des défis quotidiens et des coffres d’exploration à débloquer.</p></div>
       </div>
-      <div class="home-intro-copy"><p data-i18n="homeSecondary">Des défis quotidiens et des coffres d’exploration à débloquer.</p></div>
       <div class="daily-card" id="dailyCard">
         <div class="daily-top"><strong class="daily-label"><span class="daily-chest-mark" aria-hidden="true"><i></i></span><span data-i18n="homeDailyTitle">L’exploration quotidienne</span></strong><span id="dailyNumber" class="daily-number"></span></div>
         <div class="home-daily-content"><div class="home-daily-copy"><p class="home-daily-description" data-i18n="homeDailyDescription">5 pays à retrouver sur la carte. Les mêmes pour tous, un nouveau défi chaque jour.</p></div>
-        <div class="home-chest-preview"><svg viewBox="0 0 160 112" aria-hidden="true"><ellipse cx="80" cy="99" rx="58" ry="7" fill="#102e26" opacity=".25"/><path d="M26 49Q26 13 80 13T134 49" fill="#b87546" stroke="#edc68b" stroke-width="3"/><path d="M26 49H134V89Q80 108 26 89Z" fill="#945735" stroke="#edc68b" stroke-width="3"/><path d="M45 24V94M115 24V94M26 53H134" fill="none" stroke="#e4ad66" stroke-width="7"/><rect x="69" y="45" width="22" height="27" rx="5" fill="#f0c477"/><circle cx="80" cy="56" r="4" fill="#68452e"/><path d="M80 59V65" stroke="#68452e" stroke-width="3"/><path d="M9 22h12m-6-6v12M142 31h10m-5-5v10" stroke="#efcf94" stroke-width="2" stroke-linecap="round"/></svg><p data-i18n="homeChestQuestion">Quel drapeau découvriras-tu aujourd’hui ?</p></div></div>
+        <div class="home-chest-preview"><img src="assets/braise-chest.svg" width="160" height="120" alt="" aria-hidden="true"><p data-i18n="homeChestQuestion">Quel drapeau découvriras-tu aujourd’hui ?</p></div></div>
         <button id="resumeDailyChest" class="secondary hidden" type="button"></button>
         <button id="chooseDaily" class="primary daily-button" data-i18n="dailyPlay">Jouer le Daily</button>
         <div class="daily-home-streak">🔥 <span data-i18n="dailyStreak">Série</span> <strong id="dailyStreak">0</strong></div>
@@ -140,7 +139,8 @@
     <div id="cardModal" class="card-modal hidden" role="dialog" aria-modal="true" aria-label="Carte de collection" data-i18n-aria="collectionCard"><button id="closeCardModal" class="card-modal-close" type="button" aria-label="Fermer" data-i18n-aria="close">×</button><div id="cardModalContent" class="card-modal-content"></div></div>
     <section id="final" class="card final hidden">
       <h1 id="finalTitle" data-i18n="finalTitle">Partie terminée !</h1><p id="finalMood" class="final-mood"></p><strong class="large-score" id="finalScore"></strong><p id="dailyFinalErrors" class="daily-errors final-errors hidden"></p><div id="dailyFinalTiles" class="daily-marks daily-marks-final hidden" aria-label="Performance par pays" data-i18n-aria="performanceByCountry"></div><p id="personalBest" class="personal-best"></p><div id="dailyFinalStats" class="daily-final-stats hidden"></div>
-      <div id="dailyChest" class="daily-chest hidden"><strong data-i18n="chestReady">Ton coffre d’exploration t’attend</strong><button id="openChest" class="chest-stage" type="button" data-i18n-aria="openChest"><span class="chest-aura" aria-hidden="true"></span><span class="pack-card-back" aria-hidden="true"><img src="assets/geofact-logo.svg" alt=""></span><span class="reveal-burst" aria-hidden="true"></span><span class="chest-object" aria-hidden="true"><span class="chest-light"></span><span class="chest-lid"><i class="chest-lid-panel"></i></span><span class="chest-body"><i class="chest-panel"></i><i class="chest-corner left"></i><i class="chest-corner right"></i></span><span class="chest-band"></span><span class="chest-lock"><i></i></span></span><span class="chest-cta" data-i18n="openChest">Ouvrir</span></button></div>
+      <div id="dailyChest" class="daily-chest hidden"><strong data-i18n="chestReady">Ton coffre d’exploration t’attend</strong><button id="openChest" class="chest-stage" type="button" data-i18n-aria="openChest"><span class="chest-aura" aria-hidden="true"></span><span class="pack-card-back" aria-hidden="true"><img src="assets/geofact-logo-braise.svg" alt=""></span><span class="reveal-burst" aria-hidden="true"></span><span class="chest-object" aria-hidden="true"><span class="chest-light"></span><span class="chest-lid"><i class="chest-lid-panel"></i></span><span class="chest-body"><i class="chest-panel"></i><i class="chest-corner left"></i><i class="chest-corner right"></i></span><span class="chest-band"></span><span class="chest-lock"><i></i></span></span><span class="chest-cta" data-i18n="openChest">Ouvrir</span></button></div>
+      <template id="braiseDailyChestTemplate"><svg class="braise-chest-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" aria-hidden="true"><defs><linearGradient id="front" x2=".9" y2="1"><stop stop-color="#58303a"/><stop offset=".5" stop-color="#271c29"/><stop offset="1" stop-color="#42242b"/></linearGradient><linearGradient id="top"><stop stop-color="#a65a4c"/><stop offset=".5" stop-color="#382331"/><stop offset="1" stop-color="#713b3b"/></linearGradient><radialGradient id="a"><stop stop-color="#ff985e" stop-opacity=".5"/><stop offset="1" stop-color="#ff654d" stop-opacity="0"/></radialGradient><filter id="g"><feGaussianBlur stdDeviation="3"/></filter><g id="daily-chest-art"><ellipse cx="120" cy="144" rx="117" ry="32" fill="url(#a)"/><g stroke="#ed986c" stroke-width="1.6" stroke-linejoin="round"><path d="m30 60 42-29 126 13 10 85-42 29-132-16Z" fill="url(#front)"/><path d="m30 60 42-29 126 13-40 31Z" fill="url(#top)"/><path d="m158 75 40-31 10 85-42 29Z" fill="#241b28"/><path d="m32 83 127 16 43-30" fill="none" stroke="#ffb178" stroke-width="3"/><path d="m32 83 127 16 43-30" fill="none" stroke="#ff8057" stroke-width="9" opacity=".65" filter="url(#g)"/><path d="m55 63 41-29m35 38 42-31M56 64l4 81m69-72 6 79m45-91 6 81" fill="none" stroke="#ad6955" stroke-width="7"/><path d="m55 63 41-29m35 38 42-31M56 64l4 81m69-72 6 79m45-91 6 81" fill="none" stroke="#ffc38d" stroke-width="1"/></g><g transform="translate(96 115) rotate(7)" fill="none" stroke="#ffb279" stroke-width="1.8"><circle r="16"/><ellipse rx="7" ry="16"/><path d="M-16 0h32m-28-8h24m-24 16h24"/></g><g fill="#ffd8a1"><circle cx="33" cy="59" r="2"/><circle cx="198" cy="44" r="2"/><circle cx="159" cy="98" r="2"/></g></g><clipPath id="daily-chest-base-clip"><path d="M0 79 159 99 240 42V180H0Z"/></clipPath><clipPath id="daily-chest-lid-clip"><path d="M0 0H240V42L159 99 0 79Z"/></clipPath></defs><g clip-path="url(#daily-chest-base-clip)"><use href="#daily-chest-art"/></g><ellipse class="braise-chest-light" cx="120" cy="89" rx="77" ry="15" fill="url(#a)"/><g class="braise-chest-lid"><g clip-path="url(#daily-chest-lid-clip)"><use href="#daily-chest-art"/></g></g></svg></template>
       <div id="cardReveal" class="card-reveal hidden" aria-live="polite"></div>
       <p class="versus hidden" id="versus"></p><p class="hidden" id="opponentScore"></p>
       <button id="finalBonusRewards" class="secondary hidden" type="button"></button>
@@ -163,14 +163,14 @@
   <script src="data/borders.js?v=20261009-update1"></script>
   <script src="data/facts.js?v=20261009-update1&amp;facts=20261014-780"></script>
   <script src="data/flag-cards.js?v=20261009-update1"></script>
-  <script src="music.js?v=20261009-update1&amp;home=20261012-heroic2"></script>
-  <script src="sound.js?v=20261009-update1&amp;home=20261010-success3"></script>
+  <script src="music.js?v=20261009-update1&amp;home=20261012-heroic2&amp;audio=20261015-files1"></script>
+  <script src="sound.js?v=20261009-update1&amp;home=20261010-success3&amp;audio=20261015-files1"></script>
   <script src="public-statistics.js?v=20261009-update1"></script>
   <script src="daily-periods.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
   <script src="core.js?v=20261009-update1&amp;home=20261012-daily12h"></script>
   <script src="data/small-territories.js?v=20261009-update1&amp;map=20261014-rewardmap1"></script>
   <script src="map.js?v=20261009-update1&amp;map=20261014-rewardmap1&amp;maintenance=20261014-cleanup1"></script>
   <script src="collection-album.js?v=20261009-update1&amp;home=20261012-album1"></script>
-  <script src="app.js?v=20261009-update1&amp;home=20261014-rewardmap1&amp;map=20261014-rewardmap1&amp;bonus=20261014-actions1"></script>
+  <script src="app.js?v=20261009-update1&amp;theme=20261015-braise2&amp;home=20261014-rewardmap1&amp;map=20261014-rewardmap1&amp;bonus=20261014-actions1&amp;audio=20261015-files1"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
  const origin=new URL(url).origin;
  const snapshot=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs');const r=await openRewardRepository();try{return await r.read();}finally{r.close();}});
  const local=p=>p.evaluate(()=>Object.fromEntries(Object.entries(localStorage)));
+ const withAudioPreferences=seed=>{const initial=seed['gf-sound-v1']==='off'?'off':'on';return {...seed,'gf-music-v1':seed['gf-music-v1']||initial,'gf-effects-v1':seed['gf-effects-v1']||initial};};
  const copies=s=>Object.values(s.collection).reduce((n,e)=>n+Object.values(e.counts).reduce((a,b)=>a+b,0),0);
  async function setup(seed=currentSave,extra={},time='2026-10-08T12:00:00Z') {
   const ctx=await newContext({locale:'fr-FR',reducedMotion:'reduce',storageState:{cookies:[],origins:[{origin,localStorage:Object.entries(seed).map(([name,value])=>({name,value}))}]}});
@@ -53,7 +54,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
    const s=await snapshot(p);equal(s.dailyActive,1,label+' automatic activation');equal(s.daily,JSON.parse(seed['gf-daily-v1']),label+' original Daily fields');
    if(label==='current')equal(s.collection,JSON.parse(seed['gf-collection-v1']),label+' exact collection');
    else {equal(s.collection.FRA.counts,{silver:1},label+' prototype copy');equal(s.collection.FRA.firstUnlocked,'2026-10-01',label+' original date');}
-   equal(await local(p),seed,label+' all localStorage bytes preserved');
+   equal(await local(p),withAudioPreferences(seed),label+' all localStorage bytes preserved');
    await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await snapshot(p),s,label+' reload no new rewards');
   } finally {await ctx.close();}
  }
@@ -110,7 +111,7 @@ export async function testDailyStorage({newContext,url,tap,check,equal,telemetry
   ['denied',currentSave,()=>Object.defineProperty(window,'indexedDB',{configurable:true,value:undefined})]
  ]) {
   const {ctx,p}=await setup(seed,{init});try {
-   await p.click('#openCollection');await p.locator('#collectionCount').filter({hasText:'Collection indisponible'}).waitFor();equal(await local(p),seed,label+' originals remain intact');check(await p.locator('#retryRewards').isVisible(),label+' visible retry');
+   await p.click('#openCollection');await p.locator('#collectionCount').filter({hasText:'Collection indisponible'}).waitFor();equal(await local(p),withAudioPreferences(seed),label+' originals remain intact');check(await p.locator('#retryRewards').isVisible(),label+' visible retry');
    if(label==='malformed') {const s=await snapshot(p);equal(s.dailyActive,undefined,'failed import never activates empty state');equal(s.legacyImport,undefined,'failed import no marker');}
    await clickOutsideResult(p,'#brand');await p.click('#chooseGame');await p.click('[data-level="easy"]');await p.locator('#playing').waitFor({state:'visible'});check(await p.locator('#playing').isVisible(),label+' classic still works');
   }finally{await ctx.close();}

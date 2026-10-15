@@ -106,10 +106,11 @@ try{
   root=candidate;
   for(const {ctx,page,kind,before} of prepared){
     await page.reload();await page.locator('#chooseDaily:enabled').waitFor();
-    equal(await snapshot(page),before,kind+': all IndexedDB stores and storage bytes preserved on the same origin');
+    const migrated={...before,local:{...before.local,'gf-music-v1':'off','gf-effects-v1':'off'}};
+    equal(await snapshot(page),migrated,kind+': all existing bytes preserved; only independent audio preferences added');
     equal(await page.locator('#map .target-core').count(),0,kind+': updated map loads despite previous cached assets');
     equal(await page.locator('#lang').getAttribute('value'),'en',kind+': language unchanged');
-    equal(await page.locator('#toggleSound').getAttribute('aria-pressed'),'true',kind+': mute unchanged');
+    equal(await page.locator('#toggleSound').getAttribute('data-muted'),'true',kind+': mute unchanged');
     const opened=await page.evaluate(async()=>{
       const {openRewardRepository}=await import('./reward-repository.mjs?v=20261009-update1');const r=await openRewardRepository();
       try{
@@ -126,12 +127,19 @@ try{
     if(kind==='sealed'){
       await page.click('#chooseDaily');await page.locator('#final').waitFor({state:'visible'});
       await page.click('#openChest');await page.locator('#cardReveal').waitFor({state:'visible'});
-      await page.waitForFunction(()=>[...document.querySelectorAll('#final .revealed-actions button')].filter(button=>button.getClientRects().length).every(button=>getComputedStyle(button).backgroundColor==='rgb(250, 225, 207)'));
-      equal(await page.locator('#final .revealed-actions button:visible').evaluateAll(buttons=>buttons.map(button=>getComputedStyle(button).backgroundColor)),Array(4).fill('rgb(250, 225, 207)'),'new peach styles load despite the previous cached stylesheet');
+      await page.mouse.move(1,1);
+      await page.waitForFunction(()=>[...document.querySelectorAll('#final .revealed-actions button')].filter(b=>b.getClientRects().length).every(b=>getComputedStyle(b).backgroundImage.includes('rgb(249, 212, 185)')));
+      equal(await page.locator('#final .revealed-actions button:visible').evaluateAll(buttons=>buttons.every(b=>getComputedStyle(b).backgroundImage.includes('rgb(239, 181, 157)'))),true,'Braise warm reward styles replace the cached stylesheet');
     }
     await ctx.close();
   }
-  const fresh=await context(false);equal(await fresh.page.locator('#chooseDaily').isEnabled(),true,'fresh installation loads');await fresh.ctx.close();
+  const fresh=await context(false);equal(await fresh.page.locator('#chooseDaily').isEnabled(),true,'fresh installation loads');
+  equal(await fresh.page.locator('#toggleMusic').isChecked(),true,'fresh music defaults to on');
+  equal(await fresh.page.locator('#toggleEffects').isChecked(),true,'fresh effects default to on');
+  await fresh.page.click('#toggleSound');await fresh.page.locator('#toggleMusic').uncheck();await fresh.page.keyboard.press('Escape');await fresh.page.reload();await fresh.page.locator('#chooseDaily:enabled').waitFor();
+  equal(await fresh.page.locator('#toggleMusic').isChecked(),false,'user music choice survives reload');
+  equal(await fresh.page.locator('#toggleEffects').isChecked(),true,'music choice leaves effects enabled');
+  await fresh.ctx.close();
   equal(errors,[],'no script errors or missing resources');equal(unexpected,[],'external requests isolated');
   console.log(`${checks} same-origin release-update assertions passed; four synthetic saves and fresh installation.`);
 }finally{

@@ -201,6 +201,7 @@ try {
   console.log('Existing saves, Daily rewards and storage failures…');
   const rewardSnapshot=p=>p.evaluate(async()=>{const {openRewardRepository}=await import('./reward-repository.mjs');const repo=await openRewardRepository();try{return await repo.read();}finally{repo.close();}});
   const snapshot=p=>p.evaluate(()=>Object.fromEntries(Object.entries(localStorage)));
+  const withAudioPreferences=seed=>{const initial=seed['gf-sound-v1']==='off'?'off':'on';return {...seed,'gf-music-v1':seed['gf-music-v1']||initial,'gf-effects-v1':seed['gf-effects-v1']||initial};};
   async function savedContext(seed, {quotaExceeded=false}={}) {
     const ctx=await newContext({locale:'fr-FR',storageState:{cookies:[],origins:[{origin:new URL(url).origin,localStorage:Object.entries(seed).map(([name,value])=>({name,value}))}]}});
     if(quotaExceeded) await ctx.addInitScript(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota exceeded','QuotaExceededError');};});
@@ -209,7 +210,7 @@ try {
   }
   for(const [label,seed] of [['current',currentSave],['legacy',legacySave]]) {
     const {ctx,p}=await savedContext(seed);
-    equal(await snapshot(p),seed,label+' load preserves every stored byte and key');
+    equal(await snapshot(p),withAudioPreferences(seed),label+' load preserves every stored byte and key');
     await p.click('#openCollection');
     check((await p.locator('#collectionCount').textContent()).includes(label==='current'?'2/195':'1/195'),label+' collection rendered');
     if(label==='current') {
@@ -217,7 +218,7 @@ try {
       await p.locator('#collectionGrid .collection-card').filter({has:p.locator('h3', {hasText:'France'})}).click();
       check((await p.locator('#collectionDetail').textContent()).includes('×3'),'duplicate copies rendered in rarity detail');
     }
-    await p.reload();equal(await snapshot(p),seed,label+' reload preserves stored save');
+    await p.reload();equal(await snapshot(p),withAudioPreferences(seed),label+' reload preserves stored save');
     await ctx.close();
   }
   const {ctx:saveContext,p:savePage}=await savedContext(currentSave);
@@ -279,7 +280,7 @@ try {
   // Malformed/unknown bytes are not rewritten merely by loading the app.
   const malformed={...currentSave,'wg-stats':'{broken','wg-seen-facts':'null','gf-best-scores':'{}','gf-daily-v1':'{broken','gf-collection-v1':'null'};
   const {ctx:malformedContext,p:malformedPage}=await savedContext(malformed);
-  equal(await snapshot(malformedPage),malformed,'malformed save preserved on load');await malformedContext.close();
+  equal(await snapshot(malformedPage),withAudioPreferences(malformed),'malformed save preserved on load');await malformedContext.close();
   const failing=await newContext({locale:'en-GB'},{failSupabase:true});const failingPage=await failing.newPage();
   await failingPage.goto(url);await clickOutsideResult(failingPage,'#openPublicStats');await failingPage.locator('#statsStatus').filter({hasText:'unavailable'}).waitFor();
   await failingPage.goto(url+'?challenge='+core.encodeChallenge('easy',series,100));await failingPage.click('#acceptChallenge');await tap('FRA','mouse',failingPage);

@@ -1,47 +1,25 @@
 import {clickOutsideResult} from './result-controls.mjs';
 import {setLanguage} from './language-control.mjs';
-// Native Chromium Web Audio, with visibility/device suspension simulated explicitly.
+import {setAudioEnabled} from './audio-controls.mjs';
 export async function testMusicIntegration({newContext,url,check,equal}){
- console.log('Music: native audio, one scheduler, mute, background and foreground…');
+ console.log('Music: supplied native buffer, one loop, gestures, independent mute and visibility…');
  const ctx=await newContext({viewport:{width:375,height:812},hasTouch:true,isMobile:true,locale:'fr-FR'});
  await ctx.addInitScript(()=>{
-  const Native=window.AudioContext||window.webkitAudioContext;
-  window.musicProbe={created:0,started:[],immediateStops:0,timers:new Set(),hidden:false};
-  Object.defineProperty(document,'hidden',{configurable:true,get:()=>musicProbe.hidden});
-  const interval=window.setInterval.bind(window),clear=window.clearInterval.bind(window);
-  window.setInterval=(callback,delay,...args)=>{const id=interval(callback,delay,...args);if(delay===50)musicProbe.timers.add(id);return id;};
-  window.clearInterval=id=>{musicProbe.timers.delete(id);clear(id);};
+  const Native=window.AudioContext||window.webkitAudioContext;window.musicProbe={created:0,sources:[],hidden:false};Object.defineProperty(document,'hidden',{configurable:true,get:()=>musicProbe.hidden});
   window.AudioContext=class extends Native{
    constructor(...args){super(...args);musicProbe.created++;musicProbe.device=this;}
-   createOscillator(){const n=super.createOscillator(),start=n.start.bind(n),stop=n.stop.bind(n),device=this;
-    n.start=at=>{musicProbe.started.push({type:n.type,frequency:n.frequency.value});return start(at);};
-    n.stop=at=>{if(at===undefined||at<=device.currentTime)musicProbe.immediateStops++;return stop(at);};return n;}
+   createBufferSource(){const n=super.createBufferSource(),start=n.start.bind(n),stop=n.stop.bind(n),p={started:false,stopped:false};musicProbe.sources.push(p);n.start=(when=0,offset=0)=>{Object.assign(p,{started:true,loop:n.loop,offset,duration:n.buffer?.duration});return start(when,offset);};n.stop=(...args)=>{p.stopped=true;return stop(...args);};return n;}
   };
  });
  try{
-  const p=await ctx.newPage();await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();
-  equal(await p.evaluate(()=>musicProbe.created),0,'no context or autoplay before gesture');
-  const practice=await p.locator('#choosePractice').boundingBox();await p.touchscreen.tap(practice.x+practice.width/2,practice.y+practice.height/2);await p.waitForFunction(()=>musicProbe.timers.size===1);
-  equal(await p.evaluate(()=>musicProbe.created),1,'music and effects share one context');
-  check(await p.evaluate(()=>musicProbe.started.some(n=>n.type==='custom')),'native soft 8-bit voice plays');
-  await p.click('#practiceByDifficulty');await setLanguage(p,'en');await clickOutsideResult(p,'#howToPlay');await p.click('#closeHow');
-  equal(await p.evaluate(()=>musicProbe.timers.size),1,'screen changes and repeated gestures never stack music');
-  await p.evaluate(()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));});
-  equal(await p.evaluate(()=>musicProbe.timers.size),0,'background stops scheduler');
-  check(await p.evaluate(()=>musicProbe.immediateStops>0),'background cancels already scheduled audio');
-  await p.evaluate(()=>{musicProbe.hidden=false;document.dispatchEvent(new Event('visibilitychange'));});
-  equal(await p.evaluate(()=>musicProbe.timers.size),1,'running foreground resumes one score');
-  await p.evaluate(()=>window.dispatchEvent(new Event('pagehide')));equal(await p.evaluate(()=>musicProbe.timers.size),0,'page cache departure stops the score');
-  await p.evaluate(()=>window.dispatchEvent(new Event('pageshow')));equal(await p.evaluate(()=>musicProbe.timers.size),1,'page cache return resumes once');
-  await p.evaluate(async()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));await musicProbe.device.suspend();musicProbe.hidden=false;document.dispatchEvent(new Event('visibilitychange'));});
-  equal(await p.evaluate(()=>musicProbe.timers.size),0,'suspended foreground waits for interaction');
-  await clickOutsideResult(p,'#howToPlay');await p.waitForFunction(()=>musicProbe.timers.size===1);await p.click('#closeHow');
-  await clickOutsideResult(p,'#toggleSound');equal(await p.evaluate(()=>musicProbe.timers.size),0,'same mute stops music immediately');
-  equal(await p.evaluate(()=>localStorage.getItem('gf-sound-v1')),'off','original mute preference retained');
-  for(let i=0;i<3;i++){await clickOutsideResult(p,'#toggleSound');await p.waitForFunction(()=>musicProbe.timers.size===1);await clickOutsideResult(p,'#toggleSound');equal(await p.evaluate(()=>musicProbe.timers.size),0,'repeat enable/mute leaves no scheduler');}
-  await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.evaluate(()=>musicProbe.created),0,'muted reload creates no device');
-  await p.click('#choosePractice');equal(await p.evaluate(()=>musicProbe.created),0,'muted interactions never start music');
-  await clickOutsideResult(p,'#toggleSound');await p.waitForFunction(()=>musicProbe.timers.size===1);
-  equal(await p.evaluate(()=>musicProbe.created),1,'explicit enable after reload creates one device');
+  const p=await ctx.newPage();await p.goto(url);await p.locator('#chooseDaily:enabled').waitFor();equal(await p.evaluate(()=>musicProbe.created),0,'no autoplay device');
+  await p.locator('#choosePractice').tap();await p.waitForFunction(()=>musicProbe.sources.some(s=>s.loop&&s.started&&!s.stopped));equal(await p.evaluate(()=>musicProbe.created),1,'one shared device');
+  await p.click('#practiceByDifficulty');await setLanguage(p,'en');await clickOutsideResult(p,'#howToPlay');await p.click('#closeHow');equal(await p.evaluate(()=>musicProbe.sources.filter(s=>s.loop).length),1,'navigation does not restart the recording');
+  await p.evaluate(()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));});equal(await p.evaluate(()=>musicProbe.sources.filter(s=>s.loop&&!s.stopped).length),0,'background cuts music');
+  await p.evaluate(()=>{musicProbe.hidden=false;document.dispatchEvent(new Event('visibilitychange'));});await p.waitForFunction(()=>musicProbe.sources.some(s=>s.loop&&!s.stopped));equal(await p.evaluate(()=>musicProbe.sources.filter(s=>s.loop&&!s.stopped).length),1,'one foreground instance');
+  await p.evaluate(async()=>{musicProbe.hidden=true;document.dispatchEvent(new Event('visibilitychange'));await musicProbe.device.suspend();musicProbe.hidden=false;document.dispatchEvent(new Event('visibilitychange'));});equal(await p.evaluate(()=>musicProbe.sources.filter(s=>s.loop&&!s.stopped).length),0,'suspended foreground waits for gesture');
+  await clickOutsideResult(p,'#howToPlay');await p.waitForFunction(()=>musicProbe.sources.some(s=>s.loop&&!s.stopped));await p.click('#closeHow');
+  await setAudioEnabled(p,false);equal(await p.evaluate(()=>musicProbe.sources.filter(s=>s.loop&&!s.stopped).length),0,'mute cuts current buffer');equal(await p.evaluate(()=>localStorage.getItem('gf-music-v1')),'off','separate music preference');equal(await p.evaluate(()=>localStorage.getItem('gf-effects-v1')),'off','separate effects preference');
+  await p.reload();await p.locator('#chooseDaily:enabled').waitFor();await p.click('#choosePractice');equal(await p.evaluate(()=>musicProbe.created),0,'muted reload and gestures stay quiet');await setAudioEnabled(p,true);await p.waitForFunction(()=>musicProbe.sources.some(s=>s.loop&&!s.stopped));equal(await p.evaluate(()=>musicProbe.created),1,'enable creates a single device');check(await p.evaluate(()=>musicProbe.sources.filter(s=>s.loop).every(s=>s.duration>73&&s.duration<74)),'validated recording decoded, no generated score');
  }finally{await ctx.close();}
 }

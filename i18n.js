@@ -36,7 +36,9 @@ globalThis.GeoFactTranslations = {
     homeCollectionTitle: "Ma collection",
     homeCollectionDescription: "Tes drapeaux & leur rareté, tes découvertes.",
     homeHowToPlay: "Comment jouer",
+    homeRulesHint: "Découvre les règles.",
 
+    audioSettings: 'Réglages audio', audioMusic: 'Musique', audioEffects: 'Effets sonores', audioOn: 'oui', audioOff: 'non',
     muteSound: 'Couper les sons', enableSound: 'Activer les sons', viewCollection: 'Voir ma collection',
     collectionCard: 'Carte de collection', performanceByCountry: 'Performance par pays', shareText: 'Texte à partager',
     bonusHomeQuota: "Coffres bonus obtenus : {count}/{limit} aujourd'hui", bonusPracticeQuota: 'Coffres bonus : {count}/{limit}', bonusPracticeStreak: "Pays trouvés d'affilée : {count}/{target}",
@@ -135,7 +137,9 @@ globalThis.GeoFactTranslations = {
     homeCollectionTitle: "My collection",
     homeCollectionDescription: "Your flags & their rarities, your discoveries.",
     homeHowToPlay: "How to play",
+    homeRulesHint: "Discover the rules.",
 
+    audioSettings: 'Audio settings', audioMusic: 'Music', audioEffects: 'Sound effects', audioOn: 'on', audioOff: 'off',
     muteSound: 'Mute sounds', enableSound: 'Enable sounds', viewCollection: 'View my collection',
     collectionCard: 'Collection card', performanceByCountry: 'Performance by country', shareText: 'Text to share',
     bonusHomeQuota: 'Bonus chests earned: {count}/{limit} today', bonusPracticeQuota: 'Bonus chests: {count}/{limit}', bonusPracticeStreak: 'Countries found in a row: {count}/{target}',
@@ -159,7 +163,7 @@ globalThis.GeoFactTranslations = {
 
     neighbour: "Very close! It's a neighbouring country.",
     publicStats: 'Stats',
-    publicStatsKicker: 'GeoFact by the numbers',
+    publicStatsKicker: 'GeoFact in numbers',
     statsPeriod: 'Period',
     statsLast30: 'Last 30 days',
     statsAllTime: 'All time',

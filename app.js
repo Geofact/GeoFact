@@ -44,7 +44,7 @@
   }
   let lang = GeoFactPreferences.language.get();
   const sounds = GeoFactSound.createSoundEffects({storage:GeoFactPreferences.availableStorage(),
-    createMusic:context=>GeoFactMusic.createAdventureMusic(context),
+    createMusic:(context,options)=>GeoFactMusic.createAdventureMusic(context,options),
     createContext:()=>{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;return Audio?new Audio():null;},
     preparePlayback:()=>{const session=navigator.audioSession;if(session&&session.type!=='playback')session.type='playback';}});
   // Resume inside the actual user gesture, before any asynchronous reward operation.
@@ -478,7 +478,7 @@
         const p=album.progress(collection,region),button=document.createElement('button');button.type='button';button.className='album-continent';button.dataset.continent=region;
         button.setAttribute('aria-label',t('albumExplore',{continent:continentLabel(region),progress:albumCount(p)}));
         const heading=document.createElement('span');heading.className='album-continent-title';heading.textContent=continentLabel(region);
-        const stamp=document.createElement('span');stamp.className='album-stamp';stamp.setAttribute('aria-hidden','true');stamp.innerHTML='<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="20" cy="20" r="15"/><path d="M5 20h30M20 5c-11 8-11 22 0 30M20 5c11 8 11 22 0 30M9 10c7 5 15 5 22 0M9 30c7-5 15-5 22 0"/></svg>' ;
+        const stamp=document.createElement('span');stamp.className='album-stamp';stamp.setAttribute('aria-hidden','true');const silhouette=document.createElement('img');silhouette.src=`assets/continents/${region}.svg`;silhouette.alt='';silhouette.width=32;silhouette.height=32;stamp.appendChild(silhouette);
         const count=document.createElement('span');count.className='album-continent-count';count.textContent=`${format(p.owned)}/${format(p.total)}`;
         const bar=document.createElement('progress');bar.max=p.total;bar.value=p.owned;bar.setAttribute('aria-label',albumCount(p));
         const status=document.createElement('span');status.className='album-continent-status';status.textContent=t(p.complete?'albumComplete':p.owned===0?'albumEmpty':'albumExploreCards');
@@ -547,6 +547,7 @@
     $('retryBonusRewards').disabled = nextBusy || rewardsLoading || practiceSaving;
   }
   function render() {
+    sounds.cancelInvalidChests();
     if(state.screen !== 'playing' || !state.answered) closeResult({restoreFocus:false});
     $('closedResultActions').classList.toggle('hidden',state.screen !== 'playing' || !state.answered || $('resultDialog').open);
     // Move the same controls: their handlers and saved preferences remain unchanged.
@@ -556,10 +557,7 @@
     if (state.screen !== 'playing' || !state.answered) map.clearFound();
     document.documentElement.lang = lang;
     $('lang').value = lang;
-    $('toggleSound').setAttribute('aria-pressed',String(!sounds.isEnabled()));
-    $('toggleSound').setAttribute('aria-label',t(sounds.isEnabled()?'muteSound':'enableSound'));
-    $('toggleSound').title=t(sounds.isEnabled()?'muteSound':'enableSound');
-    $('toggleSound').dataset.muted=String(!sounds.isEnabled());
+    renderAudioControls();
     const arcText=$('heroArcText'), arcEnd=$('heroArcEnd'), arcCopy=document.querySelector('.hero-arc-copy'); if(arcText) arcText.textContent=t('homeTitleArc'); if(arcEnd) arcEnd.textContent=t('homeTitleEnd'); if(arcCopy) arcCopy.setAttribute('aria-label',t('homeTitle'));
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
@@ -887,6 +885,8 @@
     if (button.classList.contains('opening')) return;
     button.dataset.rarity=rarity; button.classList.add('opening'); button.disabled=true;
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const chestAudio=sounds.openChest({revealDelay:reduced?.08:4.91,reduced,isCurrent});
+    let chestRevealed=false;
     try {
       await new Promise(resolve=>setTimeout(resolve,reduced?80:4650));
       const outcome = await commit();
@@ -896,11 +896,11 @@
       box.classList.add('chest-fade');
       await new Promise(resolve=>setTimeout(resolve,reduced?0:260));
       if (isCurrent()) {
-        if (outcome.status==='opened'||outcome.status==='revealed') sounds.reveal(rarity);
+        if (outcome.status==='opened'||outcome.status==='revealed') chestRevealed=true;
         reveal(outcome);
       }
     } catch { rewardError = errorKey; render(); }
-    finally { button.classList.remove('opening'); button.disabled=false; box.classList.remove('chest-fade'); renderBonusRewards(); if(state.screen==='collection')renderCollection(); }
+    finally { if(chestRevealed)chestAudio.finish();else chestAudio.cancel();button.classList.remove('opening'); button.disabled=false; box.classList.remove('chest-fade'); renderBonusRewards(); if(state.screen==='collection')renderCollection(); }
   }
   $('openChest').addEventListener('click', async () => {
     const gameState = state, day = state.dailyKey, result = selectedDailyResult();
@@ -934,8 +934,10 @@
   $('retryPracticeRewards').addEventListener('click', retryRewards);
   const bonusChestButton=$('openChest').cloneNode(true);bonusChestButton.id='openBonusChest';
   $('bonusChestStage').appendChild(bonusChestButton);
+  $('openChest').querySelector('.chest-object').replaceChildren($('braiseDailyChestTemplate').content.cloneNode(true));
   for(const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards','finalBonusRewards']) $(id).addEventListener('click',openBonusRewards);
   $('closeBonusRewards').addEventListener('click',()=>$('bonusDialog').close());
+  $('bonusDialog').addEventListener('close',()=>sounds.cancelInvalidChests());
   bonusChestButton.addEventListener('click',async()=>{
     const chest=bonusSnapshot?.chests[selectedBonus];if(!chest||chest.openedAt!==null)return;
     const selected=selectedBonus;
@@ -952,8 +954,35 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('cardModal')?.classList.contains('hidden')) closeCardModal(); if (!$('howModal')?.classList.contains('hidden')) closeHow(); } });
   document.querySelectorAll('[data-home]').forEach(button => button.addEventListener('click', home));
   $('brand').addEventListener('click', home);
-  $('toggleSound').addEventListener('click',()=>{sounds.setEnabled(!sounds.isEnabled());if(sounds.isEnabled())sounds.unlock();render();});
-  window.addEventListener('storage',event=>{if(event.key===GeoFactSound.SOUND_KEY){sounds.setEnabled(event.newValue!=='off',{persist:false});render();}});
+  function renderAudioControls(){
+    $('toggleSound').setAttribute('aria-label',t('audioSettings'));
+    $('toggleSound').title=t('audioSettings');
+    $('toggleSound').dataset.muted=String(!sounds.isEnabled());
+    $('toggleMusic').checked=sounds.isMusicEnabled();
+    $('toggleEffects').checked=sounds.isEffectsEnabled();
+    $('audioStatus').textContent=`${t('audioMusic')} : ${t(sounds.isMusicEnabled()?'audioOn':'audioOff')} ; ${t('audioEffects')} : ${t(sounds.isEffectsEnabled()?'audioOn':'audioOff')}`;
+  }
+  function closeAudioPanel({restoreFocus=false}={}){
+    $('audioPanel').hidden=true;$('toggleSound').setAttribute('aria-expanded','false');
+    if(restoreFocus)$('toggleSound').focus({preventScroll:true});
+  }
+  $('toggleSound').addEventListener('click',()=>{
+    const open=$('audioPanel').hidden;$('audioPanel').hidden=!open;
+    $('toggleSound').setAttribute('aria-expanded',String(open));
+    if(open)$('toggleMusic').focus({preventScroll:true});
+  });
+  for(const [id,set] of [['toggleMusic','setMusicEnabled'],['toggleEffects','setEffectsEnabled']]){
+    $(id).addEventListener('change',event=>{sounds[set](event.target.checked);if(event.target.checked)sounds.unlock();renderAudioControls();});
+  }
+  document.addEventListener('pointerdown',event=>{if(!$('audioPanel').hidden&&!$('audioPanel').contains(event.target)&&!$('toggleSound').contains(event.target))closeAudioPanel();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('audioPanel').hidden){event.preventDefault();closeAudioPanel({restoreFocus:true});}});
+  window.addEventListener('storage',event=>{
+    if(!['on','off'].includes(event.newValue))return;
+    if(event.key===GeoFactSound.MUSIC_KEY)sounds.setMusicEnabled(event.newValue==='on',{persist:false});
+    else if(event.key===GeoFactSound.EFFECTS_KEY)sounds.setEffectsEnabled(event.newValue==='on',{persist:false});
+    else return;
+    renderAudioControls();
+  });
   $('lang').addEventListener('click', () => {
     lang = lang === 'fr' ? 'en' : 'fr';
     GeoFactPreferences.language.set(lang);

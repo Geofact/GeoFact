@@ -1,3 +1,4 @@
+import {toggleAudioEnabled} from './audio-controls.mjs';
 import {clickOutsideResult} from './result-controls.mjs';
 // Home-only visual and navigation regressions; all contexts use the HTTP/mock harness.
 import {mkdir} from 'node:fs/promises';
@@ -16,28 +17,31 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    const before=await snapshot(p);
    equal(await p.locator('#lang').evaluate(e=>e.tagName),'BUTTON','language is a direct toggle without a menu');
    equal(await p.locator('#lang select').count(),0,'no language selector');
-   const commandBoxes=await Promise.all(['#toggleSound','#lang','#openPublicStats','#howToPlay'].map(s=>p.locator(s).boundingBox()));
-   check(commandBoxes.every(b=>Math.abs(b.y-commandBoxes[0].y)<1&&b.width===44&&b.height===44),'four same-size controls in one row');
-   const row=await p.locator('.top-actions').boundingBox(),card=await p.locator('#home').boundingBox();check(Math.abs(row.x+row.width/2-card.x-card.width/2)<2,'controls centered over home');
+   const commandBoxes=await Promise.all(['#toggleSound','#lang'].map(s=>p.locator(s).boundingBox()));
+   check(commandBoxes.every(b=>Math.abs(b.y-commandBoxes[0].y)<1&&b.width===44&&b.height===44),'language and sound controls retain 44px targets');
+   const row=await p.locator('.top-actions').boundingBox(),card=await p.locator('#home').boundingBox();check(row.x+row.width<=card.x+card.width+1,'header controls stay inside home');
+   equal(await p.locator('#openPublicStats strong').textContent(),'Stats','Stats title retained');
+   equal(await p.locator('#openPublicStats small').textContent(),lang==='fr'?'GeoFact en chiffres':'GeoFact in numbers','global Stats subtitle');
    equal(await p.locator('#home > .top').count(),1,'one existing header integrated into home');
    check(await p.locator('#brand').isHidden(),'small duplicate home logo hidden');
    equal(await p.locator('#chooseDaily').textContent(),lang==='fr'?'Jouer le Daily':'Play the Daily','available Daily action');
    equal(await p.locator('[data-i18n=homeTagline]').count(),0,'removed tagline is absent in both languages');
    equal(await p.locator('#homeBonusProgress').count(),1,'one real bonus counter');check(!(await p.locator('#homeBonusProgress').textContent()).includes('/10'),'no home streak');
    check((await p.locator('#homeBonusProgress').textContent()).includes(lang==='fr'?'obtenus':'earned'),'quota meaning explicit');
-   equal(await p.locator('.hero-brand img').getAttribute('src'),'assets/geofact-logo.svg','real logo retained');
+   equal(await p.locator('.hero-brand img').getAttribute('src'),'assets/geofact-logo-braise.svg','current Braise logo retained');
    equal(await p.locator('.hero-brand').evaluate(e=>getComputedStyle(e).animationName),'heroBrandJourney','original animated logo retained');
    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'viewport has no horizontal overflow');
    for(const selector of ['#choosePractice strong','#choosePractice [data-i18n=homePracticeDescription]','#chooseGame strong','#openCollection strong','.home-intro-copy p']) {
     const style=await p.locator(selector).evaluate(e=>{const s=getComputedStyle(e);return {color:s.color,size:parseFloat(s.fontSize),overflow:e.scrollWidth>e.clientWidth+1};});
-    check(style.size>=(selector==='.home-intro-copy p'?14:15),'readable home type '+selector);check(style.color!=='rgb(255, 255, 255)','dark type on light surface '+selector);check(!style.overflow,'unclipped label '+selector);
+    check(style.size>=(selector==='.home-intro-copy p'?14:15),'readable home type '+selector);check(style.color!=='rgb(38, 61, 53)','legacy dark text removed '+selector);check(!style.overflow,'unclipped label '+selector);
    }
    for(const selector of ['#chooseDaily','#choosePractice','#chooseGame','#openCollection','#toggleSound','#lang','#openPublicStats','#howToPlay'])check((await p.locator(selector).boundingBox()).height>=44,'touch target '+selector);
    if(width<=600) {
-    const arc=await p.locator('#heroArcEnd').boundingBox(),headline=await p.locator('.home-intro-copy p').boundingBox();check(arc.y+arc.height<=headline.y,'orbit text never overlaps headline');
+    const title=await p.locator('#home h1').boundingBox(),headline=await p.locator('.home-intro-copy p').boundingBox();check(title.y+title.height<=headline.y,'headline never overlaps subtitle');
+    check((await p.locator('#chooseDaily').boundingBox()).y<700,'Play accessible without tall mobile decoration');
     const practice=await p.locator('#choosePractice').boundingBox(),challenge=await p.locator('#chooseGame').boundingBox();
-    check(width>=365?Math.abs(practice.y-challenge.y)<2:challenge.y>=practice.y+practice.height,'responsive mode cards retain readable layout');
-    check(await p.evaluate(()=>document.documentElement.scrollHeight)<1200,'mobile home remains compact');
+    check(challenge.y>=practice.y+practice.height,'mobile mode cards stack with readable text');
+    check(await p.evaluate(()=>document.documentElement.scrollHeight)<1450,'mobile home remains compact');
    }
    if(captures)await p.screenshot({path:`${captures}/home-${width}-${lang}.png`,fullPage:true});
    await p.clock.runFor(2000);equal(await p.locator('#dailyCountdown').textContent(),'11:59:58','countdown ticks from actual UTC clock');
@@ -52,7 +56,7 @@ export async function testHomeRedesign({newContext,url,tap,check,equal}) {
    equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','one touch toggles language');
    check((await p.locator('#lang').getAttribute('aria-label')).endsWith(lang==='fr'?'FR':'EN'),'accessible label announces next language');
    await p.locator('#lang').focus();await p.keyboard.press('Enter');equal(await p.locator('#lang').getAttribute('value'),lang,'Enter toggles back');await p.keyboard.press('Space');equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','Space toggles language');equal(await p.locator('[data-i18n=homeDailyTitle]').textContent(),lang==='fr'?'Your daily exploration':'L’exploration quotidienne','instant language change');
-   await clickOutsideResult(p,'#toggleSound');await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','language saved');equal(await p.locator('#toggleSound').getAttribute('aria-pressed'),'true','sound preference saved');
+   await toggleAudioEnabled(p);await p.reload();await p.locator('#chooseDaily:enabled').waitFor();equal(await p.locator('#lang').getAttribute('value'),lang==='fr'?'en':'fr','language saved');equal(await p.locator('#toggleSound').getAttribute('data-muted'),'true','sound preference saved');
   } finally {await ctx.close();}
  }
  // Completed/revealed and past sealed chests are real committed fixtures, never UI placeholders.
