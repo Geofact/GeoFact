@@ -1154,16 +1154,16 @@ dialog::backdrop, .result-dialog::backdrop {background:rgba(10,8,16,.78);}
  *,*::before,*::after {animation:none !important;transition:none !important;scroll-behavior:auto !important;}
 }
 
-/* Daily chest: the same SVG drawing as the home card, with a movable lid. */
-#openChest .chest-object {width:220px !important;height:165px !important;top:8px !important;}
-#openChest .braise-chest-art {display:block;width:100%;height:100%;overflow:visible;}
-#openChest .braise-chest-light {opacity:0;pointer-events:none;}
-#openChest .braise-chest-lid {transform-origin:70% 40%;}
-#openChest.opening .braise-chest-lid {animation:braiseLidOpen .9s 1.48s ease-out forwards;}
-#openChest.opening .braise-chest-light {animation:braiseInnerLight 2.35s 1.2s ease-out forwards;}
+/* Daily and bonus chests share the Braise drawing and opening animation. */
+.braise-chest-stage .chest-object {width:220px !important;height:165px !important;top:8px !important;}
+.braise-chest-stage .braise-chest-art {display:block;width:100%;height:100%;overflow:visible;}
+.braise-chest-stage .braise-chest-light {opacity:0;pointer-events:none;}
+.braise-chest-stage .braise-chest-lid {transform-origin:70% 40%;}
+.braise-chest-stage.opening .braise-chest-lid {animation:braiseLidOpen .9s 1.48s ease-out forwards;}
+.braise-chest-stage.opening .braise-chest-light {animation:braiseInnerLight 2.35s 1.2s ease-out forwards;}
 @keyframes braiseLidOpen {from{transform:none}to{transform:translate(-4px,-30px) rotate(-18deg)}}
 @keyframes braiseInnerLight {0%{opacity:0}25%,70%{opacity:1}100%{opacity:0;transform:translateY(-25px) scaleY(2)}}
-@media(prefers-reduced-motion:reduce){#openChest .braise-chest-lid,#openChest .braise-chest-light{animation:none !important;}}
+@media(prefers-reduced-motion:reduce){.braise-chest-stage .braise-chest-lid,.braise-chest-stage .braise-chest-light{animation:none !important;}}
 
 /* Independent audio switches; the existing header buttons retain their layout. */
 .audio-panel {position:absolute;z-index:40;right:0;top:calc(100% + 10px);width:min(290px,calc(100vw - 32px));padding:10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);box-shadow:var(--shadow);}

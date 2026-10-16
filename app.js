@@ -960,7 +960,20 @@
   $('retryPracticeRewards').addEventListener('click', retryRewards);
   const bonusChestButton=$('openChest').cloneNode(true);bonusChestButton.id='openBonusChest';
   $('bonusChestStage').appendChild(bonusChestButton);
-  $('openChest').querySelector('.chest-object').replaceChildren($('braiseDailyChestTemplate').content.cloneNode(true));
+  for(const [button,prefix] of [[$('openChest'),'daily'],[bonusChestButton,'bonus']]){
+    button.classList.add('braise-chest-stage');
+    const art=$('braiseDailyChestTemplate').content.cloneNode(true);
+    // Each inline SVG needs its own paint servers, clips and internal references.
+    const ids=new Map([...art.querySelectorAll('[id]')].map(node=>[node.id,`${prefix}-${node.id}`]));
+    for(const node of art.querySelectorAll('*'))for(const attribute of [...node.attributes]){
+      let value=attribute.value;
+      if(attribute.name==='id')value=ids.get(value);
+      else if(attribute.name==='href'&&value.startsWith('#'))value='#'+ids.get(value.slice(1));
+      else value=value.replace(/url\(#([^)]+)\)/g,(_,id)=>`url(#${ids.get(id)||id})`);
+      node.setAttribute(attribute.name,value);
+    }
+    button.querySelector('.chest-object').replaceChildren(art);
+  }
   for(const id of ['openBonusRewards','openPracticeBonusRewards','collectionBonusRewards','finalBonusRewards']) $(id).addEventListener('click',openBonusRewards);
   $('closeBonusRewards').addEventListener('click',()=>$('bonusDialog').close());
   $('bonusDialog').addEventListener('close',()=>sounds.cancelInvalidChests());
